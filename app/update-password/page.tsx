@@ -81,7 +81,7 @@ export default function UpdatePasswordPage() {
 
         <form onSubmit={handleUpdate} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">Новый паро password</label>
+            <label className="text-sm font-bold text-gray-700 ml-1">Новый пароль</label>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#10b981] transition-colors" />
               <input
