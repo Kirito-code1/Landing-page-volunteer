@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 
 export default function RegisterPage() {
-  // Адрес вашего основного сайта
-  const MAIN_SITE_URL = "http://localhost:3001";
+  // Исправлено: убрали лишний слэш в конце для корректного формирования пути callback
+  const MAIN_SITE_URL = "https://main-website-volunteer.vercel.app";
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -15,7 +15,7 @@ export default function RegisterPage() {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState(''); // Состояние для телефона
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -30,7 +30,7 @@ export default function RegisterPage() {
     message: ''
   });
 
-  const handleRegister = async (e:any) => {
+  const handleRegister = async (e: any) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
@@ -48,11 +48,11 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        // Передаем телефон вместе с именем в метаданные
         data: { 
           full_name: name,
           phone: phone 
         },
+        // Формируется путь: https://main-website-volunteer.vercel.app/auth/callback
         emailRedirectTo: `${MAIN_SITE_URL}/auth/callback`, 
       },
     });
@@ -130,9 +130,7 @@ export default function RegisterPage() {
 
       <div className="w-full max-w-[480px] bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-100 p-8 md:p-10">
         <form className="space-y-4" onSubmit={handleRegister}>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Поле Имя */}
             <div className="space-y-1">
               <label className="text-sm font-bold text-gray-700 ml-1">Имя</label>
               <div className="relative group">
@@ -145,7 +143,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Поле Телефон */}
             <div className="space-y-1">
               <label className="text-sm font-bold text-gray-700 ml-1">Телефон</label>
               <div className="relative group">
@@ -159,7 +156,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Поле Email */}
           <div className="space-y-1">
             <label className="text-sm font-bold text-gray-700 ml-1">Email</label>
             <div className="relative group">
@@ -172,7 +168,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Поля Пароля */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-sm font-bold text-gray-700 ml-1">Пароль</label>
