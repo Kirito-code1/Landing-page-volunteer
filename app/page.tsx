@@ -83,8 +83,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden scroll-smooth">
-      <Navbar />
-
       {/* Hero Section с анимацией */}
       <section className="relative flex justify-center bg-[linear-gradient(180deg,_#f0fdf4_0%,_#ffffff_50%,_#eff6ff_100%)] min-h-[80vh] md:min-h-[90vh] px-4">
         <div className="w-full max-w-7xl flex flex-col lg:flex-row items-center justify-between py-12 md:py-20 gap-12 z-10">
