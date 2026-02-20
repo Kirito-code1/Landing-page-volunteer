@@ -67,7 +67,8 @@ export default function LoginPage() {
         
         // Формируем URL с токенами в хеше (#)
         // Добавляем type=recovery, чтобы Supabase на той стороне точно распознал это как вход
-        const authUrl = `${DASHBOARD_SITE_URL}#access_token=${access_token}&refresh_token=${refresh_token}&type=recovery`;
+        const authUrl = `${DASHBOARD_SITE_URL}#access_token=${access_token}&refresh_token=${refresh_token}`;
+
         
         // Перенаправляем пользователя
         window.location.href = authUrl;
