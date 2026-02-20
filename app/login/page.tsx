@@ -1,14 +1,12 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Eye,
   EyeOff,
   Mail,
   Lock,
   Heart,
-  X,
   AlertCircle,
   Loader2,
   CheckCircle2,
@@ -16,7 +14,6 @@ import {
 import { createBrowserClient } from "@supabase/ssr";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +39,7 @@ export default function LoginPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   );
 
-  const handleLogin = async (e: any) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 

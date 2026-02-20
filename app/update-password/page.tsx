@@ -28,7 +28,7 @@ export default function UpdatePasswordPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   );
 
-  const handleUpdate = async (e:any) => {
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setStatus({ type: "", message: "" });
