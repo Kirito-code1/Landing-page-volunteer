@@ -1,16 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser } from "@fortawesome/free-regular-svg-icons";
+import { faUser, faCircleUser } from "@fortawesome/free-regular-svg-icons";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
+import { createBrowserClient } from "@supabase/ssr";
 
 export default function Navbar() {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState("Русский");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+  );
+
+  // Следим за состоянием авторизации
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    };
+
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   const languages = [
     {
@@ -31,21 +54,23 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white sticky w-full z-20 top-0 start-0 border-b border-gray-100 shadow-sm">
+      <nav className="bg-white sticky w-full z-20 top-0 start-0 border-b border-gray-100 shadow-sm backdrop-blur-md bg-white/90">
         <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+          
           {/* Логотип */}
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center transition-transform group-hover:scale-110">
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center transition-all group-hover:rotate-6 group-hover:scale-110 shadow-lg shadow-green-100">
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
             </div>
-            <span className="self-center text-xl font-bold text-gray-900 tracking-tight">
+            <span className="self-center text-xl font-black text-gray-900 tracking-tight">
               Волонтёр
             </span>
           </Link>
 
-          <div className="flex items-center md:order-2 space-x-3">
+          <div className="flex items-center md:order-2 space-x-2">
+            
             {/* ВЫБОР ЯЗЫКА */}
             <div className="relative">
               <button
@@ -63,13 +88,13 @@ export default function Navbar() {
                 {currentLang === "Русский" ? "RU" : currentLang === "Deutsch" ? "DE" : "EN"}
                 <FontAwesomeIcon
                   icon={faChevronDown}
-                  className={`ms-2 w-3 h-3 text-gray-400 transition-transform ${isLangOpen ? "rotate-180" : ""}`}
+                  className={`ms-2 w-3 h-3 text-gray-400 transition-transform duration-300 ${isLangOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
               {isLangOpen && (
-                <div className="absolute right-0 mt-2 z-50 bg-white border border-gray-100 rounded-2xl shadow-xl w-40 overflow-hidden">
-                  <ul className="py-1 text-sm font-medium text-gray-700">
+                <div className="absolute right-0 mt-2 z-50 bg-white border border-gray-100 rounded-2xl shadow-xl w-44 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <ul className="py-2 text-sm font-bold text-gray-700">
                     {languages.map((lang) => (
                       <li key={lang.name}>
                         <button
@@ -96,13 +121,21 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* КНОПКА ВОЙТИ */}
-            <Link href="/login">
-              <button className="hidden sm:flex items-center bg-[#10b981] text-white px-5 py-2.5 rounded-xl font-bold hover:bg-[#0da975] transition-all hover:shadow-lg hover:shadow-green-100 active:scale-95">
-                <FontAwesomeIcon icon={faUser} className="me-2" />
-                Войти
-              </button>
-            </Link>
+            {/* ДИНАМИЧЕСКАЯ КНОПКА: ВОЙТИ ИЛИ ПРОФИЛЬ */}
+            {isLoggedIn ? (
+              <Link href="/profile">
+                <button className="flex items-center bg-gray-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-black transition-all active:scale-95 shadow-md">
+                  <FontAwesomeIcon icon={faCircleUser} className="me-2 w-5 h-5" />
+                  Профиль
+                </button>
+              </Link>
+            ) : (
+              <Link href="/login">
+                <button className="hidden sm:flex items-center bg-[#10b981] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-[#0da975] transition-all hover:shadow-lg hover:shadow-green-100 active:scale-95">
+                  Войти
+                </button>
+              </Link>
+            )}
 
             {/* Гамбургер */}
             <button
@@ -123,7 +156,7 @@ export default function Navbar() {
           <div
             className={`${isMenuOpen ? "block" : "hidden"} items-center justify-between w-full md:flex md:w-auto md:order-1 transition-all`}
           >
-            <ul className="flex flex-col p-4 md:p-0 mt-4 font-bold md:space-x-8 md:flex-row md:mt-0 md:bg-white bg-gray-50 rounded-2xl md:border-0 border border-gray-100">
+            <ul className="flex flex-col p-4 md:p-0 mt-4 font-bold md:space-x-8 md:flex-row md:mt-0 md:bg-transparent bg-gray-50 rounded-2xl md:border-0 border border-gray-100">
               <li>
                 <Link
                   href="/"

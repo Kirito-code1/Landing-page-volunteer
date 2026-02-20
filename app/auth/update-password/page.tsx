@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { 
@@ -17,6 +17,7 @@ export default function UpdatePasswordPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   
   const [status, setStatus] = useState({
     type: "", // "success" | "error"
@@ -27,6 +28,19 @@ export default function UpdatePasswordPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   );
+
+  // Проверяем, есть ли права на смену пароля (пришел ли юзер по ссылке)
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/login");
+      } else {
+        setCheckingSession(false);
+      }
+    };
+    checkSession();
+  }, [supabase, router]);
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,48 +54,56 @@ export default function UpdatePasswordPage() {
     if (error) {
       setStatus({
         type: "error",
-        message: "Ошибка при обновлении: " + error.message,
+        message: "Ошибка: " + error.message,
       });
       setLoading(false);
     } else {
       setStatus({
         type: "success",
-        message: "Пароль успешно изменен! Перенаправляем на вход...",
+        message: "Пароль изменен! Сейчас вы будете перенаправлены...",
       });
       
-      // Через 3 секунды отправляем на логин
+      // Сразу выходим из системы после смены пароля для безопасности
+      await supabase.auth.signOut();
+      
       setTimeout(() => {
         router.push("/login");
-      }, 3000);
+      }, 2500);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-[#f8fafc]">
+        <Loader2 className="animate-spin text-[#10b981] w-10 h-10" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[linear-gradient(180deg,_#f0fdf4_0%,_#ffffff_50%,_#eff6ff_100%)] p-4">
       <div className="w-full max-w-[440px] bg-white rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-100 p-8 md:p-12 animate-in fade-in zoom-in-95 duration-500">
         
-        {/* Иконка и заголовок */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-green-50 text-[#10b981] rounded-[28px] flex items-center justify-center mx-auto mb-6 shadow-sm">
             <ShieldCheck className="w-10 h-10" />
           </div>
           <h1 className="text-3xl font-black text-gray-900 mb-2">Новый пароль</h1>
-          <p className="text-gray-500 font-medium">Придумайте надежный пароль для защиты вашего аккаунта</p>
+          <p className="text-gray-500 font-medium leading-tight">Придумайте надежный пароль для вашего аккаунта</p>
         </div>
 
-        {/* Уведомления */}
         {status.message && (
           <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-2 ${
             status.type === "success" ? "bg-green-50 text-green-700 border border-green-100" : "bg-red-50 text-red-700 border border-red-100"
           }`}>
-            {status.type === "success" ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            {status.type === "success" ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
             <p className="text-sm font-bold">{status.message}</p>
           </div>
         )}
 
         <form onSubmit={handleUpdate} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">Новый пароль</label>
+            <label className="text-sm font-bold text-gray-700 ml-1">Придумайте пароль</label>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#10b981] transition-colors" />
               <input
@@ -96,7 +118,7 @@ export default function UpdatePasswordPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#10b981] transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#10b981]"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -110,7 +132,7 @@ export default function UpdatePasswordPage() {
             {loading ? (
               <Loader2 className="animate-spin w-6 h-6" />
             ) : (
-              "Обновить пароль"
+              "Обновить и войти"
             )}
           </button>
         </form>
@@ -120,7 +142,7 @@ export default function UpdatePasswordPage() {
             onClick={() => router.push("/login")}
             className="text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors"
           >
-            Вернуться ко входу
+            Отмена и возврат к входу
           </button>
         </div>
       </div>

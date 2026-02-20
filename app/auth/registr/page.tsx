@@ -1,13 +1,13 @@
 "use client";
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, User, Heart, ArrowRight, AlertCircle, CheckCircle2, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, User, Heart, ArrowRight, AlertCircle, CheckCircle2, Phone, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 
 export default function RegisterPage() {
-  // Исправлено: убрали лишний слэш в конце для корректного формирования пути callback
-  const MAIN_SITE_URL = "https://main-website-volunteer.vercel.app";
-
+  const router = useRouter();
+  
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
@@ -52,8 +52,8 @@ export default function RegisterPage() {
           full_name: name,
           phone: phone 
         },
-        // Формируется путь: https://main-website-volunteer.vercel.app/auth/callback
-        emailRedirectTo: `${MAIN_SITE_URL}/auth/callback`, 
+        // Ссылка для подтверждения теперь ведет на текущий домен
+        emailRedirectTo: `${window.location.origin}/auth/callback`, 
       },
     });
 
@@ -70,8 +70,10 @@ export default function RegisterPage() {
         message: message
       });
     } else {
+      // Если сессия создана сразу (авто-логин после регистрации)
       if (data.session) {
-        window.location.href = MAIN_SITE_URL;
+        router.push("/dashboard");
+        router.refresh();
       } else {
         setLoading(false);
         setStatusModal({
@@ -104,13 +106,13 @@ export default function RegisterPage() {
               <button 
                 onClick={() => {
                   setStatusModal({ ...statusModal, isOpen: false });
-                  if (statusModal.type === 'success') window.location.href = "/login";
+                  if (statusModal.type === 'success') router.push("/login");
                 }}
                 className={`w-full py-4 rounded-2xl font-bold text-white transition-all active:scale-95 shadow-lg ${
                   statusModal.type === 'success' ? 'bg-[#10b981] shadow-green-100' : 'bg-gray-900 shadow-gray-200'
                 }`}
               >
-                {statusModal.type === 'success' ? 'Понятно' : 'Попробовать снова'}
+                {statusModal.type === 'success' ? 'К логину' : 'Попробовать снова'}
               </button>
             </div>
           </div>
@@ -124,7 +126,7 @@ export default function RegisterPage() {
             <Heart className="text-white w-10 h-10 fill-current" />
           </div>
         </Link>
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Создайте аккаунт</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2">Создайте аккаунт</h1>
         <p className="text-gray-500 font-medium text-center">Присоединяйтесь к сообществу помощников</p>
       </div>
 
@@ -200,15 +202,15 @@ export default function RegisterPage() {
 
           <button 
             disabled={loading} 
-            className="w-full bg-[#10b981] hover:bg-[#0da975] text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-green-100 transition-all active:scale-[0.98] mt-6 disabled:bg-gray-300"
+            className="w-full bg-[#10b981] hover:bg-[#0da975] text-white py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 shadow-xl shadow-green-100/50 transition-all active:scale-[0.98] mt-6 disabled:bg-gray-300"
           >
-            {loading ? "Создание..." : "Зарегистрироваться"} 
+            {loading ? <Loader2 className="animate-spin" /> : "Зарегистрироваться"} 
             {!loading && <ArrowRight className="w-5 h-5" />}
           </button>
 
           <div className="text-center text-sm font-medium text-gray-500 pt-4">
             Уже есть аккаунт?{" "}
-            <Link href="/login" className="text-[#10b981] font-bold hover:underline">
+            <Link href="/login" className="text-[#10b981] font-black hover:underline">
               Войти
             </Link>
           </div>
