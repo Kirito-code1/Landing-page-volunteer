@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, User, Heart, ArrowRight, X, AlertCircle, CheckCircle2, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, User, Heart, ArrowRight, AlertCircle, CheckCircle2, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 
@@ -30,7 +30,7 @@ export default function RegisterPage() {
     message: ''
   });
 
-  const handleRegister = async (e: any) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {

@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion, Variants } from "framer-motion";
 import Link from "next/link";
-import Navbar from "@/components/layouts/Navbar";
 import CategoryCard from "@/components/ui/Card";
 import EventCard from "@/components/ui/CategoryCard";
 import {
@@ -31,11 +30,6 @@ const staggerContainer: Variants = {
 };
 
 export default function Home() {
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
 
   const events = [
     {
@@ -79,7 +73,6 @@ export default function Home() {
     { title: "Развиваться и расти", desc: "Получайте новые навыки и опыт через волонтёрство", icon: "✨", color: "bg-lime-50 text-lime-600" },
   ];
 
-  if (!isHydrated) return <div className="min-h-screen bg-white" />;
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden scroll-smooth">
