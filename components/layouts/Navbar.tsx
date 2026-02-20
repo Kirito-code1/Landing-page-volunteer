@@ -3,15 +3,28 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faCircleUser } from "@fortawesome/free-regular-svg-icons";
-import { faChevronDown, faTableColumns } from "@fortawesome/free-solid-svg-icons";
-import { LogOut } from "lucide-react";
+import { 
+  faChevronDown, 
+  faTableColumns, 
+  faCalendarAlt,
+  IconDefinition 
+} from "@fortawesome/free-solid-svg-icons";
+import { LogOut, Heart } from "lucide-react";
+
+// 1. Определяем интерфейс для пунктов меню, чтобы TS не ругался на отсутствие icon
+interface MenuItem {
+  href: string;
+  label: string;
+  icon?: IconDefinition; // Знак вопроса делает поле необязательным
+}
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState("Русский");
@@ -20,31 +33,25 @@ export default function Navbar() {
   const supabase = useMemo(
     () =>
       createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       ),
     [],
   );
 
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setIsLoggedIn(Boolean(session));
     };
 
     checkUser();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(Boolean(session));
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [supabase]);
 
   const handleLogout = async () => {
@@ -55,199 +62,134 @@ export default function Navbar() {
   };
 
   const languages = [
-    {
-      name: "Русский",
-      flag: "https://upload.wikimedia.org/wikipedia/commons/f/f3/Flag_of_Russia.svg",
-    },
-    {
-      name: "English (US)",
-      flag: "https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg",
-    },
-    {
-      name: "Deutsch",
-      flag: "https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg",
-    },
+    { name: "Русский", code: "RU", flag: "https://upload.wikimedia.org/wikipedia/commons/f/f3/Flag_of_Russia.svg" },
+    { name: "English (US)", code: "EN", flag: "https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" },
+    { name: "Deutsch", code: "DE", flag: "https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg" },
   ];
 
-  const selectedLanguage =
-    languages.find((lang) => lang.name === currentLang) ?? languages[0];
+  const selectedLanguage = languages.find((l) => l.name === currentLang) || languages[0];
 
-  const menuItems = isLoggedIn
+  // 2. Явно указываем тип MenuItem[]
+  const menuItems: MenuItem[] = isLoggedIn
     ? [
-        { href: "/dashboard", label: "Dashboard" },
-        { href: "/profile", label: "Profile" },
+        { href: "/events", label: "Все события", icon: faCalendarAlt },
+        { href: "/dashboard", label: "Кабинет", icon: faTableColumns },
+        { href: "/profile", label: "Профиль", icon: faCircleUser },
       ]
     : [
         { href: "/", label: "Главная" },
+        { href: "/events", label: "События" },
         { href: "/#about", label: "О нас" },
-        { href: "/#events", label: "События" },
-        { href: "/#directions", label: "Направления" },
       ];
 
   return (
-    <>
-      <nav className="bg-white sticky w-full z-20 top-0 start-0 border-b border-gray-100 shadow-sm backdrop-blur-md bg-white/90">
-        <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center transition-all group-hover:rotate-6 group-hover:scale-110 shadow-lg shadow-green-100">
-              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-            </div>
-            <span className="self-center text-xl font-black text-gray-900 tracking-tight">
-              Волонтёр
-            </span>
-          </Link>
+    <nav className="bg-white/80 sticky w-full z-[100] top-0 border-b border-gray-100 backdrop-blur-md">
+      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 md:px-6">
+        
+        {/* Logo */}
+        <Link href="/" className="flex items-center space-x-3 group">
+          <div className="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center transition-all group-hover:scale-110 shadow-lg shadow-green-100">
+            <Heart className="w-6 h-6 text-white fill-current" />
+          </div>
+          <span className="text-xl font-black text-gray-900 tracking-tighter uppercase italic">
+            Volo<span className="text-[#10b981]">Hero</span>
+          </span>
+        </Link>
 
-          <div className="flex items-center md:order-2 space-x-2">
-            <div className="relative">
-              <button
-                onClick={() => setIsLangOpen(!isLangOpen)}
-                className="inline-flex items-center font-bold justify-center px-3 py-2 text-sm text-gray-700 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
-              >
-                <Image
-                  src={selectedLanguage.flag}
-                  width={20}
-                  height={20}
-                  className="w-5 h-5 rounded-full me-2 object-cover border border-gray-100"
-                  alt=""
-                  unoptimized
-                />
-                {currentLang === "Русский"
-                  ? "RU"
-                  : currentLang === "Deutsch"
-                    ? "DE"
-                    : "EN"}
-                <FontAwesomeIcon
-                  icon={faChevronDown}
-                  className={`ms-2 w-3 h-3 text-gray-400 transition-transform duration-300 ${
-                    isLangOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {isLangOpen && (
-                <div className="absolute right-0 mt-2 z-50 bg-white border border-gray-100 rounded-2xl shadow-xl w-44 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <ul className="py-2 text-sm font-bold text-gray-700">
-                    {languages.map((lang) => (
-                      <li key={lang.name}>
-                        <button
-                          onClick={() => {
-                            setCurrentLang(lang.name);
-                            setIsLangOpen(false);
-                          }}
-                          className="flex items-center w-full px-4 py-3 hover:bg-green-50 hover:text-[#10b981] transition-colors"
-                        >
-                          <Image
-                            src={lang.flag}
-                            width={16}
-                            height={16}
-                            className="w-4 h-4 me-3 rounded-full object-cover border border-gray-100"
-                            alt=""
-                            unoptimized
-                          />
-                          {lang.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {isLoggedIn ? (
-              <button
-                onClick={handleLogout}
-                className="hidden sm:flex items-center bg-gray-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-black transition-all active:scale-95 shadow-md"
-              >
-                <LogOut className="w-4 h-4 me-2" />
-                Выйти
-              </button>
-            ) : (
-              <Link href="/auth/login">
-                <button className="hidden sm:flex items-center bg-[#10b981] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-[#0da975] transition-all hover:shadow-lg hover:shadow-green-100 active:scale-95">
-                  <FontAwesomeIcon icon={faUser} className="me-2" />
-                  Войти
-                </button>
-              </Link>
-            )}
-
+        {/* Right Side Tools */}
+        <div className="flex items-center md:order-2 space-x-2">
+          
+          {/* Language Dropdown */}
+          <div className="relative">
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center p-2 w-10 h-10 justify-center text-gray-500 rounded-xl md:hidden hover:bg-gray-50"
+              onClick={() => setIsLangOpen(!isLangOpen)}
+              className="inline-flex items-center font-black text-[11px] px-3 py-2 text-gray-500 rounded-xl hover:bg-gray-50 transition-colors uppercase tracking-widest"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isMenuOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 6h16M4 12h16m-7 6h7"
-                  />
-                )}
-              </svg>
+              <Image 
+                src={selectedLanguage.flag} 
+                width={18} height={18} 
+                className="rounded-full me-2 object-cover border border-gray-100" 
+                alt={selectedLanguage.name} 
+                unoptimized 
+              />
+              {selectedLanguage.code}
+              <FontAwesomeIcon icon={faChevronDown} className={`ms-2 w-2 h-2 transition-transform ${isLangOpen ? "rotate-180" : ""}`} />
             </button>
+
+            {isLangOpen && (
+              <div className="absolute right-0 mt-2 z-50 bg-white border border-gray-100 rounded-2xl shadow-xl w-44 overflow-hidden animate-in fade-in zoom-in-95">
+                <ul className="py-2 text-[12px] font-bold text-gray-700">
+                  {languages.map((lang) => (
+                    <li key={lang.name}>
+                      <button
+                        onClick={() => { setCurrentLang(lang.name); setIsLangOpen(false); }}
+                        className="flex items-center w-full px-4 py-3 hover:bg-green-50 hover:text-[#10b981] transition-colors"
+                      >
+                        <Image src={lang.flag} width={16} height={16} className="me-3 rounded-full border border-gray-100" alt="" unoptimized />
+                        {lang.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
-          <div
-            className={`${isMenuOpen ? "block" : "hidden"} items-center justify-between w-full md:flex md:w-auto md:order-1 transition-all`}
+          {/* Auth Button */}
+          {isLoggedIn ? (
+            <button
+              onClick={handleLogout}
+              className="hidden sm:flex items-center bg-gray-900 text-white px-5 py-2.5 rounded-[14px] font-black text-[11px] uppercase tracking-widest hover:bg-red-500 transition-all active:scale-95 shadow-md"
+            >
+              <LogOut className="w-4 h-4 me-2" />
+              Выйти
+            </button>
+          ) : (
+            <Link href="/auth/login">
+              <button className="hidden sm:flex items-center bg-[#10b981] text-white px-6 py-2.5 rounded-[14px] font-black text-[11px] uppercase tracking-widest hover:bg-[#0da975] transition-all hover:shadow-lg hover:shadow-green-100 active:scale-95">
+                <FontAwesomeIcon icon={faUser} className="me-2" />
+                Войти
+              </button>
+            </Link>
+          )}
+
+          {/* Mobile Toggle */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="inline-flex items-center p-2 w-10 h-10 justify-center text-gray-500 rounded-xl md:hidden hover:bg-gray-50"
           >
-            <ul className="flex flex-col p-4 md:p-0 mt-4 font-bold md:space-x-8 md:flex-row md:mt-0 md:bg-transparent bg-gray-50 rounded-2xl md:border-0 border border-gray-100">
-              {menuItems.map((item) => (
+            <div className="w-5 h-5 flex flex-col justify-between items-center">
+              <span className={`w-full h-0.5 bg-gray-900 rounded-full transition-all ${isMenuOpen ? "rotate-45 translate-y-2" : ""}`} />
+              <span className={`w-full h-0.5 bg-gray-900 rounded-full transition-all ${isMenuOpen ? "opacity-0" : ""}`} />
+              <span className={`w-full h-0.5 bg-gray-900 rounded-full transition-all ${isMenuOpen ? "-rotate-45 -translate-y-2.5" : ""}`} />
+            </div>
+          </button>
+        </div>
+
+        {/* Menu Links */}
+        <div className={`${isMenuOpen ? "block" : "hidden"} w-full md:flex md:w-auto md:order-1`}>
+          <ul className="flex flex-col p-4 md:p-0 mt-4 font-black text-[11px] uppercase tracking-widest md:space-x-8 md:flex-row md:mt-0 md:border-0">
+            {menuItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="block py-2 px-4 md:p-0 text-gray-900 hover:text-[#10b981] transition-colors"
+                    className={`flex items-center py-3 px-4 md:p-0 transition-colors ${
+                      isActive ? "text-[#10b981]" : "text-gray-900 hover:text-[#10b981]"
+                    }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {isLoggedIn && item.label === "Dashboard" ? (
-                      <>
-                        <FontAwesomeIcon icon={faTableColumns} className="me-2" />
-                        {item.label}
-                      </>
-                    ) : isLoggedIn && item.label === "Profile" ? (
-                      <>
-                        <FontAwesomeIcon icon={faCircleUser} className="me-2" />
-                        {item.label}
-                      </>
-                    ) : (
-                      item.label
-                    )}
+                    {/* Рендерим иконку только если она существует в объекте */}
+                    {item.icon && <FontAwesomeIcon icon={item.icon} className="me-2 w-3 h-3" />}
+                    {item.label}
                   </Link>
                 </li>
-              ))}
-
-              {isLoggedIn ? (
-                <li className="md:hidden">
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left py-2 px-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                  >
-                    Выйти
-                  </button>
-                </li>
-              ) : (
-                <li className="md:hidden">
-                  <Link
-                    href="/auth/login"
-                    className="block py-2 px-4 text-[#10b981] hover:bg-green-50 rounded-xl transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Войти
-                  </Link>
-                </li>
-              )}
-            </ul>
-          </div>
+              );
+            })}
+          </ul>
         </div>
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }
