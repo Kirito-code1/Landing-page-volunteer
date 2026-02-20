@@ -12,16 +12,15 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-
-  // URL второго сайта, где находится Дашборд
-  const DASHBOARD_SITE_URL = "https://landing-page-volunteer.vercel.app/dashboard";
 
   const [errorModal, setErrorModal] = useState({
     isOpen: false,
@@ -61,17 +60,11 @@ export default function LoginPage() {
         message: msg,
       });
     } else {
-      // ЛОГИКА ПЕРЕДАЧИ СЕССИИ (ВАРИАНТ 3)
       if (data?.session) {
-        const { access_token, refresh_token } = data.session;
-        
-        // Формируем URL с токенами в хеше (#)
-        // Добавляем type=recovery, чтобы Supabase на той стороне точно распознал это как вход
-        const authUrl = `${DASHBOARD_SITE_URL}#access_token=${access_token}&refresh_token=${refresh_token}`;
-
-        
-        // Перенаправляем пользователя
-        window.location.href = authUrl;
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        setLoading(false);
       }
     }
   };
@@ -88,7 +81,7 @@ export default function LoginPage() {
 
     setResetLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/update-password`,
+      redirectTo: `${window.location.origin}/auth/update-password`,
     });
 
     setResetLoading(false);
@@ -216,7 +209,7 @@ export default function LoginPage() {
 
           <div className="text-center text-sm font-medium text-gray-500 pt-2">
             Нет аккаунта?{" "}
-            <Link href="/registr" className="text-[#10b981] font-black hover:underline">
+            <Link href="/auth/registr" className="text-[#10b981] font-black hover:underline">
               Создать сейчас
             </Link>
           </div>

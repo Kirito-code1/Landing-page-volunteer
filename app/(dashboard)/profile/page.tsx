@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { User as SupabaseUser } from "@supabase/supabase-js"; // Тип для юзера
 import { User, LogOut, ShieldCheck, Camera, Loader2, Mail, Phone } from "lucide-react";
 
@@ -55,7 +56,7 @@ export default function ProfilePage() {
 
       if (!hasUser) {
         // Редирект на локальную страницу логина
-        router.push("/login");
+        router.push("/auth/login");
         return;
       }
 
@@ -69,7 +70,7 @@ export default function ProfilePage() {
 
       if (event === "SIGNED_OUT" || !session?.user) {
         setUser(null);
-        router.push("/login");
+        router.push("/auth/login");
         return;
       }
 
@@ -106,7 +107,7 @@ export default function ProfilePage() {
       });
       
       await fetchUser();
-    } catch (error) {
+    } catch {
       alert("Ошибка при загрузке фото");
     } finally {
       setUploading(false);
@@ -129,7 +130,7 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/auth/login");
   };
 
   if (loading) {
@@ -152,10 +153,13 @@ export default function ProfilePage() {
             <div className="relative -mt-20 mb-6 flex justify-between items-end">
               <div className="w-40 h-40 bg-white rounded-[38px] p-1.5 shadow-2xl overflow-hidden relative group">
                 {user.user_metadata?.avatar_url ? (
-                  <img 
-                    src={user.user_metadata.avatar_url} 
-                    className="w-full h-full object-cover rounded-[32px]" 
-                    alt="Профиль" 
+                  <Image
+                    src={user.user_metadata.avatar_url}
+                    width={160}
+                    height={160}
+                    className="w-full h-full object-cover rounded-[32px]"
+                    alt="Профиль"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-[32px]">

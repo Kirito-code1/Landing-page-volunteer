@@ -34,7 +34,7 @@ export default function UpdatePasswordPage() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        router.push("/login");
+        router.push("/auth/login");
       } else {
         setCheckingSession(false);
       }
@@ -67,7 +67,7 @@ export default function UpdatePasswordPage() {
       await supabase.auth.signOut();
       
       setTimeout(() => {
-        router.push("/login");
+        router.push("/auth/login");
       }, 2500);
     }
   };
@@ -139,7 +139,7 @@ export default function UpdatePasswordPage() {
 
         <div className="mt-8 text-center">
           <button 
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/auth/login")}
             className="text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors"
           >
             Отмена и возврат к входу

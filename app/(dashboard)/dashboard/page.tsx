@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { User } from "@supabase/supabase-js"; // Импортируем тип для юзера
 import {
   User as UserIcon,
@@ -55,7 +56,7 @@ export default function ProfilePage() {
     const checkAuth = async () => {
       const hasSession = await fetchUser();
       if (!hasSession) {
-        router.push("/login");
+        router.push("/auth/login");
       }
     };
 
@@ -63,7 +64,7 @@ export default function ProfilePage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
-        router.push("/login");
+        router.push("/auth/login");
       }
     });
 
@@ -94,7 +95,7 @@ export default function ProfilePage() {
       });
 
       await fetchUser();
-    } catch (error) {
+    } catch {
       alert("Ошибка загрузки");
     } finally {
       setUploading(false);
@@ -117,7 +118,7 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/auth/login");
   };
 
   if (loading) {
@@ -142,7 +143,14 @@ export default function ProfilePage() {
             <div className="relative -mt-20 mb-6 flex justify-between items-end">
               <div className="w-40 h-40 bg-white rounded-[38px] p-1.5 shadow-2xl overflow-hidden relative">
                 {user.user_metadata?.avatar_url ? (
-                   <img src={user.user_metadata.avatar_url} className="w-full h-full object-cover rounded-[32px]" alt="Avatar" />
+                  <Image
+                    src={user.user_metadata.avatar_url}
+                    width={160}
+                    height={160}
+                    className="w-full h-full object-cover rounded-[32px]"
+                    alt="Avatar"
+                    unoptimized
+                  />
                 ) : (
                    <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-[32px]">
                       <UserIcon className="w-16 h-16 text-gray-200" />

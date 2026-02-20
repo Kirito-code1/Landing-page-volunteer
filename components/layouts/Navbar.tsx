@@ -1,39 +1,58 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createBrowserClient } from "@supabase/ssr";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faCircleUser } from "@fortawesome/free-regular-svg-icons";
-import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
-import Link from "next/link";
-import { createBrowserClient } from "@supabase/ssr";
+import { faChevronDown, faTableColumns } from "@fortawesome/free-solid-svg-icons";
+import { LogOut } from "lucide-react";
 
 export default function Navbar() {
+  const router = useRouter();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState("Русский");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+      ),
+    [],
   );
 
-  // Следим за состоянием авторизации
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsLoggedIn(!!session);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setIsLoggedIn(Boolean(session));
     };
 
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session));
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [supabase]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsMenuOpen(false);
+    router.push("/");
+    router.refresh();
+  };
 
   const languages = [
     {
@@ -50,14 +69,25 @@ export default function Navbar() {
     },
   ];
 
-  const selectedLanguage = languages.find((lang) => lang.name === currentLang) ?? languages[0];
+  const selectedLanguage =
+    languages.find((lang) => lang.name === currentLang) ?? languages[0];
+
+  const menuItems = isLoggedIn
+    ? [
+        { href: "/dashboard", label: "Dashboard" },
+        { href: "/profile", label: "Profile" },
+      ]
+    : [
+        { href: "/", label: "Главная" },
+        { href: "/#about", label: "О нас" },
+        { href: "/#events", label: "События" },
+        { href: "/#directions", label: "Направления" },
+      ];
 
   return (
     <>
       <nav className="bg-white sticky w-full z-20 top-0 start-0 border-b border-gray-100 shadow-sm backdrop-blur-md bg-white/90">
         <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-          
-          {/* Логотип */}
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center transition-all group-hover:rotate-6 group-hover:scale-110 shadow-lg shadow-green-100">
               <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -70,8 +100,6 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center md:order-2 space-x-2">
-            
-            {/* ВЫБОР ЯЗЫКА */}
             <div className="relative">
               <button
                 onClick={() => setIsLangOpen(!isLangOpen)}
@@ -85,10 +113,16 @@ export default function Navbar() {
                   alt=""
                   unoptimized
                 />
-                {currentLang === "Русский" ? "RU" : currentLang === "Deutsch" ? "DE" : "EN"}
+                {currentLang === "Русский"
+                  ? "RU"
+                  : currentLang === "Deutsch"
+                    ? "DE"
+                    : "EN"}
                 <FontAwesomeIcon
                   icon={faChevronDown}
-                  className={`ms-2 w-3 h-3 text-gray-400 transition-transform duration-300 ${isLangOpen ? "rotate-180" : ""}`}
+                  className={`ms-2 w-3 h-3 text-gray-400 transition-transform duration-300 ${
+                    isLangOpen ? "rotate-180" : ""
+                  }`}
                 />
               </button>
 
@@ -121,78 +155,95 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* ДИНАМИЧЕСКАЯ КНОПКА: ВОЙТИ ИЛИ ПРОФИЛЬ */}
             {isLoggedIn ? (
-              <Link href="/profile">
-                <button className="flex items-center bg-gray-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-black transition-all active:scale-95 shadow-md">
-                  <FontAwesomeIcon icon={faCircleUser} className="me-2 w-5 h-5" />
-                  Профиль
-                </button>
-              </Link>
+              <button
+                onClick={handleLogout}
+                className="hidden sm:flex items-center bg-gray-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-black transition-all active:scale-95 shadow-md"
+              >
+                <LogOut className="w-4 h-4 me-2" />
+                Выйти
+              </button>
             ) : (
-              <Link href="/login">
+              <Link href="/auth/login">
                 <button className="hidden sm:flex items-center bg-[#10b981] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-[#0da975] transition-all hover:shadow-lg hover:shadow-green-100 active:scale-95">
+                  <FontAwesomeIcon icon={faUser} className="me-2" />
                   Войти
                 </button>
               </Link>
             )}
 
-            {/* Гамбургер */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center p-2 w-10 h-10 justify-center text-gray-500 rounded-xl md:hidden hover:bg-gray-50"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {isMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 6h16M4 12h16m-7 6h7"
+                  />
                 )}
               </svg>
             </button>
           </div>
 
-          {/* Ссылки меню */}
           <div
             className={`${isMenuOpen ? "block" : "hidden"} items-center justify-between w-full md:flex md:w-auto md:order-1 transition-all`}
           >
             <ul className="flex flex-col p-4 md:p-0 mt-4 font-bold md:space-x-8 md:flex-row md:mt-0 md:bg-transparent bg-gray-50 rounded-2xl md:border-0 border border-gray-100">
-              <li>
-                <Link
-                  href="/"
-                  className="block py-2 px-4 md:p-0 text-gray-900 hover:text-[#10b981] transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Главная
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#about"
-                  className="block py-2 px-4 md:p-0 text-gray-900 hover:text-[#10b981] transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  О нас
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#events"
-                  className="block py-2 px-4 md:p-0 text-gray-900 hover:text-[#10b981] transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  События
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#directions"
-                  className="block py-2 px-4 md:p-0 text-gray-900 hover:text-[#10b981] transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Направления
-                </Link>
-              </li>
+              {menuItems.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="block py-2 px-4 md:p-0 text-gray-900 hover:text-[#10b981] transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {isLoggedIn && item.label === "Dashboard" ? (
+                      <>
+                        <FontAwesomeIcon icon={faTableColumns} className="me-2" />
+                        {item.label}
+                      </>
+                    ) : isLoggedIn && item.label === "Profile" ? (
+                      <>
+                        <FontAwesomeIcon icon={faCircleUser} className="me-2" />
+                        {item.label}
+                      </>
+                    ) : (
+                      item.label
+                    )}
+                  </Link>
+                </li>
+              ))}
+
+              {isLoggedIn ? (
+                <li className="md:hidden">
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left py-2 px-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                  >
+                    Выйти
+                  </button>
+                </li>
+              ) : (
+                <li className="md:hidden">
+                  <Link
+                    href="/auth/login"
+                    className="block py-2 px-4 text-[#10b981] hover:bg-green-50 rounded-xl transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Войти
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
         </div>

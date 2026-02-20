@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 export interface EventCardProps {
   image: string;
@@ -16,10 +17,12 @@ export default function EventCard({ image, category, title, description, date, l
     <div className="w-full max-w-[320px] bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-hidden hover:shadow-2xl transition-all duration-500 group">
       {/* Изображение */}
       <div className="relative h-56 w-full overflow-hidden">
-        <img 
-          src={image} 
-          alt={title} 
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+        <Image
+          src={image}
+          alt={title}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          width={320}
+          height={224}
         />
         <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-2xl text-xs font-black text-gray-900 uppercase tracking-wider">
           {category}

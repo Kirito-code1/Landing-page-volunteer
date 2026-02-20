@@ -106,7 +106,7 @@ export default function RegisterPage() {
               <button 
                 onClick={() => {
                   setStatusModal({ ...statusModal, isOpen: false });
-                  if (statusModal.type === 'success') router.push("/login");
+                  if (statusModal.type === 'success') router.push("/auth/login");
                 }}
                 className={`w-full py-4 rounded-2xl font-bold text-white transition-all active:scale-95 shadow-lg ${
                   statusModal.type === 'success' ? 'bg-[#10b981] shadow-green-100' : 'bg-gray-900 shadow-gray-200'
@@ -210,7 +210,7 @@ export default function RegisterPage() {
 
           <div className="text-center text-sm font-medium text-gray-500 pt-4">
             Уже есть аккаунт?{" "}
-            <Link href="/login" className="text-[#10b981] font-black hover:underline">
+            <Link href="/auth/login" className="text-[#10b981] font-black hover:underline">
               Войти
             </Link>
           </div>
