@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser } from "@fortawesome/free-regular-svg-icons";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
@@ -26,17 +27,19 @@ export default function Navbar() {
     },
   ];
 
+  const selectedLanguage = languages.find((lang) => lang.name === currentLang) ?? languages[0];
+
   return (
     <>
       <nav className="bg-white sticky w-full z-20 top-0 start-0 border-b border-gray-100 shadow-sm">
         <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
           {/* Логотип */}
           <Link href="/" className="flex items-center space-x-3 group">
-             <div className="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center transition-transform group-hover:scale-110">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-             </div>
+            <div className="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center transition-transform group-hover:scale-110">
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </div>
             <span className="self-center text-xl font-bold text-gray-900 tracking-tight">
               Волонтёр
             </span>
@@ -49,15 +52,18 @@ export default function Navbar() {
                 onClick={() => setIsLangOpen(!isLangOpen)}
                 className="inline-flex items-center font-bold justify-center px-3 py-2 text-sm text-gray-700 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
               >
-                <img
-                  src={languages.find((l) => l.name === currentLang)?.flag}
+                <Image
+                  src={selectedLanguage.flag}
+                  width={20}
+                  height={20}
                   className="w-5 h-5 rounded-full me-2 object-cover border border-gray-100"
                   alt=""
+                  unoptimized
                 />
                 {currentLang === "Русский" ? "RU" : currentLang === "Deutsch" ? "DE" : "EN"}
                 <FontAwesomeIcon
                   icon={faChevronDown}
-                  className={`ms-2 w-3 h-3 text-gray-400 transition-transform ${isLangOpen ? 'rotate-180' : ''}`}
+                  className={`ms-2 w-3 h-3 text-gray-400 transition-transform ${isLangOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
@@ -73,10 +79,13 @@ export default function Navbar() {
                           }}
                           className="flex items-center w-full px-4 py-3 hover:bg-green-50 hover:text-[#10b981] transition-colors"
                         >
-                          <img
+                          <Image
                             src={lang.flag}
+                            width={16}
+                            height={16}
                             className="w-4 h-4 me-3 rounded-full object-cover border border-gray-100"
                             alt=""
+                            unoptimized
                           />
                           {lang.name}
                         </button>

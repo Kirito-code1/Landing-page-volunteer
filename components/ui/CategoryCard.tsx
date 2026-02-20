@@ -23,10 +23,12 @@ export default function EventCard({
       {/* Изображение */}
       <div className="relative w-full h-[220px] p-3">
         <div className="relative w-full h-full overflow-hidden rounded-[18px]">
-          <img
+          <Image
             src={image}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+            width={320}
+            height={220}
           />
         </div>
       </div>
