@@ -71,6 +71,7 @@ export default function Home() {
             <h1 className="font-black text-4xl sm:text-5xl md:text-7xl text-gray-900 leading-[1.0] tracking-tighter uppercase italic mb-8">
               Найди <span className="text-[#10b981]">события</span> рядом с тобой
             </h1>
+            <p className="font-black text-2xl sm:text-3xl md:text-4xl text-gray-900 leading-[1.0] tracking-tighter uppercase italic mb-8">Волонтерство вместе с 22 школой</p>
             <Link href="/auth/registr" className="px-12 py-5 text-lg font-black text-white bg-gray-900 rounded-[20px] hover:bg-[#10b981] transition-all shadow-2xl uppercase italic tracking-tighter">
               Начать помогать
             </Link>

@@ -8,7 +8,7 @@ import Navbar from "@/components/layouts/Navbar";
 config.autoAddCss = false;
 
 export const metadata: Metadata = {
-  title: "Volonteer",
+  title: "VolunteerHub",
   description: "Сайт для тех кто хочет улучшить мир",
 };
 
