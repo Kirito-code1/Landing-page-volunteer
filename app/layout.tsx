@@ -3,6 +3,7 @@ import "./globals.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import Navbar from "@/components/layouts/Navbar";
+import Footer from "@/components/layouts/Footer";
 
 // Disable automatic CSS insertion because styles are imported manually above.
 config.autoAddCss = false;
@@ -22,6 +23,7 @@ export default function RootLayout({
       <body suppressHydrationWarning className="antialiased">
         <Navbar />
         {children}
+        <Footer />
       </body>
     </html>
   );
