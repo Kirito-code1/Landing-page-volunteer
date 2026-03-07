@@ -34,3 +34,41 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Donation Checkout Setup
+
+The project includes a `/donate` page and backend route: `POST /api/donations/checkout`.
+
+Configure provider checkout URL templates in `.env.local`:
+
+```bash
+DONATION_CLICK_URL_TEMPLATE=
+DONATION_PAYME_URL_TEMPLATE=
+DONATION_STRIPE_URL_TEMPLATE=
+DONATION_PAYPAL_URL_TEMPLATE=
+NEXT_PUBLIC_DONATION_CARD_NUMBER=
+NEXT_PUBLIC_DONATION_CARD_HOLDER=
+NEXT_PUBLIC_DONATION_CARD_BANK=
+NEXT_PUBLIC_DONATION_CARD_TRANSFER_URL_TEMPLATE=
+```
+
+Template tokens supported:
+
+- `{amount}`
+- `{currency}`
+- `{orderId}`
+- `{email}`
+- `{returnUrl}`
+- `{cancelUrl}`
+- `{origin}`
+- `{provider}`
+- `{card}` (for `NEXT_PUBLIC_DONATION_CARD_TRANSFER_URL_TEMPLATE`)
+
+Example template shape:
+
+```text
+https://provider.example/checkout?amount={amount}&currency={currency}&order={orderId}&return={returnUrl}&cancel={cancelUrl}
+```
+
+Use checkout URL formats provided by your own merchant cabinet for Click/Payme/Stripe/PayPal.
+For direct card transfer mode on `/donate`, fill the `NEXT_PUBLIC_DONATION_CARD_*` variables.

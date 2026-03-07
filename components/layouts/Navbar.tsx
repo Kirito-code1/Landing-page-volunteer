@@ -11,6 +11,7 @@ import {
   faChevronDown, 
   faTableColumns, 
   faCalendarAlt,
+  faHandHoldingHeart,
   IconDefinition 
 } from "@fortawesome/free-solid-svg-icons";
 import { LogOut, Heart } from "lucide-react";
@@ -73,12 +74,14 @@ export default function Navbar() {
   const menuItems: MenuItem[] = isLoggedIn
     ? [
         { href: "/events", label: "Все события", icon: faCalendarAlt },
+        { href: "/donate", label: "Пожертвовать", icon: faHandHoldingHeart },
         { href: "/dashboard", label: "Кабинет", icon: faTableColumns },
         { href: "/profile", label: "Профиль", icon: faCircleUser },
       ]
     : [
         { href: "/", label: "Главная" },
         { href: "/events", label: "События" },
+        { href: "/donate", label: "Пожертвовать" },
         { href: "/#about", label: "О нас" },
       ];
 
