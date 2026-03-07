@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { 
@@ -24,22 +24,63 @@ export default function UpdatePasswordPage() {
     message: ""
   });
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+      ),
+    [],
   );
 
   // Проверяем, есть ли права на смену пароля (пришел ли юзер по ссылке)
   useEffect(() => {
+    let mounted = true;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push("/auth/login");
-      } else {
+      if (!mounted) return;
+
+      if (session) {
+        setCheckingSession(false);
+        return;
+      }
+
+      // В recovery-flow сессия может выставляться не сразу после открытия ссылки.
+      fallbackTimer = setTimeout(async () => {
+        const { data: { session: delayedSession } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        if (delayedSession) {
+          setCheckingSession(false);
+        } else {
+          router.replace("/auth/login");
+        }
+      }, 1500);
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      if (session) {
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer);
+        }
         setCheckingSession(false);
       }
-    };
+    });
+
     checkSession();
+
+    return () => {
+      mounted = false;
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+      }
+      subscription.unsubscribe();
+    };
   }, [supabase, router]);
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {

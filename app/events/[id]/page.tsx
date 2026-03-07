@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useParams, useRouter } from "next/navigation";
 import { 
@@ -14,17 +14,31 @@ import {
   AlertCircle
 } from "lucide-react";
 
+interface EventDetails {
+  id: string;
+  title: string;
+  location: string;
+  date: string;
+  description: string | null;
+  image_url: string | null;
+}
+
 export default function EventPage() {
-  const { id } = useParams();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const router = useRouter();
-  const [event, setEvent] = useState<any>(null);
+  const [event, setEvent] = useState<EventDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      ),
+    [],
   );
 
   useEffect(() => {
@@ -49,9 +63,10 @@ export default function EventPage() {
         }
 
         setEvent(data);
-      } catch (err: any) {
-        console.error("Ошибка при загрузке:", err.message);
-        setError(err.message);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Не удалось загрузить событие";
+        console.error("Ошибка при загрузке:", message);
+        setError(message);
       } finally {
         setLoading(false);
       }

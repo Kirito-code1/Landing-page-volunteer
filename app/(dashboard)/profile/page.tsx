@@ -3,8 +3,8 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { User as SupabaseUser } from "@supabase/supabase-js";
-import { User, LogOut, ShieldCheck, Camera, Loader2, Mail, Phone, Trash2, X, AlertTriangle } from "lucide-react";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { User, LogOut, ShieldCheck, Camera, Loader2, Mail, Phone, Trash2, AlertTriangle } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -103,9 +103,10 @@ export default function ProfilePage() {
       if (error) throw error;
       await supabase.auth.signOut();
       router.push("/auth/login");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Неизвестная ошибка";
       console.error("Delete account error:", error);
-      alert("Ошибка при удалении: " + error.message);
+      alert("Ошибка при удалении: " + message);
     } finally {
       setIsSaving(false);
       setConfirmDeleteOpen(false);

@@ -31,34 +31,34 @@ export default function Home() {
     {
       image: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800",
       category: "Экология",
-      title: "Уборка парка Горького",
-      description: "Присоединяйтесь к нам для уборки парка и посадки новых деревьев",
-      date: "25 февраля 2026",
-      location: "Парк Горького, Москва",
+      title: "Уборка берега канала Анхор",
+      description: "Очищаем набережную Анхора и сортируем собранные отходы вместе с волонтерами района.",
+      date: "14 марта 2026",
+      location: "Набережная Анхора, Ташкент",
     },
     {
       image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=800",
       category: "Переработка",
-      title: "Сбор пластика на ВДНХ",
-      description: "Учимся правильно сортировать мусор и очищаем территорию выставки",
-      date: "10 марта 2026",
-      location: "ВДНХ, Москва",
+      title: "Сбор пластика в экопункте Yangiobod",
+      description: "Принимаем пластик и макулатуру, показываем как правильно сортировать сырье дома.",
+      date: "22 марта 2026",
+      location: "Экопункт Yangiobod, Ташкент",
     },
     {
       image: "https://media.istockphoto.com/id/1265210645/ru/%D1%84%D0%BE%D1%82%D0%BE/%D0%BC%D0%BE%D0%BB%D0%BE%D0%B4%D0%B0%D1%8F-%D0%B6%D0%B5%D0%BD%D1%89%D0%B8%D0%BD%D0%B0-%D0%B2-%D0%BF%D1%80%D0%B8%D1%8E%D1%82%D0%B5-%D0%B4%D0%BB%D1%8F-%D0%B6%D0%B8%D0%B2%D0%BE%D1%82%D0%BD%D1%8B%D1%85.jpg?s=612x612&w=0&k=20&c=_uhiPb4SzSld5vOwWmti9xoEc8MbKYvD3DIesbcErME=",
       category: "Животные",
-      title: "Помощь приюту «Друг»",
-      description: "Выгул собак и помощь в обустройстве новых вольеров для питомцев",
-      date: "15 марта 2026",
-      location: "Приют Друг, МО",
+      title: "Помощь приюту Mehr va Oqibat",
+      description: "Кормление животных, выгул собак и помощь в уборке территории приюта.",
+      date: "28 марта 2026",
+      location: "Ташкентская область",
     },
     {
       image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800",
       category: "Лес",
-      title: "Посадка кедров",
-      description: "Восстанавливаем лесной массив после летних пожаров в Подмосковье",
-      date: "20 апреля 2026",
-      location: "Звенигородское лесничество",
+      title: "Посадка саксаула в Приаралье",
+      description: "Высаживаем саженцы саксаула для укрепления почвы и снижения пылевых бурь.",
+      date: "12 апреля 2026",
+      location: "Муйнак, Каракалпакстан",
     },
   ];
 
@@ -86,6 +86,20 @@ export default function Home() {
               priority 
             />
           </div>
+        </div>
+      </section>
+
+      {/* О нас */}
+      <section id="about" className="py-20 px-4">
+        <div className="max-w-5xl mx-auto bg-white border border-gray-100 rounded-[36px] p-8 md:p-12 shadow-sm">
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#10b981] mb-4">О платформе</p>
+          <h2 className="text-3xl md:text-5xl font-black text-gray-900 uppercase italic tracking-tighter mb-6">
+            VoloHero объединяет школьников и волонтерские инициативы
+          </h2>
+          <p className="text-gray-600 font-medium leading-relaxed">
+            Мы публикуем проверенные городские события, где можно помогать людям, природе и животным.
+            Каждый участник может найти задачу рядом с собой и подключиться в пару кликов.
+          </p>
         </div>
       </section>
 

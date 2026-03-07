@@ -51,7 +51,7 @@ export default function LoginPage() {
     if (error) {
       setLoading(false);
       // Упрощаем сообщение об ошибке, так как подтверждение почты отключено
-      let msg = "Неверный email или пароль. Пожалуйста, проверьте данные.";
+      const msg = "Неверный email или пароль. Пожалуйста, проверьте данные.";
       
       setErrorModal({
         isOpen: true,

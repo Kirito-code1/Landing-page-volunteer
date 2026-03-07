@@ -1,32 +1,53 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { Loader2, Search, MapPin, Calendar, ArrowRight, Heart } from "lucide-react";
+import { Loader2, Search, MapPin, Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+interface EventListItem {
+  id: string;
+  title: string;
+  location: string;
+  date: string;
+  image_url: string | null;
+}
+
 export default function AllEvents() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<EventListItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      ),
+    [],
   );
 
   useEffect(() => {
     async function getEvents() {
-      const { data } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from("events")
         .select("*")
         .order("created_at", { ascending: false });
-      
-      if (data) setEvents(data);
+
+      if (supabaseError) {
+        setError("Не удалось загрузить события. Попробуйте обновить страницу.");
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
+
+      setEvents(data ?? []);
+      setError(null);
       setLoading(false);
     }
     getEvents();
-  }, []);
+  }, [supabase]);
 
   // Фильтрация для поиска
   const filteredEvents = events.filter(event => 
@@ -61,6 +82,12 @@ export default function AllEvents() {
                 />
             </div>
         </header>
+
+        {error && (
+          <div className="mb-8 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredEvents.map((event) => (

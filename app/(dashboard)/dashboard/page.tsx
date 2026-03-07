@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { 
   PlusCircle, 
@@ -12,15 +13,23 @@ import {
   Calendar,
   Trash2,
   Edit3,
-  ImageIcon,
-  AlignLeft
+  ImageIcon
 } from "lucide-react";
+
+interface DashboardEvent {
+  id: string;
+  title: string;
+  location: string;
+  date: string;
+  image_url: string | null;
+  description: string | null;
+}
 
 export default function Dashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [myEvents, setMyEvents] = useState<any[]>([]);
+  const [myEvents, setMyEvents] = useState<DashboardEvent[]>([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,7 +67,7 @@ export default function Dashboard() {
         .order('created_at', { ascending: false });
 
       if (eventsData) setMyEvents(eventsData);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error loading dashboard:", err);
     } finally {
       setLoading(false);
@@ -82,20 +91,29 @@ export default function Dashboard() {
     try {
       const { error } = await supabase.from("events").delete().eq("id", id);
       if (error) throw error;
-      setMyEvents(myEvents.filter(event => event.id !== id));
-    } catch (err: any) {
-      alert("Ошибка при удалении: " + err.message);
+      setMyEvents((prev) => prev.filter((event) => event.id !== id));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Неизвестная ошибка";
+      alert("Ошибка при удалении: " + message);
     }
   };
 
-  const openEditModal = (event: any) => {
+  const openEditModal = (event: DashboardEvent) => {
     const eventDate = new Date(event.date);
+    const isValidDate = !Number.isNaN(eventDate.getTime());
+    const pad2 = (value: number) => value.toString().padStart(2, "0");
+
     setEditingId(event.id);
     setFormData({
       title: event.title,
       location: event.location,
-      date: eventDate.toISOString().split('T')[0],
-      time: eventDate.toTimeString().slice(0, 5),
+      // Формируем дату в локальной зоне, чтобы избежать сдвига дня из-за UTC.
+      date: isValidDate
+        ? `${eventDate.getFullYear()}-${pad2(eventDate.getMonth() + 1)}-${pad2(eventDate.getDate())}`
+        : "",
+      time: isValidDate
+        ? `${pad2(eventDate.getHours())}:${pad2(eventDate.getMinutes())}`
+        : "",
       description: event.description || ""
     });
     setImagePreview(event.image_url);
@@ -115,6 +133,10 @@ export default function Dashboard() {
     setIsSubmitting(true);
 
     try {
+      if (!user) {
+        throw new Error("Пользователь не найден. Перезайдите в аккаунт.");
+      }
+
       let finalImageUrl = imagePreview;
 
       if (imageFile) {
@@ -147,8 +169,9 @@ export default function Dashboard() {
 
       closeAndReset();
       fetchData(); 
-    } catch (err: any) {
-      alert("Ошибка: " + err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Неизвестная ошибка";
+      alert("Ошибка: " + message);
     } finally {
       setIsSubmitting(false);
     }
