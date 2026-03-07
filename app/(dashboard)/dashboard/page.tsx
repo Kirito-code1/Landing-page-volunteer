@@ -15,6 +15,7 @@ import {
   Edit3,
   ImageIcon
 } from "lucide-react";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 interface DashboardEvent {
   id: string;
@@ -26,6 +27,7 @@ interface DashboardEvent {
 }
 
 export default function Dashboard() {
+  const { pick } = useLanguage();
   const router = useRouter();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,8 @@ export default function Dashboard() {
     }
   }, [supabase, router]);
 
+  const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -87,14 +91,20 @@ export default function Dashboard() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Вы уверены, что хотите удалить это объявление?")) return;
+    if (!confirm(pick({
+      ru: "Вы уверены, что хотите удалить это объявление?",
+      en: "Are you sure you want to delete this post?",
+      uz: "Bu e'lonni o'chirmoqchimisiz?",
+    }))) return;
     try {
       const { error } = await supabase.from("events").delete().eq("id", id);
       if (error) throw error;
       setMyEvents((prev) => prev.filter((event) => event.id !== id));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Неизвестная ошибка";
-      alert("Ошибка при удалении: " + message);
+      const message = err instanceof Error
+        ? err.message
+        : pick({ ru: "Неизвестная ошибка", en: "Unknown error", uz: "Noma'lum xatolik" });
+      alert(`${pick({ ru: "Ошибка при удалении", en: "Delete error", uz: "O'chirish xatosi" })}: ${message}`);
     }
   };
 
@@ -134,7 +144,13 @@ export default function Dashboard() {
 
     try {
       if (!user) {
-        throw new Error("Пользователь не найден. Перезайдите в аккаунт.");
+        throw new Error(
+          pick({
+            ru: "Пользователь не найден. Перезайдите в аккаунт.",
+            en: "User not found. Please sign in again.",
+            uz: "Foydalanuvchi topilmadi. Qayta kirib ko'ring.",
+          }),
+        );
       }
 
       let finalImageUrl = imagePreview;
@@ -170,8 +186,10 @@ export default function Dashboard() {
       closeAndReset();
       fetchData(); 
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Неизвестная ошибка";
-      alert("Ошибка: " + message);
+      const message = err instanceof Error
+        ? err.message
+        : pick({ ru: "Неизвестная ошибка", en: "Unknown error", uz: "Noma'lum xatolik" });
+      alert(`${pick({ ru: "Ошибка", en: "Error", uz: "Xatolik" })}: ${message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -181,7 +199,9 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
         <Loader2 className="animate-spin h-10 w-10 text-[#10b981]" />
-        <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest italic">Загрузка...</p>
+        <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest italic">
+          {pick({ ru: "Загрузка...", en: "Loading...", uz: "Yuklanmoqda..." })}
+        </p>
       </div>
     );
   }
@@ -196,7 +216,9 @@ export default function Dashboard() {
             <div className="p-6 md:p-10">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl md:text-3xl font-black text-gray-900 uppercase italic tracking-tighter">
-                  {editingId ? "Изменить" : "Создать"}
+                  {editingId
+                    ? pick({ ru: "Изменить", en: "Edit", uz: "Tahrirlash" })
+                    : pick({ ru: "Создать", en: "Create", uz: "Yaratish" })}
                 </h2>
                 <button onClick={closeAndReset} className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-500 transition-all">
                   <X size={20} />
@@ -206,58 +228,80 @@ export default function Dashboard() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Фотография */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Фотография</label>
+                  <label className="text-[10px] font-black uppercase text-gray-400 ml-4">
+                    {pick({ ru: "Фотография", en: "Photo", uz: "Rasm" })}
+                  </label>
                   <div className="relative h-32 w-full bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden hover:border-[#10b981]/50 transition-colors cursor-pointer group">
                     {imagePreview ? (
                       <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
                     ) : (
-                      <div className="flex flex-col items-center text-gray-400 group-hover:text-[#10b981]">
-                        <ImageIcon size={24} className="mb-2" />
-                        <span className="text-[9px] font-bold uppercase tracking-widest">Выбрать файл</span>
-                      </div>
-                    )}
+                        <div className="flex flex-col items-center text-gray-400 group-hover:text-[#10b981]">
+                          <ImageIcon size={24} className="mb-2" />
+                          <span className="text-[9px] font-bold uppercase tracking-widest">
+                            {pick({ ru: "Выбрать файл", en: "Select file", uz: "Fayl tanlash" })}
+                          </span>
+                        </div>
+                      )}
                     <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" />
                   </div>
                 </div>
 
                 {/* Название */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Название</label>
-                  <input required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-6 py-4 bg-gray-50 rounded-[22px] outline-none font-bold text-gray-900" placeholder="Название события" />
+                  <label className="text-[10px] font-black uppercase text-gray-400 ml-4">
+                    {pick({ ru: "Название", en: "Title", uz: "Nomi" })}
+                  </label>
+                  <input required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full px-6 py-4 bg-gray-50 rounded-[22px] outline-none font-bold text-gray-900" placeholder={pick({ ru: "Название события", en: "Event title", uz: "Tadbir nomi" })} />
                 </div>
 
                 {/* Дата и Время */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Дата</label>
+                    <label className="text-[10px] font-black uppercase text-gray-400 ml-4">
+                      {pick({ ru: "Дата", en: "Date", uz: "Sana" })}
+                    </label>
                     <input required type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full px-6 py-4 bg-gray-50 rounded-[22px] font-bold text-gray-900" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Время</label>
+                    <label className="text-[10px] font-black uppercase text-gray-400 ml-4">
+                      {pick({ ru: "Время", en: "Time", uz: "Vaqt" })}
+                    </label>
                     <input required type="time" value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full px-6 py-4 bg-gray-50 rounded-[22px] font-bold text-gray-900" />
                   </div>
                 </div>
 
                 {/* Место */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Место</label>
-                  <input required value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} className="w-full px-6 py-4 bg-gray-50 rounded-[22px] font-bold text-gray-900" placeholder="Локация" />
+                  <label className="text-[10px] font-black uppercase text-gray-400 ml-4">
+                    {pick({ ru: "Место", en: "Location", uz: "Joylashuv" })}
+                  </label>
+                  <input required value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} className="w-full px-6 py-4 bg-gray-50 rounded-[22px] font-bold text-gray-900" placeholder={pick({ ru: "Локация", en: "Location", uz: "Joylashuv" })} />
                 </div>
 
                 {/* Описание (Добавлено) */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Описание</label>
+                  <label className="text-[10px] font-black uppercase text-gray-400 ml-4">
+                    {pick({ ru: "Описание", en: "Description", uz: "Tavsif" })}
+                  </label>
                   <textarea 
                     rows={4}
                     value={formData.description} 
                     onChange={(e) => setFormData({...formData, description: e.target.value})} 
                     className="w-full px-6 py-4 bg-gray-50 rounded-[22px] font-bold text-gray-900 outline-none resize-none" 
-                    placeholder="Расскажите подробнее о задаче..."
+                    placeholder={pick({
+                      ru: "Расскажите подробнее о задаче...",
+                      en: "Describe the task in more detail...",
+                      uz: "Vazifa haqida batafsil yozing...",
+                    })}
                   />
                 </div>
 
                 <button disabled={isSubmitting} type="submit" className="w-full bg-[#10b981] text-white py-5 rounded-[24px] font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-green-200 mt-2 hover:bg-[#0da975] transition-all disabled:bg-gray-200">
-                  {isSubmitting ? <Loader2 className="animate-spin mx-auto w-5 h-5" /> : editingId ? "Обновить" : "Опубликовать"}
+                  {isSubmitting
+                    ? <Loader2 className="animate-spin mx-auto w-5 h-5" />
+                    : editingId
+                      ? pick({ ru: "Обновить", en: "Update", uz: "Yangilash" })
+                      : pick({ ru: "Опубликовать", en: "Publish", uz: "E'lon qilish" })}
                 </button>
               </form>
             </div>
@@ -274,7 +318,9 @@ export default function Dashboard() {
              </div>
              <div>
                 <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase italic leading-none">VoloHero</h1>
-                <p className="text-gray-400 font-bold uppercase text-[9px] tracking-[0.3em] mt-2">Личный кабинет героя: {user?.user_metadata?.full_name?.split(" ")[0]}</p>
+                <p className="text-gray-400 font-bold uppercase text-[9px] tracking-[0.3em] mt-2">
+                  {pick({ ru: "Личный кабинет героя", en: "Hero dashboard", uz: "Qahramon kabineti" })}: {user?.user_metadata?.full_name?.split(" ")[0]}
+                </p>
              </div>
           </div>
           
@@ -283,14 +329,14 @@ export default function Dashboard() {
               onClick={() => setIsModalOpen(true)}
               className="flex items-center justify-center gap-3 px-8 py-4 bg-[#10b981] text-white rounded-[22px] font-black italic uppercase text-[10px] tracking-widest shadow-xl shadow-green-100/50 hover:bg-[#0da975] hover:scale-105 transition-all"
             >
-              <PlusCircle size={18} /> Создать пост
+              <PlusCircle size={18} /> {pick({ ru: "Создать пост", en: "Create Post", uz: "Post yaratish" })}
             </button>
           </div>
         </header>
 
         <div className="mb-20">
           <h2 className="text-2xl font-black text-gray-900 uppercase italic tracking-tighter mb-10 flex items-center gap-4">
-            Ваши публикации
+            {pick({ ru: "Ваши публикации", en: "Your Posts", uz: "Sizning e'lonlaringiz" })}
             <span className="text-[#10b981] text-sm not-italic font-bold bg-green-50 px-3 py-1 rounded-full">{myEvents.length}</span>
           </h2>
 
@@ -309,16 +355,16 @@ export default function Dashboard() {
                           <MapPin className="w-3.5 h-3.5 text-[#10b981]" /> {event.location}
                         </p>
                         <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
-                          <Calendar className="w-3.5 h-3.5 text-[#10b981]" /> {new Date(event.date).toLocaleDateString()}
+                          <Calendar className="w-3.5 h-3.5 text-[#10b981]" /> {new Date(event.date).toLocaleDateString(dateLocale)}
                         </p>
                       </div>
                     </div>
                     <div className="flex gap-6 mt-8 border-t border-gray-50 pt-6">
                         <button onClick={() => openEditModal(event)} className="text-[10px] font-black uppercase text-[#10b981] flex items-center gap-1.5 hover:tracking-widest transition-all">
-                          <Edit3 size={14} /> Изменить
+                          <Edit3 size={14} /> {pick({ ru: "Изменить", en: "Edit", uz: "Tahrirlash" })}
                         </button>
                         <button onClick={() => handleDelete(event.id)} className="text-[10px] font-black uppercase text-red-400 flex items-center gap-1.5 hover:tracking-widest transition-all">
-                          <Trash2 size={14} /> Удалить
+                          <Trash2 size={14} /> {pick({ ru: "Удалить", en: "Delete", uz: "O'chirish" })}
                         </button>
                     </div>
                   </div>
@@ -326,9 +372,11 @@ export default function Dashboard() {
               ))
             ) : (
               <div className="col-span-full py-24 bg-white rounded-[60px] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center px-10">
-                <p className="text-gray-400 font-black uppercase text-[10px] tracking-[0.2em] mb-10 italic">Список пуст...</p>
+                <p className="text-gray-400 font-black uppercase text-[10px] tracking-[0.2em] mb-10 italic">
+                  {pick({ ru: "Список пуст...", en: "No posts yet...", uz: "Ro'yxat bo'sh..." })}
+                </p>
                 <button onClick={() => setIsModalOpen(true)} className="px-12 py-5 bg-gray-900 text-white rounded-[26px] font-black italic uppercase text-[10px] tracking-widest transition-all">
-                  Создать объявление
+                  {pick({ ru: "Создать объявление", en: "Create Post", uz: "E'lon yaratish" })}
                 </button>
               </div>
             )}

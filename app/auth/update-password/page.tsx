@@ -11,8 +11,10 @@ import {
   Loader2, 
   ShieldCheck 
 } from "lucide-react";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function UpdatePasswordPage() {
+  const { pick } = useLanguage();
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -95,13 +97,17 @@ export default function UpdatePasswordPage() {
     if (error) {
       setStatus({
         type: "error",
-        message: "Ошибка: " + error.message,
+        message: `${pick({ ru: "Ошибка", en: "Error", uz: "Xatolik" })}: ${error.message}`,
       });
       setLoading(false);
     } else {
       setStatus({
         type: "success",
-        message: "Пароль изменен! Сейчас вы будете перенаправлены...",
+        message: pick({
+          ru: "Пароль изменен! Сейчас вы будете перенаправлены...",
+          en: "Password updated! You will be redirected now...",
+          uz: "Parol yangilandi! Hozir yo'naltirilasiz...",
+        }),
       });
       
       // Сразу выходим из системы после смены пароля для безопасности
@@ -129,8 +135,16 @@ export default function UpdatePasswordPage() {
           <div className="w-20 h-20 bg-green-50 text-[#10b981] rounded-[28px] flex items-center justify-center mx-auto mb-6 shadow-sm">
             <ShieldCheck className="w-10 h-10" />
           </div>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">Новый пароль</h1>
-          <p className="text-gray-500 font-medium leading-tight">Придумайте надежный пароль для вашего аккаунта</p>
+          <h1 className="text-3xl font-black text-gray-900 mb-2">
+            {pick({ ru: "Новый пароль", en: "New Password", uz: "Yangi parol" })}
+          </h1>
+          <p className="text-gray-500 font-medium leading-tight">
+            {pick({
+              ru: "Придумайте надежный пароль для вашего аккаунта",
+              en: "Create a strong password for your account",
+              uz: "Akkountingiz uchun ishonchli parol yarating",
+            })}
+          </p>
         </div>
 
         {status.message && (
@@ -144,7 +158,9 @@ export default function UpdatePasswordPage() {
 
         <form onSubmit={handleUpdate} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700 ml-1">Придумайте пароль</label>
+            <label className="text-sm font-bold text-gray-700 ml-1">
+              {pick({ ru: "Придумайте пароль", en: "Create Password", uz: "Parol yarating" })}
+            </label>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#10b981] transition-colors" />
               <input
@@ -153,7 +169,11 @@ export default function UpdatePasswordPage() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Минимум 6 символов"
+                placeholder={pick({
+                  ru: "Минимум 6 символов",
+                  en: "Minimum 6 characters",
+                  uz: "Kamida 6 ta belgi",
+                })}
                 className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-[#10b981] focus:bg-white transition-all font-medium text-gray-900"
               />
               <button
@@ -173,7 +193,7 @@ export default function UpdatePasswordPage() {
             {loading ? (
               <Loader2 className="animate-spin w-6 h-6" />
             ) : (
-              "Обновить и войти"
+              pick({ ru: "Обновить и войти", en: "Update and Sign In", uz: "Yangilash va kirish" })
             )}
           </button>
         </form>
@@ -183,7 +203,11 @@ export default function UpdatePasswordPage() {
             onClick={() => router.push("/auth/login")}
             className="text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors"
           >
-            Отмена и возврат к входу
+            {pick({
+              ru: "Отмена и возврат к входу",
+              en: "Cancel and return to login",
+              uz: "Bekor qilish va kirishga qaytish",
+            })}
           </button>
         </div>
       </div>

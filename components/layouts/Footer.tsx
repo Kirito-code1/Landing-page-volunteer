@@ -1,15 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight, Heart, Mail, MapPin, Phone } from "lucide-react";
-
-const quickLinks = [
-  { href: "/", label: "Главная" },
-  { href: "/events", label: "События" },
-  { href: "/donate", label: "Пожертвования" },
-  { href: "/dashboard", label: "Кабинет" },
-];
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const { pick } = useLanguage();
+
+  const quickLinks = [
+    { href: "/", label: pick({ ru: "Главная", en: "Home", uz: "Bosh sahifa" }) },
+    { href: "/events", label: pick({ ru: "События", en: "Events", uz: "Tadbirlar" }) },
+    { href: "/donate", label: pick({ ru: "Пожертвования", en: "Donations", uz: "Xayriyalar" }) },
+    { href: "/dashboard", label: pick({ ru: "Кабинет", en: "Dashboard", uz: "Kabinet" }) },
+  ];
 
   return (
     <footer className="relative mt-16 overflow-hidden bg-[linear-gradient(135deg,_#0f172a_0%,_#052e2b_45%,_#1d4ed8_100%)] text-white">
@@ -29,19 +33,26 @@ export default function Footer() {
             </Link>
 
             <p className="mt-5 max-w-xl text-white/75 font-semibold leading-relaxed">
-              Платформа волонтерских инициатив по Узбекистану: находим полезные события, объединяем людей
-              и превращаем добрые идеи в реальные действия.
+              {pick({
+                ru: "Платформа волонтерских инициатив по Узбекистану: находим полезные события, объединяем людей и превращаем добрые идеи в реальные действия.",
+                en: "A volunteer platform for Uzbekistan: discover meaningful events, connect people, and turn good ideas into real action.",
+                uz: "O'zbekiston uchun volontyorlik platformasi: foydali tadbirlarni topamiz, odamlarni birlashtiramiz va yaxshi g'oyalarni amaliy ishga aylantiramiz.",
+              })}
             </p>
 
             <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em]">
               <ArrowUpRight className="w-4 h-4" />
-              Вместе делаем город лучше
+              {pick({
+                ru: "Вместе делаем город лучше",
+                en: "Building Better Cities Together",
+                uz: "Birga shaharning kelajagini yaxshilaymiz",
+              })}
             </div>
           </div>
 
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/60 mb-4">
-              Навигация
+              {pick({ ru: "Навигация", en: "Navigation", uz: "Navigatsiya" })}
             </p>
             <ul className="space-y-3">
               {quickLinks.map((item) => (
@@ -56,12 +67,16 @@ export default function Footer() {
 
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/60 mb-4">
-              Контакты
+              {pick({ ru: "Контакты", en: "Contacts", uz: "Kontaktlar" })}
             </p>
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-white/85 font-bold">
                 <MapPin className="w-4 h-4 mt-0.5 text-[#86efac]" />
-                Ташкент, Узбекистан
+                {pick({
+                  ru: "Ташкент, Узбекистан",
+                  en: "Tashkent, Uzbekistan",
+                  uz: "Toshkent, O'zbekiston",
+                })}
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="w-4 h-4 mt-0.5 text-[#86efac]" />
@@ -81,10 +96,18 @@ export default function Footer() {
 
         <div className="mt-10 pt-6 border-t border-white/15 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <p className="text-sm font-bold text-white/70">
-            © {year} VoloHero. Все права защищены.
+            {pick({
+              ru: `© ${year} VoloHero. Все права защищены.`,
+              en: `© ${year} VoloHero. All rights reserved.`,
+              uz: `© ${year} VoloHero. Barcha huquqlar himoyalangan.`,
+            })}
           </p>
           <p className="text-xs font-black uppercase tracking-[0.2em] text-white/50">
-            Volunteer Platform Uzbekistan
+            {pick({
+              ru: "Volunteer Platform Uzbekistan",
+              en: "Volunteer Platform Uzbekistan",
+              uz: "Volunteer Platform Uzbekistan",
+            })}
           </p>
         </div>
       </div>

@@ -13,8 +13,10 @@ import {
 } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function LoginPage() {
+  const { pick } = useLanguage();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -51,11 +53,15 @@ export default function LoginPage() {
     if (error) {
       setLoading(false);
       // Упрощаем сообщение об ошибке, так как подтверждение почты отключено
-      const msg = "Неверный email или пароль. Пожалуйста, проверьте данные.";
+      const msg = pick({
+        ru: "Неверный email или пароль. Пожалуйста, проверьте данные.",
+        en: "Invalid email or password. Please check your credentials.",
+        uz: "Email yoki parol noto'g'ri. Ma'lumotlaringizni tekshiring.",
+      });
       
       setErrorModal({
         isOpen: true,
-        title: "Ошибка входа",
+        title: pick({ ru: "Ошибка входа", en: "Login Error", uz: "Kirish xatosi" }),
         message: msg,
       });
     } else {
@@ -73,8 +79,12 @@ export default function LoginPage() {
     if (!email) {
       setErrorModal({
         isOpen: true,
-        title: "Внимание",
-        message: "Пожалуйста, введите ваш Email для получения ссылки на сброс пароля.",
+        title: pick({ ru: "Внимание", en: "Attention", uz: "Diqqat" }),
+        message: pick({
+          ru: "Пожалуйста, введите ваш Email для получения ссылки на сброс пароля.",
+          en: "Please enter your email to receive the password reset link.",
+          uz: "Parolni tiklash havolasini olish uchun emailingizni kiriting.",
+        }),
       });
       return;
     }
@@ -90,13 +100,17 @@ export default function LoginPage() {
     if (error) {
       setErrorModal({
         isOpen: true,
-        title: "Ошибка",
+        title: pick({ ru: "Ошибка", en: "Error", uz: "Xatolik" }),
         message: error.message,
       });
     } else {
       setSuccessModal({
         isOpen: true,
-        message: "Инструкции по сбросу пароля отправлены на вашу почту!",
+        message: pick({
+          ru: "Инструкции по сбросу пароля отправлены на вашу почту!",
+          en: "Password reset instructions were sent to your email!",
+          uz: "Parolni tiklash bo'yicha ko'rsatmalar emailingizga yuborildi!",
+        }),
       });
     }
   };
@@ -117,7 +131,7 @@ export default function LoginPage() {
               onClick={() => setErrorModal({ ...errorModal, isOpen: false })}
               className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-gray-200"
             >
-              Попробовать снова
+              {pick({ ru: "Попробовать снова", en: "Try Again", uz: "Qayta urinib ko'rish" })}
             </button>
           </div>
         </div>
@@ -130,13 +144,15 @@ export default function LoginPage() {
             <div className="w-16 h-16 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-10 h-10" />
             </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">Готово!</h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">
+              {pick({ ru: "Готово!", en: "Done!", uz: "Tayyor!" })}
+            </h2>
             <p className="text-gray-500 font-medium mb-8 leading-relaxed">{successModal.message}</p>
             <button
               onClick={() => setSuccessModal({ ...successModal, isOpen: false })}
               className="w-full py-4 bg-[#10b981] text-white rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-green-100"
             >
-              Закрыть
+              {pick({ ru: "Закрыть", en: "Close", uz: "Yopish" })}
             </button>
           </div>
         </div>
@@ -148,14 +164,24 @@ export default function LoginPage() {
             <Heart className="text-white w-10 h-10 fill-current" />
           </div>
         </Link>
-        <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2 italic uppercase tracking-tighter">С возвращением!</h1>
-        <p className="text-gray-500 font-bold">Войдите, чтобы творить добро</p>
+        <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2 italic uppercase tracking-tighter">
+          {pick({ ru: "С возвращением!", en: "Welcome Back!", uz: "Yana xush kelibsiz!" })}
+        </h1>
+        <p className="text-gray-500 font-bold">
+          {pick({
+            ru: "Войдите, чтобы творить добро",
+            en: "Sign in to make a difference",
+            uz: "Yaxshilik qilish uchun tizimga kiring",
+          })}
+        </p>
       </div>
 
       <div className="w-full max-w-[440px] bg-white rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-50 p-8 md:p-10">
         <form className="space-y-6" onSubmit={handleLogin}>
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">Email адрес</label>
+            <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">
+              {pick({ ru: "Email адрес", en: "Email Address", uz: "Email manzil" })}
+            </label>
             <div className="relative group">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#10b981] transition-colors" />
               <input
@@ -171,14 +197,18 @@ export default function LoginPage() {
 
           <div className="space-y-2">
             <div className="flex justify-between items-center px-2">
-              <label className="text-xs font-black uppercase text-gray-400 tracking-widest">Пароль</label>
+              <label className="text-xs font-black uppercase text-gray-400 tracking-widest">
+                {pick({ ru: "Пароль", en: "Password", uz: "Parol" })}
+              </label>
               <button
                 type="button"
                 onClick={handleResetPassword}
                 disabled={resetLoading}
                 className="text-[10px] font-black text-[#10b981] uppercase hover:underline disabled:opacity-50"
               >
-                {resetLoading ? "Загрузка..." : "Забыли пароль?"}
+                {resetLoading
+                  ? pick({ ru: "Загрузка...", en: "Loading...", uz: "Yuklanmoqda..." })
+                  : pick({ ru: "Забыли пароль?", en: "Forgot Password?", uz: "Parolni unutdingizmi?" })}
               </button>
             </div>
             <div className="relative group">
@@ -205,13 +235,15 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-[#10b981] hover:bg-[#0da975] disabled:bg-gray-200 text-white py-5 rounded-[22px] font-black text-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xl shadow-green-100/50"
           >
-            {loading ? <Loader2 className="animate-spin" /> : "ВОЙТИ В АККАУНТ"}
+            {loading
+              ? <Loader2 className="animate-spin" />
+              : pick({ ru: "ВОЙТИ В АККАУНТ", en: "SIGN IN", uz: "AKKAUNTGA KIRISH" })}
           </button>
 
           <div className="text-center text-sm font-bold text-gray-400 pt-2">
-            Впервые у нас?{" "}
+            {pick({ ru: "Впервые у нас?", en: "New here?", uz: "Bizda birinchimisiz?" })}{" "}
             <Link href="/auth/registr" className="text-[#10b981] font-black hover:underline uppercase text-[12px] ml-1">
-              Создать профиль
+              {pick({ ru: "Создать профиль", en: "Create Profile", uz: "Profil yaratish" })}
             </Link>
           </div>
         </form>

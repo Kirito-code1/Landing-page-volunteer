@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { Loader2, Search, MapPin, Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 interface EventListItem {
   id: string;
@@ -14,10 +15,12 @@ interface EventListItem {
 }
 
 export default function AllEvents() {
+  const { pick } = useLanguage();
   const [events, setEvents] = useState<EventListItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
 
   const supabase = useMemo(
     () =>
@@ -36,7 +39,13 @@ export default function AllEvents() {
         .order("created_at", { ascending: false });
 
       if (supabaseError) {
-        setError("Не удалось загрузить события. Попробуйте обновить страницу.");
+        setError(
+          pick({
+            ru: "Не удалось загрузить события. Попробуйте обновить страницу.",
+            en: "Failed to load events. Please refresh the page.",
+            uz: "Tadbirlarni yuklab bo'lmadi. Sahifani yangilang.",
+          }),
+        );
         setEvents([]);
         setLoading(false);
         return;
@@ -47,7 +56,7 @@ export default function AllEvents() {
       setLoading(false);
     }
     getEvents();
-  }, [supabase]);
+  }, [supabase, pick]);
 
   // Фильтрация для поиска
   const filteredEvents = events.filter(event => 
@@ -66,9 +75,19 @@ export default function AllEvents() {
         <header className="flex flex-col md:flex-row justify-between items-center mb-16 gap-8">
             <div className="text-center md:text-left">
                 <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter text-gray-900 leading-none">
-                    Найти <span className="text-[#10b981]">Героя</span>
+                    {pick({
+                      ru: <>Найти <span className="text-[#10b981]">Героя</span></>,
+                      en: <>Find a <span className="text-[#10b981]">Hero</span></>,
+                      uz: <>Yordamchi <span className="text-[#10b981]">Qahramonni</span> toping</>,
+                    })}
                 </h1>
-                <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-3 ml-1">Все актуальные задачи города</p>
+                <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-3 ml-1">
+                  {pick({
+                    ru: "Все актуальные задачи города",
+                    en: "All current city tasks",
+                    uz: "Shahardagi dolzarb vazifalar",
+                  })}
+                </p>
             </div>
             
             <div className="relative w-full max-w-md">
@@ -77,7 +96,11 @@ export default function AllEvents() {
                     type="text" 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="ПОИСК ПО КЛЮЧЕВЫМ СЛОВАМ..." 
+                    placeholder={pick({
+                      ru: "ПОИСК ПО КЛЮЧЕВЫМ СЛОВАМ...",
+                      en: "SEARCH BY KEYWORDS...",
+                      uz: "KALIT SO'Z BO'YICHA QIDIRISH...",
+                    })}
                     className="w-full pl-14 pr-6 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] transition-all font-bold uppercase text-[10px] tracking-widest"
                 />
             </div>
@@ -103,7 +126,7 @@ export default function AllEvents() {
                           alt={event.title} 
                         />
                         <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-gray-900 shadow-sm">
-                            {event.location?.split(',')[0] || "Локация"}
+                            {event.location?.split(',')[0] || pick({ ru: "Локация", en: "Location", uz: "Joylashuv" })}
                         </div>
                     </div>
                     
@@ -121,7 +144,7 @@ export default function AllEvents() {
                                 <div className="flex items-center gap-2 text-gray-400">
                                     <Calendar size={14} className="text-[#10b981]" />
                                     <span className="text-[10px] font-bold uppercase tracking-wider">
-                                        {new Date(event.date).toLocaleDateString()}
+                                        {new Date(event.date).toLocaleDateString(dateLocale)}
                                     </span>
                                 </div>
                             </div>
@@ -129,7 +152,7 @@ export default function AllEvents() {
 
                         <div className="flex items-center justify-between mt-4 py-5 border-t border-gray-50">
                             <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 group-hover:translate-x-1 transition-transform flex items-center gap-2">
-                                Подробнее <ArrowRight size={14} />
+                                {pick({ ru: "Подробнее", en: "Details", uz: "Batafsil" })} <ArrowRight size={14} />
                             </span>
                         </div>
                     </div>
@@ -139,7 +162,13 @@ export default function AllEvents() {
 
         {filteredEvents.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-gray-400 font-black uppercase text-xs tracking-widest italic">Ничего не найдено...</p>
+            <p className="text-gray-400 font-black uppercase text-xs tracking-widest italic">
+              {pick({
+                ru: "Ничего не найдено...",
+                en: "No results found...",
+                uz: "Hech narsa topilmadi...",
+              })}
+            </p>
           </div>
         )}
       </div>

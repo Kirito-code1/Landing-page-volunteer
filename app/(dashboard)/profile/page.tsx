@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { User, LogOut, ShieldCheck, Camera, Loader2, Mail, Phone, Trash2, AlertTriangle } from "lucide-react";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function ProfilePage() {
+  const { pick } = useLanguage();
   const router = useRouter();
   
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -104,9 +106,11 @@ export default function ProfilePage() {
       await supabase.auth.signOut();
       router.push("/auth/login");
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Неизвестная ошибка";
+      const message = error instanceof Error
+        ? error.message
+        : pick({ ru: "Неизвестная ошибка", en: "Unknown error", uz: "Noma'lum xatolik" });
       console.error("Delete account error:", error);
-      alert("Ошибка при удалении: " + message);
+      alert(`${pick({ ru: "Ошибка при удалении", en: "Delete error", uz: "O'chirish xatosi" })}: ${message}`);
     } finally {
       setIsSaving(false);
       setConfirmDeleteOpen(false);
@@ -117,7 +121,9 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] p-4 gap-4">
         <Loader2 className="animate-spin h-10 w-10 text-[#10b981]" />
-        <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest text-center">Загрузка профиля...</p>
+        <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest text-center">
+          {pick({ ru: "Загрузка профиля...", en: "Loading profile...", uz: "Profil yuklanmoqda..." })}
+        </p>
       </div>
     );
   }
@@ -135,7 +141,7 @@ export default function ProfilePage() {
             <div className="relative -mt-16 md:-mt-20 mb-4 md:mb-6 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4">
               <div className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-[28px] md:rounded-[38px] p-1 shadow-2xl overflow-hidden relative group">
                 {user.user_metadata?.avatar_url ? (
-                  <Image src={user.user_metadata.avatar_url} width={160} height={160} className="w-full h-full object-cover rounded-[24px] md:rounded-[32px]" alt="Профиль" unoptimized />
+                  <Image src={user.user_metadata.avatar_url} width={160} height={160} className="w-full h-full object-cover rounded-[24px] md:rounded-[32px]" alt={pick({ ru: "Профиль", en: "Profile", uz: "Profil" })} unoptimized />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-[24px] md:rounded-[32px]">
                     <User className="w-12 h-12 md:w-20 md:h-20 text-gray-200" />
@@ -150,13 +156,13 @@ export default function ProfilePage() {
                 onClick={() => setIsEditModalOpen(true)} 
                 className="w-full sm:w-auto px-6 md:px-8 py-3.5 md:py-4 bg-gray-900 text-white rounded-[18px] md:rounded-[22px] font-black hover:bg-black transition-all active:scale-95 shadow-lg text-sm md:text-base"
               >
-                Настроить
+                {pick({ ru: "Настроить", en: "Edit", uz: "Sozlash" })}
               </button>
             </div>
             
             <div className="text-center sm:text-left">
               <h1 className="text-2xl md:text-4xl font-black text-gray-900 flex items-center justify-center sm:justify-start gap-2 md:gap-3">
-                {user.user_metadata?.full_name || "Участник"}
+                {user.user_metadata?.full_name || pick({ ru: "Участник", en: "Member", uz: "Ishtirokchi" })}
                 <ShieldCheck className="w-5 h-5 md:w-6 md:h-6 text-[#10b981]" />
               </h1>
               <p className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px] tracking-widest mt-1">ID: {user.id.slice(0, 8)}</p>
@@ -169,24 +175,26 @@ export default function ProfilePage() {
           <div className="bg-white p-6 md:p-8 rounded-[25px] md:rounded-[35px] border border-gray-100 shadow-sm space-y-4 md:space-y-6">
             <div>
               <p className="text-gray-400 font-black uppercase text-[9px] md:text-[10px] tracking-widest mb-1 flex items-center gap-2">
-                <Mail className="w-3 h-3" /> Почта
+                <Mail className="w-3 h-3" /> {pick({ ru: "Почта", en: "Email", uz: "Email" })}
               </p>
               <p className="font-bold text-gray-900 text-sm md:text-base break-all">{user.email}</p>
             </div>
             <div>
               <p className="text-gray-400 font-black uppercase text-[9px] md:text-[10px] tracking-widest mb-1 flex items-center gap-2">
-                <Phone className="w-3 h-3" /> Телефон
+                <Phone className="w-3 h-3" /> {pick({ ru: "Телефон", en: "Phone", uz: "Telefon" })}
               </p>
-              <p className="font-bold text-gray-900 text-sm md:text-base">{user.user_metadata?.phone || "Не указан"}</p>
+              <p className="font-bold text-gray-900 text-sm md:text-base">
+                {user.user_metadata?.phone || pick({ ru: "Не указан", en: "Not set", uz: "Kiritilmagan" })}
+              </p>
             </div>
           </div>
           
           <div className="flex flex-col gap-3 md:gap-4">
              <button onClick={handleLogout} className="w-full py-4 md:py-5 bg-white text-gray-900 border border-gray-100 rounded-[20px] md:rounded-[22px] font-black hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm md:text-base">
-               <LogOut className="w-4 h-4 md:w-5 md:h-5" /> Выйти
+               <LogOut className="w-4 h-4 md:w-5 md:h-5" /> {pick({ ru: "Выйти", en: "Logout", uz: "Chiqish" })}
              </button>
              <button onClick={() => setConfirmDeleteOpen(true)} className="w-full py-4 md:py-5 bg-red-50 text-red-500 rounded-[20px] md:rounded-[22px] font-black hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 text-sm md:text-base">
-               <Trash2 className="w-4 h-4 md:w-5 md:h-5" /> Удалить аккаунт
+               <Trash2 className="w-4 h-4 md:w-5 md:h-5" /> {pick({ ru: "Удалить аккаунт", en: "Delete account", uz: "Akkountni o'chirish" })}
              </button>
           </div>
         </div>
@@ -196,21 +204,31 @@ export default function ProfilePage() {
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-4">
           <div className="bg-white w-full max-w-md rounded-[30px] md:rounded-[40px] p-6 md:p-8 shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
-            <h3 className="text-xl md:text-2xl font-black mb-4 md:mb-6 text-gray-900">Редактировать профиль</h3>
+            <h3 className="text-xl md:text-2xl font-black mb-4 md:mb-6 text-gray-900">
+              {pick({ ru: "Редактировать профиль", en: "Edit Profile", uz: "Profilni tahrirlash" })}
+            </h3>
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-gray-400 ml-2 tracking-widest">Имя</label>
+                <label className="text-[10px] font-black uppercase text-gray-400 ml-2 tracking-widest">
+                  {pick({ ru: "Имя", en: "Name", uz: "Ism" })}
+                </label>
                 <input value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-4 md:p-5 bg-gray-50 rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:border-[#10b981] font-bold text-sm md:text-base" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-gray-400 ml-2 tracking-widest">Телефон</label>
+                <label className="text-[10px] font-black uppercase text-gray-400 ml-2 tracking-widest">
+                  {pick({ ru: "Телефон", en: "Phone", uz: "Telefon" })}
+                </label>
                 <input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} className="w-full p-4 md:p-5 bg-gray-50 rounded-xl md:rounded-2xl border border-gray-100 outline-none focus:border-[#10b981] font-bold text-sm md:text-base" />
               </div>
               <div className="pt-2 md:pt-4 space-y-2 md:space-y-3">
                 <button type="submit" disabled={isSaving} className="w-full py-4 md:py-5 bg-[#10b981] text-white rounded-xl md:rounded-2xl font-black shadow-lg hover:bg-[#0da975] transition-all disabled:opacity-50 text-sm md:text-base">
-                  {isSaving ? "Сохранение..." : "Сохранить изменения"}
+                  {isSaving
+                    ? pick({ ru: "Сохранение...", en: "Saving...", uz: "Saqlanmoqda..." })
+                    : pick({ ru: "Сохранить изменения", en: "Save changes", uz: "O'zgarishlarni saqlash" })}
                 </button>
-                <button type="button" onClick={() => setIsEditModalOpen(false)} className="w-full text-gray-400 font-bold py-2 text-sm md:text-base">Отмена</button>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="w-full text-gray-400 font-bold py-2 text-sm md:text-base">
+                  {pick({ ru: "Отмена", en: "Cancel", uz: "Bekor qilish" })}
+                </button>
               </div>
             </form>
           </div>
@@ -224,9 +242,15 @@ export default function ProfilePage() {
             <div className="w-14 h-14 md:w-16 md:h-16 bg-red-50 text-red-500 rounded-2xl md:rounded-[24px] flex items-center justify-center mx-auto mb-4 md:mb-6">
               <AlertTriangle className="w-8 h-8 md:w-10 md:h-10" />
             </div>
-            <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-2">Удалить аккаунт?</h3>
+            <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-2">
+              {pick({ ru: "Удалить аккаунт?", en: "Delete account?", uz: "Akkountni o'chirasizmi?" })}
+            </h3>
             <p className="text-gray-400 text-xs md:text-sm font-bold mb-6 md:mb-8 italic uppercase tracking-widest leading-relaxed">
-                Это действие удалит вашу учетную запись и все посты навсегда.
+              {pick({
+                ru: "Это действие удалит вашу учетную запись и все посты навсегда.",
+                en: "This action will permanently delete your account and all posts.",
+                uz: "Bu amal akkountingiz va barcha postlarni butunlay o'chiradi.",
+              })}
             </p>
             <div className="space-y-2 md:space-y-3">
               <button 
@@ -234,9 +258,13 @@ export default function ProfilePage() {
                 onClick={handleDeleteAccount} 
                 className="w-full py-4 md:py-5 bg-red-500 text-white rounded-xl md:rounded-[22px] font-black shadow-lg hover:bg-red-600 transition-all flex items-center justify-center text-sm md:text-base"
               >
-                {isSaving ? <Loader2 className="animate-spin w-5 h-5" /> : "Удалить навсегда"}
+                {isSaving
+                  ? <Loader2 className="animate-spin w-5 h-5" />
+                  : pick({ ru: "Удалить навсегда", en: "Delete Forever", uz: "Butunlay o'chirish" })}
               </button>
-              <button onClick={() => setConfirmDeleteOpen(false)} className="w-full py-2 md:py-4 text-gray-400 font-bold text-sm md:text-base">Отмена</button>
+              <button onClick={() => setConfirmDeleteOpen(false)} className="w-full py-2 md:py-4 text-gray-400 font-bold text-sm md:text-base">
+                {pick({ ru: "Отмена", en: "Cancel", uz: "Bekor qilish" })}
+              </button>
             </div>
           </div>
         </div>

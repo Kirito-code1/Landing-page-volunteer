@@ -13,6 +13,7 @@ import {
   Info,
   AlertCircle
 } from "lucide-react";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 interface EventDetails {
   id: string;
@@ -24,6 +25,7 @@ interface EventDetails {
 }
 
 export default function EventPage() {
+  const { pick } = useLanguage();
   const params = useParams<{ id: string }>();
   const id = params?.id;
   const router = useRouter();
@@ -31,6 +33,7 @@ export default function EventPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
 
   const supabase = useMemo(
     () =>
@@ -59,13 +62,28 @@ export default function EventPage() {
         }
 
         if (!data) {
-          throw new Error("Событие не найдено в базе данных");
+          throw new Error(
+            pick({
+              ru: "Событие не найдено в базе данных",
+              en: "Event was not found in the database",
+              uz: "Tadbir ma'lumotlar bazasida topilmadi",
+            }),
+          );
         }
 
         setEvent(data);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Не удалось загрузить событие";
-        console.error("Ошибка при загрузке:", message);
+        const message = err instanceof Error
+          ? err.message
+          : pick({
+              ru: "Не удалось загрузить событие",
+              en: "Failed to load event",
+              uz: "Tadbirni yuklab bo'lmadi",
+            });
+        console.error(
+          pick({ ru: "Ошибка при загрузке:", en: "Loading error:", uz: "Yuklash xatosi:" }),
+          message,
+        );
         setError(message);
       } finally {
         setLoading(false);
@@ -75,7 +93,7 @@ export default function EventPage() {
     if (id) {
       fetchEvent();
     }
-  }, [id, supabase]);
+  }, [id, supabase, pick]);
 
   const handleShare = () => {
     if (typeof window !== "undefined") {
@@ -89,7 +107,13 @@ export default function EventPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#fcfdfd] gap-4">
         <Loader2 className="animate-spin text-[#10b981] w-12 h-12" />
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 italic">Загружаем данные...</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 italic">
+          {pick({
+            ru: "Загружаем данные...",
+            en: "Loading data...",
+            uz: "Ma'lumotlar yuklanmoqda...",
+          })}
+        </p>
       </div>
     );
   }
@@ -98,13 +122,21 @@ export default function EventPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#fcfdfd] p-6 text-center">
         <AlertCircle className="w-16 h-16 text-red-100 mb-6" />
-        <h2 className="text-2xl font-black uppercase italic tracking-tighter text-gray-900 mb-2">Упс! Что-то пошло не так</h2>
-        <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mb-8">{error || "Событие не найдено"}</p>
+        <h2 className="text-2xl font-black uppercase italic tracking-tighter text-gray-900 mb-2">
+          {pick({
+            ru: "Упс! Что-то пошло не так",
+            en: "Oops! Something went wrong",
+            uz: "Voy! Nimadir xato ketdi",
+          })}
+        </h2>
+        <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mb-8">
+          {error || pick({ ru: "Событие не найдено", en: "Event not found", uz: "Tadbir topilmadi" })}
+        </p>
         <button 
           onClick={() => router.push('/events')}
           className="px-8 py-4 bg-gray-900 text-white rounded-[22px] font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-all"
         >
-          Вернуться к списку
+          {pick({ ru: "Вернуться к списку", en: "Back to list", uz: "Ro'yxatga qaytish" })}
         </button>
       </div>
     );
@@ -120,7 +152,7 @@ export default function EventPage() {
           className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#10b981] transition-all mb-8 group"
         >
           <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
-          Назад к списку
+          {pick({ ru: "Назад к списку", en: "Back to list", uz: "Ro'yxatga qaytish" })}
         </button>
 
         <div className="bg-white rounded-[50px] border border-gray-100 overflow-hidden shadow-2xl shadow-gray-200/40">
@@ -145,7 +177,7 @@ export default function EventPage() {
                 <div className="flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-2xl text-white/90 border border-white/10">
                   <Calendar size={16} className="text-[#10b981]" />
                   <span className="text-[10px] font-black uppercase tracking-widest">
-                    {new Date(event.date).toLocaleDateString('ru-RU')}
+                    {new Date(event.date).toLocaleDateString(dateLocale)}
                   </span>
                 </div>
               </div>
@@ -157,7 +189,7 @@ export default function EventPage() {
             
             <div className="lg:col-span-2">
               <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-[#10b981] mb-8 flex items-center gap-3">
-                <Info size={16} /> Описание задачи
+                <Info size={16} /> {pick({ ru: "Описание задачи", en: "Task Description", uz: "Vazifa tavsifi" })}
               </h2>
               
               {event.description ? (
@@ -167,7 +199,11 @@ export default function EventPage() {
               ) : (
                 <div className="py-16 px-10 border-2 border-dashed border-gray-50 rounded-[40px] text-center bg-gray-50/30">
                    <p className="text-gray-400 font-black uppercase text-[10px] tracking-[0.2em] italic">
-                     Детальное описание проекта пока не добавлено
+                     {pick({
+                       ru: "Детальное описание проекта пока не добавлено",
+                       en: "Detailed project description has not been added yet",
+                       uz: "Loyiha haqida batafsil tavsif hali qo'shilmagan",
+                     })}
                    </p>
                 </div>
               )}
@@ -177,15 +213,19 @@ export default function EventPage() {
             <div className="flex flex-col gap-4">
               <div className="p-10 bg-gray-900 rounded-[45px] text-white shadow-2xl shadow-gray-900/20">
                 <h3 className="text-sm font-black uppercase italic mb-8 tracking-tighter text-center">
-                  Нужна ваша помощь
+                  {pick({ ru: "Нужна ваша помощь", en: "Your Help Is Needed", uz: "Yordamingiz kerak" })}
                 </h3>
                 
                 <div className="space-y-4">
                   <a 
-                    href={`mailto:support@volohero.com?subject=Отклик: ${event.title}`}
+                    href={`mailto:support@volohero.com?subject=${pick({
+                      ru: "Отклик",
+                      en: "Response",
+                      uz: "Murojaat",
+                    })}: ${event.title}`}
                     className="w-full py-5 bg-[#10b981] text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] shadow-lg shadow-green-900/20 hover:bg-[#0da975] hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
                   >
-                    Связаться <Mail size={18} />
+                    {pick({ ru: "Связаться", en: "Contact", uz: "Bog'lanish" })} <Mail size={18} />
                   </a>
 
                   <button 
@@ -196,7 +236,10 @@ export default function EventPage() {
                       : "bg-transparent text-white border-white/20 hover:bg-white/10"
                     }`}
                   >
-                    {copied ? "Готово!" : "Поделиться"} <Share2 size={18} />
+                    {copied
+                      ? pick({ ru: "Готово!", en: "Copied!", uz: "Tayyor!" })
+                      : pick({ ru: "Поделиться", en: "Share", uz: "Ulashish" })}{" "}
+                    <Share2 size={18} />
                   </button>
                 </div>
               </div>
@@ -206,7 +249,7 @@ export default function EventPage() {
                   ID: {event.id.toString().split('-')[0]}
                 </p>
                 <p className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-300">
-                  Статус: Активно
+                  {pick({ ru: "Статус: Активно", en: "Status: Active", uz: "Holat: Faol" })}
                 </p>
               </div>
             </div>

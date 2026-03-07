@@ -15,6 +15,7 @@ import {
   IconDefinition 
 } from "@fortawesome/free-solid-svg-icons";
 import { LogOut, Heart } from "lucide-react";
+import { useLanguage, type Locale } from "@/components/providers/LanguageProvider";
 
 // 1. Определяем интерфейс для пунктов меню, чтобы TS не ругался на отсутствие icon
 interface MenuItem {
@@ -28,8 +29,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState("Русский");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { locale, setLocale, pick } = useLanguage();
 
   const supabase = useMemo(
     () =>
@@ -62,27 +63,58 @@ export default function Navbar() {
     router.refresh();
   };
 
-  const languages = [
-    { name: "Русский", code: "RU", flag: "https://upload.wikimedia.org/wikipedia/commons/f/f3/Flag_of_Russia.svg" },
-    { name: "English (US)", code: "EN", flag: "https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" },
-    { name: "Deutsch", code: "DE", flag: "https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg" },
+  const languages: Array<{ locale: Locale; name: string; code: string; flag: string }> = [
+    {
+      locale: "ru",
+      name: "Русский",
+      code: "RU",
+      flag: "https://upload.wikimedia.org/wikipedia/commons/f/f3/Flag_of_Russia.svg",
+    },
+    {
+      locale: "uz",
+      name: "O'zbek",
+      code: "UZ",
+      flag: "https://upload.wikimedia.org/wikipedia/commons/8/84/Flag_of_Uzbekistan.svg",
+    },
+    {
+      locale: "en",
+      name: "English (US)",
+      code: "EN",
+      flag: "https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg",
+    },
   ];
 
-  const selectedLanguage = languages.find((l) => l.name === currentLang) || languages[0];
+  const selectedLanguage = languages.find((item) => item.locale === locale) || languages[0];
 
   // 2. Явно указываем тип MenuItem[]
   const menuItems: MenuItem[] = isLoggedIn
     ? [
-        { href: "/events", label: "Все события", icon: faCalendarAlt },
-        { href: "/donate", label: "Пожертвовать", icon: faHandHoldingHeart },
-        { href: "/dashboard", label: "Кабинет", icon: faTableColumns },
-        { href: "/profile", label: "Профиль", icon: faCircleUser },
+        {
+          href: "/events",
+          label: pick({ ru: "Все события", en: "All Events", uz: "Barcha tadbirlar" }),
+          icon: faCalendarAlt,
+        },
+        {
+          href: "/donate",
+          label: pick({ ru: "Пожертвовать", en: "Donate", uz: "Xayriya" }),
+          icon: faHandHoldingHeart,
+        },
+        {
+          href: "/dashboard",
+          label: pick({ ru: "Кабинет", en: "Dashboard", uz: "Kabinet" }),
+          icon: faTableColumns,
+        },
+        {
+          href: "/profile",
+          label: pick({ ru: "Профиль", en: "Profile", uz: "Profil" }),
+          icon: faCircleUser,
+        },
       ]
     : [
-        { href: "/", label: "Главная" },
-        { href: "/events", label: "События" },
-        { href: "/donate", label: "Пожертвовать" },
-        { href: "/#about", label: "О нас" },
+        { href: "/", label: pick({ ru: "Главная", en: "Home", uz: "Bosh sahifa" }) },
+        { href: "/events", label: pick({ ru: "События", en: "Events", uz: "Tadbirlar" }) },
+        { href: "/donate", label: pick({ ru: "Пожертвовать", en: "Donate", uz: "Xayriya" }) },
+        { href: "/#about", label: pick({ ru: "О нас", en: "About", uz: "Biz haqimizda" }) },
       ];
 
   return (
@@ -125,7 +157,7 @@ export default function Navbar() {
                   {languages.map((lang) => (
                     <li key={lang.name}>
                       <button
-                        onClick={() => { setCurrentLang(lang.name); setIsLangOpen(false); }}
+                        onClick={() => { setLocale(lang.locale); setIsLangOpen(false); }}
                         className="flex items-center w-full px-4 py-3 hover:bg-green-50 hover:text-[#10b981] transition-colors"
                       >
                         <Image src={lang.flag} width={16} height={16} className="me-3 rounded-full border border-gray-100" alt="" unoptimized />
@@ -145,13 +177,13 @@ export default function Navbar() {
               className="hidden sm:flex items-center bg-gray-900 text-white px-5 py-2.5 rounded-[14px] font-black text-[11px] uppercase tracking-widest hover:bg-red-500 transition-all active:scale-95 shadow-md"
             >
               <LogOut className="w-4 h-4 me-2" />
-              Выйти
+              {pick({ ru: "Выйти", en: "Logout", uz: "Chiqish" })}
             </button>
           ) : (
             <Link href="/auth/login">
               <button className="hidden sm:flex items-center bg-[#10b981] text-white px-6 py-2.5 rounded-[14px] font-black text-[11px] uppercase tracking-widest hover:bg-[#0da975] transition-all hover:shadow-lg hover:shadow-green-100 active:scale-95">
                 <FontAwesomeIcon icon={faUser} className="me-2" />
-                Войти
+                {pick({ ru: "Войти", en: "Login", uz: "Kirish" })}
               </button>
             </Link>
           )}

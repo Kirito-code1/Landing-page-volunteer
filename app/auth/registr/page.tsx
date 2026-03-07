@@ -4,8 +4,10 @@ import { Eye, EyeOff, Mail, User, Heart, ArrowRight, AlertCircle, Phone, Loader2
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function RegisterPage() {
+  const { pick } = useLanguage();
   const router = useRouter();
   
   const supabase = createBrowserClient(
@@ -35,8 +37,12 @@ export default function RegisterPage() {
     if (password !== confirmPassword) {
       return setErrorModal({
         isOpen: true,
-        title: 'Ошибка пароля',
-        message: 'Пароли не совпадают. Пожалуйста, проверьте правильность ввода.'
+        title: pick({ ru: "Ошибка пароля", en: "Password Error", uz: "Parol xatosi" }),
+        message: pick({
+          ru: "Пароли не совпадают. Пожалуйста, проверьте правильность ввода.",
+          en: "Passwords do not match. Please verify your input.",
+          uz: "Parollar mos kelmadi. Kiritilgan ma'lumotlarni tekshiring.",
+        }),
       });
     }
 
@@ -57,11 +63,15 @@ export default function RegisterPage() {
       setLoading(false);
       let message = error.message;
       if (message.includes("User already registered")) {
-        message = "Пользователь с таким Email уже существует.";
+        message = pick({
+          ru: "Пользователь с таким Email уже существует.",
+          en: "A user with this email already exists.",
+          uz: "Bunday email bilan foydalanuvchi allaqachon mavjud.",
+        });
       }
       setErrorModal({
         isOpen: true,
-        title: 'Ошибка регистрации',
+        title: pick({ ru: "Ошибка регистрации", en: "Registration Error", uz: "Ro'yxatdan o'tish xatosi" }),
         message: message
       });
     } else {
@@ -92,7 +102,7 @@ export default function RegisterPage() {
               onClick={() => setErrorModal({ ...errorModal, isOpen: false })}
               className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-all"
             >
-              ПОПРОБОВАТЬ СНОВА
+              {pick({ ru: "ПОПРОБОВАТЬ СНОВА", en: "TRY AGAIN", uz: "QAYTA URINISH" })}
             </button>
           </div>
         </div>
@@ -105,8 +115,12 @@ export default function RegisterPage() {
             <Heart className="text-white w-10 h-10 fill-current" />
           </div>
         </Link>
-        <h1 className="text-4xl font-black text-gray-900 mb-2 uppercase italic italic tracking-tighter">Создать профиль</h1>
-        <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.2em]">Присоединяйтесь к нам</p>
+        <h1 className="text-4xl font-black text-gray-900 mb-2 uppercase italic italic tracking-tighter">
+          {pick({ ru: "Создать профиль", en: "Create Profile", uz: "Profil yaratish" })}
+        </h1>
+        <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.2em]">
+          {pick({ ru: "Присоединяйтесь к нам", en: "Join Us", uz: "Bizga qo'shiling" })}
+        </p>
       </div>
 
       <div className="w-full max-w-[500px] bg-white rounded-[48px] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-gray-50 p-8 md:p-12">
@@ -114,19 +128,23 @@ export default function RegisterPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Ваше имя</label>
+              <label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">
+                {pick({ ru: "Ваше имя", en: "Your Name", uz: "Ismingiz" })}
+              </label>
               <div className="relative group">
                 <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#10b981]" />
                 <input 
                   type="text" required value={name} onChange={(e) => setName(e.target.value)} 
                   className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[24px] focus:outline-none focus:border-[#10b981] focus:bg-white transition-all font-bold text-gray-900" 
-                  placeholder="Имя" 
+                  placeholder={pick({ ru: "Имя", en: "Name", uz: "Ism" })} 
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Телефон</label>
+              <label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">
+                {pick({ ru: "Телефон", en: "Phone", uz: "Telefon" })}
+              </label>
               <div className="relative group">
                 <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#10b981]" />
                 <input 
@@ -152,7 +170,9 @@ export default function RegisterPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Пароль</label>
+              <label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">
+                {pick({ ru: "Пароль", en: "Password", uz: "Parol" })}
+              </label>
               <div className="relative group">
                 <input 
                   type={showPass ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} 
@@ -166,7 +186,9 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Повтор</label>
+              <label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">
+                {pick({ ru: "Повтор", en: "Repeat", uz: "Takrorlash" })}
+              </label>
               <div className="relative group">
                 <input 
                   type={showConfirm ? "text" : "password"} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} 
@@ -186,16 +208,18 @@ export default function RegisterPage() {
           >
             {loading ? <Loader2 className="animate-spin" /> : (
               <>
-                Начать помогать
+                {pick({ ru: "Начать помогать", en: "Start Helping", uz: "Yordam berishni boshlash" })}
                 <ArrowRight className="w-5 h-5" />
               </>
             )}
           </button>
 
           <div className="text-center pt-4">
-            <span className="text-[12px] font-bold text-gray-400 uppercase tracking-tight">Уже зарегистрированы?</span>{" "}
+            <span className="text-[12px] font-bold text-gray-400 uppercase tracking-tight">
+              {pick({ ru: "Уже зарегистрированы?", en: "Already registered?", uz: "Allaqachon ro'yxatdan o'tganmisiz?" })}
+            </span>{" "}
             <Link href="/auth/login" className="text-[#10b981] font-black hover:underline uppercase text-[12px] ml-1">
-              Войти
+              {pick({ ru: "Войти", en: "Login", uz: "Kirish" })}
             </Link>
           </div>
         </form>
