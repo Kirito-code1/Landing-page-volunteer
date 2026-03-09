@@ -17,7 +17,7 @@ type Step = "amount" | "method" | "confirm" | "processing" | "success";
 type PaymentMethod = "click" | "payme" | "uzum" | "card";
 
 const DEMO_MODE = true;
-const COMING_SOON = true;
+const COMING_SOON = process.env.NEXT_PUBLIC_DONATE_COMING_SOON !== "false";
 
 const AMOUNTS = [10000, 50000, 100000, 250000, 500000, 1000000];
 
