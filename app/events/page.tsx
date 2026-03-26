@@ -2,25 +2,81 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { Loader2, Search, MapPin, Calendar, ArrowRight } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  MapPin,
+  Calendar,
+  Clock3,
+  Users,
+  ArrowRight,
+  Flame,
+  FilterX,
+  Crown,
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import {
+  getEventCategoryLabel,
+  getEventCategoryOptions,
+  normalizeEventCategory,
+  normalizeVolunteerCount,
+} from "@/components/events/eventMeta";
 
 interface EventListItem {
   id: string;
   title: string;
   location: string;
   date: string;
+  created_at: string;
+  category?: string | null;
+  volunteers_needed?: number | null;
+  premium_priority?: boolean | null;
   image_url: string | null;
+}
+
+function formatDate(value: string, locale: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "—";
+  }
+  return parsed.toLocaleDateString(locale);
+}
+
+function getDaysUntil(dateValue: string): number | null {
+  const parsed = new Date(dateValue).getTime();
+  if (Number.isNaN(parsed)) return null;
+  return (parsed - Date.now()) / (1000 * 60 * 60 * 24);
+}
+
+function getUrgencyTag(dateValue: string): "urgent" | "soon" | "none" {
+  const daysUntil = getDaysUntil(dateValue);
+  if (daysUntil === null || daysUntil < 0) return "none";
+  if (daysUntil <= 3) return "urgent";
+  if (daysUntil <= 10) return "soon";
+  return "none";
+}
+
+function getTeamSizeTag(volunteers: number | null): "small" | "medium" | "large" | "unknown" {
+  if (!volunteers) return "unknown";
+  if (volunteers <= 10) return "small";
+  if (volunteers <= 30) return "medium";
+  return "large";
 }
 
 export default function AllEvents() {
   const { pick } = useLanguage();
   const [events, setEvents] = useState<EventListItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | string>("all");
+  const [urgencyFilter, setUrgencyFilter] = useState<"all" | "urgent" | "soon">("all");
+  const [teamSizeFilter, setTeamSizeFilter] = useState<"all" | "small" | "medium" | "large">("all");
+  const [sortOrder, setSortOrder] = useState<"new" | "old">("new");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
+  const categoryOptions = getEventCategoryOptions(pick);
 
   const supabase = useMemo(
     () =>
@@ -58,53 +114,225 @@ export default function AllEvents() {
     getEvents();
   }, [supabase, pick]);
 
-  // Фильтрация для поиска
-  const filteredEvents = events.filter(event => 
-    event.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const visibleEvents = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+
+    const filtered = events.filter((event) => {
+      const title = (event.title ?? "").toLowerCase();
+      const location = (event.location ?? "").toLowerCase();
+      const categoryText = getEventCategoryLabel(event.category, pick).toLowerCase();
+      const matchesSearch = title.includes(term) || location.includes(term) || categoryText.includes(term);
+
+      const matchesCategory =
+        categoryFilter === "all" || normalizeEventCategory(event.category) === categoryFilter;
+
+      const urgencyTag = getUrgencyTag(event.date);
+      const matchesUrgency =
+        urgencyFilter === "all" ||
+        (urgencyFilter === "urgent" && urgencyTag === "urgent") ||
+        (urgencyFilter === "soon" && (urgencyTag === "urgent" || urgencyTag === "soon"));
+
+      const teamSizeTag = getTeamSizeTag(normalizeVolunteerCount(event.volunteers_needed));
+      const matchesTeamSize =
+        teamSizeFilter === "all" ||
+        (teamSizeFilter === "small" && teamSizeTag === "small") ||
+        (teamSizeFilter === "medium" && teamSizeTag === "medium") ||
+        (teamSizeFilter === "large" && teamSizeTag === "large");
+
+      return matchesSearch && matchesCategory && matchesUrgency && matchesTeamSize;
+    });
+
+    return [...filtered].sort((a, b) => {
+      const aPremium = a.premium_priority === true ? 1 : 0;
+      const bPremium = b.premium_priority === true ? 1 : 0;
+      if (aPremium !== bPremium) {
+        return bPremium - aPremium;
+      }
+
+      const aTime = new Date(a.created_at).getTime();
+      const bTime = new Date(b.created_at).getTime();
+      const safeATime = Number.isNaN(aTime) ? 0 : aTime;
+      const safeBTime = Number.isNaN(bTime) ? 0 : bTime;
+      return sortOrder === "new" ? safeBTime - safeATime : safeATime - safeBTime;
+    });
+  }, [events, searchTerm, sortOrder, categoryFilter, urgencyFilter, teamSizeFilter, pick]);
+
+  const selectedVolunteers = useMemo(
+    () =>
+      visibleEvents.reduce((sum, event) => {
+        return sum + (normalizeVolunteerCount(event.volunteers_needed) ?? 0);
+      }, 0),
+    [visibleEvents],
   );
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fcfdfd]">
-      <Loader2 className="animate-spin text-[#10b981] w-10 h-10" />
-    </div>
-  );
+  const resetFilters = () => {
+    setSearchTerm("");
+    setCategoryFilter("all");
+    setUrgencyFilter("all");
+    setTeamSizeFilter("all");
+    setSortOrder("new");
+  };
+
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fcfdfd]">
+        <Loader2 className="animate-spin text-[#10b981] w-10 h-10" />
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-[#fcfdfd] py-12 px-6">
       <div className="max-w-7xl mx-auto">
-        <header className="flex flex-col md:flex-row justify-between items-center mb-16 gap-8">
-            <div className="text-center md:text-left">
-                <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter text-gray-900 leading-none">
-                    {pick({
-                      ru: <>Найти <span className="text-[#10b981]">Героя</span></>,
-                      en: <>Find a <span className="text-[#10b981]">Hero</span></>,
-                      uz: <>Yordamchi <span className="text-[#10b981]">Qahramonni</span> toping</>,
-                    })}
-                </h1>
-                <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-3 ml-1">
+        <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-8">
+          <div className="text-center md:text-left">
+            <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter text-gray-900 leading-none">
+              {pick({
+                ru: (
+                  <>
+                    Найти <span className="text-[#10b981]">Героя</span>
+                  </>
+                ),
+                en: (
+                  <>
+                    Find a <span className="text-[#10b981]">Hero</span>
+                  </>
+                ),
+                uz: (
+                  <>
+                    Yordamchi <span className="text-[#10b981]">Qahramonni</span> toping
+                  </>
+                ),
+              })}
+            </h1>
+            <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-3 ml-1">
+              {pick({
+                ru: "Все актуальные задачи города",
+                en: "All current city tasks",
+                uz: "Shahardagi dolzarb vazifalar",
+              })}
+            </p>
+          </div>
+
+          <div className="w-full max-w-6xl space-y-3">
+            <div className="relative">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={pick({
+                  ru: "ПОИСК ПО КЛЮЧЕВЫМ СЛОВАМ...",
+                  en: "SEARCH BY KEYWORDS...",
+                  uz: "KALIT SO'Z BO'YICHA QIDIRISH...",
+                })}
+                className="w-full pl-14 pr-6 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] transition-all font-bold uppercase text-[10px] tracking-widest"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] font-bold uppercase text-[10px] tracking-widest text-gray-700"
+            >
+              <option value="all">
+                {pick({ ru: "Все категории", en: "All categories", uz: "Barcha kategoriyalar" })}
+              </option>
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={urgencyFilter}
+              onChange={(e) => setUrgencyFilter(e.target.value as "all" | "urgent" | "soon")}
+              className="w-full px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] font-bold uppercase text-[10px] tracking-widest text-gray-700"
+            >
+              <option value="all">
+                {pick({ ru: "Любая срочность", en: "Any urgency", uz: "Har qanday shoshilinchlik" })}
+              </option>
+              <option value="urgent">
+                {pick({ ru: "Только срочные (до 3 дней)", en: "Urgent only (<=3 days)", uz: "Faqat shoshilinch (3 kungacha)" })}
+              </option>
+              <option value="soon">
+                {pick({ ru: "Скоро (до 10 дней)", en: "Soon (<=10 days)", uz: "Tez orada (10 kungacha)" })}
+              </option>
+            </select>
+
+            <select
+              value={teamSizeFilter}
+              onChange={(e) => setTeamSizeFilter(e.target.value as "all" | "small" | "medium" | "large")}
+              className="w-full px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] font-bold uppercase text-[10px] tracking-widest text-gray-700"
+            >
+              <option value="all">
+                {pick({ ru: "Любой размер команды", en: "Any team size", uz: "Har qanday jamoa hajmi" })}
+              </option>
+              <option value="small">{pick({ ru: "Малые (1-10)", en: "Small (1-10)", uz: "Kichik (1-10)" })}</option>
+              <option value="medium">
+                {pick({ ru: "Средние (11-30)", en: "Medium (11-30)", uz: "O'rta (11-30)" })}
+              </option>
+              <option value="large">{pick({ ru: "Большие (31+)", en: "Large (31+)", uz: "Katta (31+)" })}</option>
+            </select>
+
+            <div className="flex gap-3">
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as "new" | "old")}
+                className="flex-1 w-full px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] font-bold uppercase text-[10px] tracking-widest text-gray-700"
+              >
+                <option value="new">
                   {pick({
-                    ru: "Все актуальные задачи города",
-                    en: "All current city tasks",
-                    uz: "Shahardagi dolzarb vazifalar",
+                    ru: "Сначала новые",
+                    en: "Newest first",
+                    uz: "Avval yangilari",
                   })}
-                </p>
+                </option>
+                <option value="old">
+                  {pick({
+                    ru: "Сначала старые",
+                    en: "Oldest first",
+                    uz: "Avval eskilari",
+                  })}
+                </option>
+              </select>
+
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm hover:border-[#10b981] text-gray-700 inline-flex items-center justify-center gap-2 font-bold uppercase text-[10px] tracking-widest transition-colors"
+              >
+                <FilterX className="w-4 h-4" />
+                {pick({ ru: "Сброс", en: "Reset", uz: "Tozalash" })}
+              </button>
             </div>
-            
-            <div className="relative w-full max-w-md">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5" />
-                <input 
-                    type="text" 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={pick({
-                      ru: "ПОИСК ПО КЛЮЧЕВЫМ СЛОВАМ...",
-                      en: "SEARCH BY KEYWORDS...",
-                      uz: "KALIT SO'Z BO'YICHA QIDIRISH...",
-                    })}
-                    className="w-full pl-14 pr-6 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] transition-all font-bold uppercase text-[10px] tracking-widest"
-                />
             </div>
+          </div>
         </header>
+
+        <section className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-2xl border border-white bg-white px-5 py-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+              {pick({ ru: "Найдено событий", en: "Events found", uz: "Topilgan tadbirlar" })}
+            </p>
+            <p className="text-2xl font-black text-gray-900 mt-1">{visibleEvents.length}</p>
+          </div>
+          <div className="rounded-2xl border border-white bg-white px-5 py-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+              {pick({ ru: "Нужно волонтёров", en: "Volunteers needed", uz: "Kerakli volontyorlar" })}
+            </p>
+            <p className="text-2xl font-black text-gray-900 mt-1">{selectedVolunteers}</p>
+          </div>
+          <div className="rounded-2xl border border-white bg-white px-5 py-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+              {pick({ ru: "Срочные события", en: "Urgent events", uz: "Shoshilinch tadbirlar" })}
+            </p>
+            <p className="text-2xl font-black text-red-500 mt-1">
+              {visibleEvents.filter((event) => getUrgencyTag(event.date) === "urgent").length}
+            </p>
+          </div>
+        </section>
 
         {error && (
           <div className="mb-8 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600">
@@ -113,54 +341,102 @@ export default function AllEvents() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredEvents.map((event) => (
-                <Link 
-                  href={`/events/${event.id}`} 
-                  key={event.id} 
-                  className="group bg-white rounded-[45px] border border-gray-100 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-green-100/40 transition-all duration-500 flex flex-col"
-                >
-                    <div className="h-64 overflow-hidden relative">
-                        <img 
-                          src={event.image_url || "/placeholder.jpg"} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                          alt={event.title} 
-                        />
-                        <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-gray-900 shadow-sm">
-                            {event.location?.split(',')[0] || pick({ ru: "Локация", en: "Location", uz: "Joylashuv" })}
-                        </div>
-                    </div>
-                    
-                    <div className="p-8 flex-1 flex flex-col">
-                        <div className="flex-1">
-                            <h3 className="text-xl font-black text-gray-900 uppercase italic tracking-tighter mb-4 leading-tight group-hover:text-[#10b981] transition-colors line-clamp-2">
-                                {event.title}
-                            </h3>
-                            
-                            <div className="flex flex-col gap-2 mb-6">
-                                <div className="flex items-center gap-2 text-gray-400">
-                                    <MapPin size={14} className="text-[#10b981]" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">{event.location}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-gray-400">
-                                    <Calendar size={14} className="text-[#10b981]" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">
-                                        {new Date(event.date).toLocaleDateString(dateLocale)}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+          {visibleEvents.map((event) => {
+            const urgency = getUrgencyTag(event.date);
+            const isPremiumEvent = event.premium_priority === true;
 
-                        <div className="flex items-center justify-between mt-4 py-5 border-t border-gray-50">
-                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 group-hover:translate-x-1 transition-transform flex items-center gap-2">
-                                {pick({ ru: "Подробнее", en: "Details", uz: "Batafsil" })} <ArrowRight size={14} />
-                            </span>
-                        </div>
+            return (
+              <Link
+                href={`/events/${event.id}`}
+                key={event.id}
+                className={`group bg-white rounded-[45px] overflow-hidden shadow-sm transition-all duration-500 flex flex-col ${
+                  isPremiumEvent
+                    ? "border-2 border-amber-300/80 hover:shadow-2xl hover:shadow-amber-100/60"
+                    : "border border-gray-100 hover:shadow-2xl hover:shadow-green-100/40"
+                }`}
+              >
+                <div className="h-64 overflow-hidden relative">
+                  <Image
+                    src={event.image_url || "/placeholder.jpg"}
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    alt={event.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                    unoptimized
+                  />
+                  {isPremiumEvent && (
+                    <div className="absolute top-6 left-6 bg-amber-500/95 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white shadow-sm inline-flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5" />
+                      {pick({ ru: "Premium", en: "Premium", uz: "Premium" })}
                     </div>
-                </Link>
-            ))}
+                  )}
+                  <div className={`absolute left-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-gray-900 shadow-sm ${isPremiumEvent ? "top-[4.15rem]" : "top-6"}`}>
+                    {event.location?.split(",")[0] || pick({ ru: "Локация", en: "Location", uz: "Joylashuv" })}
+                  </div>
+                  <div className="absolute top-6 right-6 bg-emerald-500/95 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
+                    {getEventCategoryLabel(event.category, pick)}
+                  </div>
+                  {urgency !== "none" && (
+                    <div
+                      className={`absolute bottom-6 right-6 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white shadow-sm inline-flex items-center gap-1.5 ${
+                        urgency === "urgent" ? "bg-red-500/95" : "bg-amber-500/95"
+                      }`}
+                    >
+                      <Flame className="w-3.5 h-3.5" />
+                      {urgency === "urgent"
+                        ? pick({ ru: "Срочно", en: "Urgent", uz: "Shoshilinch" })
+                        : pick({ ru: "Скоро", en: "Soon", uz: "Tez orada" })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-8 flex-1 flex flex-col">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-black text-gray-900 uppercase italic tracking-tighter mb-4 leading-tight group-hover:text-[#10b981] transition-colors line-clamp-2">
+                      {event.title}
+                    </h3>
+
+                    <div className="flex flex-col gap-2 mb-6">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <MapPin size={14} className="text-[#10b981]" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{event.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Calendar size={14} className="text-[#10b981]" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          {formatDate(event.date, dateLocale)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Clock3 size={14} className="text-[#10b981]" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          {pick({ ru: "Опубликовано", en: "Published", uz: "E'lon qilingan" })}:{" "}
+                          {formatDate(event.created_at, dateLocale)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <Users size={14} className="text-[#10b981]" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          {pick({ ru: "Волонтёров нужно", en: "Volunteers Needed", uz: "Kerakli volontyorlar" })}:{" "}
+                          {normalizeVolunteerCount(event.volunteers_needed) ??
+                            pick({ ru: "не указано", en: "not set", uz: "kiritilmagan" })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4 py-5 border-t border-gray-50">
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 group-hover:translate-x-1 transition-transform flex items-center gap-2">
+                      {pick({ ru: "Подробнее", en: "Details", uz: "Batafsil" })} <ArrowRight size={14} />
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
-        {filteredEvents.length === 0 && (
+        {visibleEvents.length === 0 && (
           <div className="text-center py-20">
             <p className="text-gray-400 font-black uppercase text-xs tracking-widest italic">
               {pick({

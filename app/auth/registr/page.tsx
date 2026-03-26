@@ -54,7 +54,9 @@ export default function RegisterPage() {
       options: {
         data: { 
           full_name: name,
-          phone: phone 
+          phone: phone,
+          is_premium: false,
+          subscription_plan: "free",
         }
       },
     });
@@ -123,7 +125,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-[500px] bg-white rounded-[48px] shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-gray-50 p-8 md:p-12">
+      <div className="w-full max-w-[500px] bg-white rounded-[48px] shadow-[0_26px_65px_rgba(15,23,42,0.16),0_8px_26px_rgba(16,185,129,0.12)] border border-gray-100 p-8 md:p-12">
         <form className="space-y-5" onSubmit={handleRegister}>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -150,7 +152,7 @@ export default function RegisterPage() {
                 <input 
                   type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} 
                   className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[24px] focus:outline-none focus:border-[#10b981] focus:bg-white transition-all font-bold text-gray-900" 
-                  placeholder="+7..." 
+                  placeholder="+998..." 
                 />
               </div>
             </div>

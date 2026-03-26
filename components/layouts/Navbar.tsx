@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faCircleUser } from "@fortawesome/free-regular-svg-icons";
 import { 
@@ -12,9 +13,10 @@ import {
   faTableColumns, 
   faCalendarAlt,
   faHandHoldingHeart,
+  faCrown,
   IconDefinition 
 } from "@fortawesome/free-solid-svg-icons";
-import { LogOut, Heart } from "lucide-react";
+import { LogOut, Heart, Bell, Clock3, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { useLanguage, type Locale } from "@/components/providers/LanguageProvider";
 
 // 1. Определяем интерфейс для пунктов меню, чтобы TS не ругался на отсутствие icon
@@ -24,12 +26,43 @@ interface MenuItem {
   icon?: IconDefinition; // Знак вопроса делает поле необязательным
 }
 
+type NotificationType = "incoming" | "approved" | "rejected";
+
+interface NavbarNotification {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  happenedAt: string;
+  type: NotificationType;
+}
+
+function parseLastSeen(value: unknown) {
+  if (typeof value !== "string") return 0;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function isMissingApplicationsTableError(message: string) {
+  const hasTableMention = /event_applications/i.test(message);
+  const hasSchemaMention = /relation|table|schema cache|does not exist|PGRST/i.test(message);
+  return hasTableMention && hasSchemaMention;
+}
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [notifications, setNotifications] = useState<NavbarNotification[]>([]);
+  const [lastSeenMs, setLastSeenMs] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsSupported, setNotificationsSupported] = useState(true);
+  const userRef = useRef<SupabaseUser | null>(null);
+  const notificationsRef = useRef<NavbarNotification[]>([]);
+  const hasNotificationsFetchedRef = useRef(false);
   const { locale, setLocale, pick } = useLanguage();
 
   const supabase = useMemo(
@@ -41,24 +74,183 @@ export default function Navbar() {
     [],
   );
 
+  const fetchNotifications = useCallback(
+    async (sessionUser: SupabaseUser | null) => {
+      if (!sessionUser) {
+        setNotifications([]);
+        notificationsRef.current = [];
+        setLastSeenMs(0);
+        setNotificationsSupported(true);
+        hasNotificationsFetchedRef.current = false;
+        setNotificationsLoading(false);
+        return;
+      }
+
+      const shouldShowLoader =
+        !hasNotificationsFetchedRef.current && notificationsRef.current.length === 0;
+      if (shouldShowLoader) {
+        setNotificationsLoading(true);
+      }
+      const metadata = sessionUser.user_metadata ?? {};
+      setLastSeenMs(parseLastSeen(metadata.last_notifications_seen));
+
+      const [incomingRes, decisionRes] = await Promise.all([
+        supabase
+          .from("event_applications")
+          .select("id, event_id, created_at")
+          .eq("organizer_id", sessionUser.id)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+          .limit(20),
+        supabase
+          .from("event_applications")
+          .select("id, event_id, status, reviewed_at")
+          .eq("volunteer_id", sessionUser.id)
+          .in("status", ["approved", "rejected"])
+          .not("reviewed_at", "is", null)
+          .order("reviewed_at", { ascending: false })
+          .limit(20),
+      ]);
+
+      const anyError = incomingRes.error || decisionRes.error;
+      if (anyError) {
+        if (isMissingApplicationsTableError(anyError.message)) {
+          setNotificationsSupported(false);
+          setNotifications([]);
+          notificationsRef.current = [];
+        } else {
+          setNotificationsSupported(true);
+          console.error("Notifications load error:", anyError.message);
+        }
+        hasNotificationsFetchedRef.current = true;
+        setNotificationsLoading(false);
+        return;
+      }
+
+      setNotificationsSupported(true);
+      const incomingRows = incomingRes.data ?? [];
+      const decisionRows = decisionRes.data ?? [];
+      const eventIds = Array.from(
+        new Set(
+          [...incomingRows, ...decisionRows]
+            .map((row) => row.event_id as string)
+            .filter(Boolean),
+        ),
+      );
+
+      const eventTitleMap: Record<string, string> = {};
+      if (eventIds.length > 0) {
+        const { data: eventRows, error: eventsError } = await supabase
+          .from("events")
+          .select("id, title")
+          .in("id", eventIds);
+
+        if (!eventsError) {
+          (eventRows ?? []).forEach((event) => {
+            eventTitleMap[event.id] = event.title;
+          });
+        }
+      }
+
+      const nextNotifications: NavbarNotification[] = [
+        ...incomingRows.map((row) => ({
+          id: `incoming-${row.id}`,
+          eventId: row.event_id,
+          eventTitle:
+            eventTitleMap[row.event_id] ??
+            pick({ ru: "Событие", en: "Event", uz: "Tadbir" }),
+          happenedAt: row.created_at,
+          type: "incoming" as NotificationType,
+        })),
+        ...decisionRows.map((row) => ({
+          id: `decision-${row.id}`,
+          eventId: row.event_id,
+          eventTitle:
+            eventTitleMap[row.event_id] ??
+            pick({ ru: "Событие", en: "Event", uz: "Tadbir" }),
+          happenedAt: row.reviewed_at as string,
+          type: row.status === "approved" ? "approved" as NotificationType : "rejected" as NotificationType,
+        })),
+      ]
+        .sort((a, b) => new Date(b.happenedAt).getTime() - new Date(a.happenedAt).getTime())
+        .slice(0, 20);
+
+      setNotifications(nextNotifications);
+      notificationsRef.current = nextNotifications;
+      hasNotificationsFetchedRef.current = true;
+      setNotificationsLoading(false);
+    },
+    [supabase, pick],
+  );
+
   useEffect(() => {
+    let mounted = true;
+    let intervalId: NodeJS.Timeout | null = null;
+
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsLoggedIn(Boolean(session));
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!mounted) return;
+      const nextUser = session?.user ?? null;
+      userRef.current = nextUser;
+      setUser(nextUser);
+      setIsLoggedIn(Boolean(nextUser));
+      await fetchNotifications(nextUser);
     };
 
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(Boolean(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const nextUser = session?.user ?? null;
+      userRef.current = nextUser;
+      setUser(nextUser);
+      setIsLoggedIn(Boolean(nextUser));
+      if (event === "USER_UPDATED") {
+        return;
+      }
+      await fetchNotifications(nextUser);
     });
 
-    return () => subscription.unsubscribe();
-  }, [supabase]);
+    intervalId = setInterval(() => {
+      fetchNotifications(userRef.current);
+    }, 30000);
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [supabase, fetchNotifications]);
+
+  const markNotificationsAsSeen = async () => {
+    if (!user || notifications.length === 0) return;
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const metadata = user.user_metadata ?? {};
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        ...metadata,
+        last_notifications_seen: nowIso,
+      },
+    });
+
+    if (!error) {
+      setLastSeenMs(now.getTime());
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsMenuOpen(false);
+    setIsNotificationsOpen(false);
+    userRef.current = null;
+    setUser(null);
+    setNotifications([]);
+    notificationsRef.current = [];
+    hasNotificationsFetchedRef.current = false;
+    setLastSeenMs(0);
     router.push("/");
     router.refresh();
   };
@@ -86,6 +278,45 @@ export default function Navbar() {
 
   const selectedLanguage = languages.find((item) => item.locale === locale) || languages[0];
 
+  const unreadCount = useMemo(() => {
+    return notifications.filter((item) => {
+      const ts = new Date(item.happenedAt).getTime();
+      if (Number.isNaN(ts)) return false;
+      return ts > lastSeenMs;
+    }).length;
+  }, [notifications, lastSeenMs]);
+
+  const formatNotificationDate = (value: string) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "—";
+    return parsed.toLocaleDateString(
+      locale === "ru" ? "ru-RU" : locale === "uz" ? "uz-UZ" : "en-US",
+      { day: "2-digit", month: "short" },
+    );
+  };
+
+  const getNotificationText = (item: NavbarNotification) => {
+    if (item.type === "incoming") {
+      return pick({
+        ru: `Новый отклик: ${item.eventTitle}`,
+        en: `New application: ${item.eventTitle}`,
+        uz: `Yangi ariza: ${item.eventTitle}`,
+      });
+    }
+    if (item.type === "approved") {
+      return pick({
+        ru: `Заявка принята: ${item.eventTitle}`,
+        en: `Application approved: ${item.eventTitle}`,
+        uz: `Ariza tasdiqlandi: ${item.eventTitle}`,
+      });
+    }
+    return pick({
+      ru: `Заявка отклонена: ${item.eventTitle}`,
+      en: `Application rejected: ${item.eventTitle}`,
+      uz: `Ariza rad etildi: ${item.eventTitle}`,
+    });
+  };
+
   // 2. Явно указываем тип MenuItem[]
   const menuItems: MenuItem[] = isLoggedIn
     ? [
@@ -105,6 +336,16 @@ export default function Navbar() {
           icon: faTableColumns,
         },
         {
+          href: "/applications",
+          label: pick({ ru: "Отклики", en: "Applications", uz: "Arizalar" }),
+          icon: faCalendarAlt,
+        },
+        {
+          href: "/premium",
+          label: pick({ ru: "Премиум", en: "Premium", uz: "Premium" }),
+          icon: faCrown,
+        },
+        {
           href: "/profile",
           label: pick({ ru: "Профиль", en: "Profile", uz: "Profil" }),
           icon: faCircleUser,
@@ -114,6 +355,7 @@ export default function Navbar() {
         { href: "/", label: pick({ ru: "Главная", en: "Home", uz: "Bosh sahifa" }) },
         { href: "/events", label: pick({ ru: "События", en: "Events", uz: "Tadbirlar" }) },
         { href: "/donate", label: pick({ ru: "Пожертвовать", en: "Donate", uz: "Xayriya" }) },
+        { href: "/premium", label: pick({ ru: "Премиум", en: "Premium", uz: "Premium" }) },
         { href: "/#about", label: pick({ ru: "О нас", en: "About", uz: "Biz haqimizda" }) },
       ];
 
@@ -169,6 +411,97 @@ export default function Navbar() {
               </div>
             )}
           </div>
+
+          {isLoggedIn && (
+            <div className="relative">
+              <button
+                onClick={async () => {
+                  const nextOpen = !isNotificationsOpen;
+                  setIsNotificationsOpen(nextOpen);
+                  if (nextOpen) {
+                    await markNotificationsAsSeen();
+                  }
+                }}
+                className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
+                aria-label={pick({ ru: "Уведомления", en: "Notifications", uz: "Bildirishnomalar" })}
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <div className="absolute right-0 mt-2 z-50 bg-white border border-gray-100 rounded-2xl shadow-xl w-[320px] overflow-hidden animate-in fade-in zoom-in-95">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-[10px] uppercase tracking-widest font-black text-gray-400">
+                      {pick({ ru: "Уведомления", en: "Notifications", uz: "Bildirishnomalar" })}
+                    </p>
+                  </div>
+                  <div className="max-h-[320px] overflow-y-auto">
+                    {!notificationsSupported ? (
+                      <div className="px-4 py-6 text-center text-xs font-bold text-amber-700 bg-amber-50">
+                        {pick({
+                          ru: "Для уведомлений выполните SQL из database/event_applications.sql",
+                          en: "Run SQL from database/event_applications.sql to enable notifications",
+                          uz: "Bildirishnomalar uchun database/event_applications.sql ni ishga tushiring",
+                        })}
+                      </div>
+                    ) : notificationsLoading ? (
+                      <div className="px-4 py-8 flex items-center justify-center">
+                        <Loader2 className="w-5 h-5 animate-spin text-[#10b981]" />
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-[10px] uppercase tracking-widest font-black text-gray-400">
+                        {pick({ ru: "Пока пусто", en: "No notifications", uz: "Hali bo'sh" })}
+                      </div>
+                    ) : (
+                      notifications.slice(0, 8).map((item) => {
+                        const isUnread = new Date(item.happenedAt).getTime() > lastSeenMs;
+                        return (
+                          <Link
+                            key={item.id}
+                            href={item.type === "incoming" ? "/dashboard" : "/applications"}
+                            onClick={() => setIsNotificationsOpen(false)}
+                            className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50"
+                          >
+                            <div className="mt-0.5">
+                              {item.type === "incoming" ? (
+                                <Clock3 className="w-4 h-4 text-amber-500" />
+                              ) : item.type === "approved" ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                              ) : (
+                                <XCircle className="w-4 h-4 text-red-500" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className={`text-[11px] font-bold leading-snug ${isUnread ? "text-gray-900" : "text-gray-600"}`}>
+                                {getNotificationText(item)}
+                              </p>
+                              <p className="text-[9px] uppercase tracking-widest font-black text-gray-300 mt-1">
+                                {formatNotificationDate(item.happenedAt)}
+                              </p>
+                            </div>
+                          </Link>
+                        );
+                      })
+                    )}
+                  </div>
+                  <div className="px-4 py-3 border-t border-gray-100">
+                    <Link
+                      href="/applications"
+                      onClick={() => setIsNotificationsOpen(false)}
+                      className="text-[10px] uppercase tracking-widest font-black text-[#10b981] hover:text-emerald-700 transition-colors"
+                    >
+                      {pick({ ru: "Открыть мои отклики", en: "Open my applications", uz: "Mening arizalarimni ochish" })}
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Auth Button */}
           {isLoggedIn ? (
