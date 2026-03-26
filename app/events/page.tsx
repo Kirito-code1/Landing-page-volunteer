@@ -91,7 +91,7 @@ export default function AllEvents() {
     async function getEvents() {
       const { data, error: supabaseError } = await supabase
         .from("events")
-        .select("*")
+        .select("id, title, location, date, created_at, category, volunteers_needed, premium_priority, image_url")
         .order("created_at", { ascending: false });
 
       if (supabaseError) {

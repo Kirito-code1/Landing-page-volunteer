@@ -166,7 +166,7 @@ export default function Dashboard() {
 
       const { data: eventsData } = await supabase
         .from("events")
-        .select("*")
+        .select("id, title, location, date, category, volunteers_needed, premium_priority, image_url, description")
         .eq("user_id", session.user.id)
         .order('created_at', { ascending: false });
 
@@ -185,12 +185,12 @@ export default function Dashboard() {
       const [applicationsResponse, reportsResponse] = await Promise.all([
         supabase
           .from("event_applications")
-          .select("*")
+          .select("id, event_id, organizer_id, volunteer_id, volunteer_name, volunteer_email, volunteer_phone, status, attended, checked_in_at, created_at, reviewed_at")
           .in("event_id", eventIds)
           .order("created_at", { ascending: false }),
         supabase
           .from("event_reports")
-          .select("*")
+          .select("id, event_id, organizer_id, actual_attendees, hours_per_volunteer, outcome_text, outcome_value, outcome_unit, created_at, updated_at")
           .in("event_id", eventIds)
           .order("updated_at", { ascending: false }),
       ]);
@@ -765,7 +765,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from("event_reports")
         .upsert(payload, { onConflict: "event_id" })
-        .select("*")
+        .select("id, event_id, organizer_id, actual_attendees, hours_per_volunteer, outcome_text, outcome_value, outcome_unit, created_at, updated_at")
         .single();
 
       if (error) {

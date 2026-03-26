@@ -63,6 +63,7 @@ export default function Navbar() {
   const userRef = useRef<SupabaseUser | null>(null);
   const notificationsRef = useRef<NavbarNotification[]>([]);
   const hasNotificationsFetchedRef = useRef(false);
+  const hasNotificationDetailsRef = useRef(false);
   const { locale, setLocale, pick } = useLanguage();
 
   const supabase = useMemo(
@@ -75,19 +76,25 @@ export default function Navbar() {
   );
 
   const fetchNotifications = useCallback(
-    async (sessionUser: SupabaseUser | null) => {
+    async (
+      sessionUser: SupabaseUser | null,
+      options?: { includeTitles?: boolean; showLoader?: boolean },
+    ) => {
       if (!sessionUser) {
         setNotifications([]);
         notificationsRef.current = [];
         setLastSeenMs(0);
         setNotificationsSupported(true);
         hasNotificationsFetchedRef.current = false;
+        hasNotificationDetailsRef.current = false;
         setNotificationsLoading(false);
         return;
       }
 
+      const includeTitles = options?.includeTitles === true;
       const shouldShowLoader =
-        !hasNotificationsFetchedRef.current && notificationsRef.current.length === 0;
+        options?.showLoader === true &&
+        (!hasNotificationsFetchedRef.current || !hasNotificationDetailsRef.current);
       if (shouldShowLoader) {
         setNotificationsLoading(true);
       }
@@ -139,7 +146,7 @@ export default function Navbar() {
       );
 
       const eventTitleMap: Record<string, string> = {};
-      if (eventIds.length > 0) {
+      if (includeTitles && eventIds.length > 0) {
         const { data: eventRows, error: eventsError } = await supabase
           .from("events")
           .select("id, title")
@@ -178,6 +185,7 @@ export default function Navbar() {
       setNotifications(nextNotifications);
       notificationsRef.current = nextNotifications;
       hasNotificationsFetchedRef.current = true;
+      hasNotificationDetailsRef.current = includeTitles;
       setNotificationsLoading(false);
     },
     [supabase, pick],
@@ -185,7 +193,7 @@ export default function Navbar() {
 
   useEffect(() => {
     let mounted = true;
-    let intervalId: NodeJS.Timeout | null = null;
+    let lazyFetchTimer: NodeJS.Timeout | null = null;
 
     const checkUser = async () => {
       const {
@@ -196,7 +204,13 @@ export default function Navbar() {
       userRef.current = nextUser;
       setUser(nextUser);
       setIsLoggedIn(Boolean(nextUser));
-      await fetchNotifications(nextUser);
+      setLastSeenMs(parseLastSeen(nextUser?.user_metadata?.last_notifications_seen));
+      if (nextUser) {
+        lazyFetchTimer = setTimeout(() => {
+          if (!mounted) return;
+          void fetchNotifications(nextUser);
+        }, 1200);
+      }
     };
 
     checkUser();
@@ -206,20 +220,25 @@ export default function Navbar() {
       userRef.current = nextUser;
       setUser(nextUser);
       setIsLoggedIn(Boolean(nextUser));
+      setLastSeenMs(parseLastSeen(nextUser?.user_metadata?.last_notifications_seen));
       if (event === "USER_UPDATED") {
         return;
       }
-      await fetchNotifications(nextUser);
+      hasNotificationDetailsRef.current = false;
+      if (lazyFetchTimer) clearTimeout(lazyFetchTimer);
+      if (nextUser) {
+        lazyFetchTimer = setTimeout(() => {
+          void fetchNotifications(nextUser);
+        }, 800);
+      } else {
+        await fetchNotifications(null);
+      }
     });
-
-    intervalId = setInterval(() => {
-      fetchNotifications(userRef.current);
-    }, 30000);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      if (intervalId) clearInterval(intervalId);
+      if (lazyFetchTimer) clearTimeout(lazyFetchTimer);
     };
   }, [supabase, fetchNotifications]);
 
@@ -250,9 +269,24 @@ export default function Navbar() {
     setNotifications([]);
     notificationsRef.current = [];
     hasNotificationsFetchedRef.current = false;
+    hasNotificationDetailsRef.current = false;
     setLastSeenMs(0);
     router.push("/");
     router.refresh();
+  };
+
+  const handleNotificationsToggle = async () => {
+    const nextOpen = !isNotificationsOpen;
+    setIsNotificationsOpen(nextOpen);
+    if (!nextOpen) return;
+
+    await Promise.all([
+      fetchNotifications(userRef.current, {
+        includeTitles: true,
+        showLoader: notificationsRef.current.length === 0 || !hasNotificationDetailsRef.current,
+      }),
+      markNotificationsAsSeen(),
+    ]);
   };
 
   const languages: Array<{ locale: Locale; name: string; code: string; flag: string }> = [
@@ -415,13 +449,7 @@ export default function Navbar() {
           {isLoggedIn && (
             <div className="relative">
               <button
-                onClick={async () => {
-                  const nextOpen = !isNotificationsOpen;
-                  setIsNotificationsOpen(nextOpen);
-                  if (nextOpen) {
-                    await markNotificationsAsSeen();
-                  }
-                }}
+                onClick={handleNotificationsToggle}
                 className="relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
                 aria-label={pick({ ru: "Уведомления", en: "Notifications", uz: "Bildirishnomalar" })}
               >

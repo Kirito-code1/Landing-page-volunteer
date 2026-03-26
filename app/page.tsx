@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { motion, Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -26,15 +25,6 @@ import {
   faHandHoldingHeart,
   faTree,
 } from "@fortawesome/free-solid-svg-icons";
-
-const fadeInUp: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
-  },
-};
 
 export default function Home() {
   const { pick } = useLanguage();
@@ -377,7 +367,7 @@ export default function Home() {
         <div className="pointer-events-none absolute top-24 -right-24 h-72 w-72 rounded-full bg-sky-200/50 blur-3xl" />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
-          <motion.div initial="hidden" animate="visible" variants={fadeInUp}>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">
               {pick({
                 ru: "Платформа городского волонтёрства",
@@ -434,9 +424,9 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div initial="hidden" animate="visible" variants={fadeInUp} className="relative">
+          <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="relative w-full max-w-[500px] mx-auto aspect-[4/5] rounded-[44px] overflow-hidden border-[12px] border-white shadow-[0_30px_80px_rgba(15,23,42,0.16)]">
               <Image
                 src="https://img.freepik.com/free-photo/environmental-conservation-garden-children_1150-15276.jpg"
@@ -462,7 +452,7 @@ export default function Home() {
                 })}
               </p>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 

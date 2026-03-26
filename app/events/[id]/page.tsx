@@ -159,7 +159,7 @@ export default function EventPage() {
           supabase.auth.getSession(),
           supabase
             .from("events")
-            .select("*")
+            .select("id, user_id, title, location, date, created_at, category, volunteers_needed, description, image_url")
             .eq("id", id)
             .single(),
         ]);
