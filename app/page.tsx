@@ -378,9 +378,9 @@ export default function Home() {
 
             <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 leading-[0.95] tracking-tighter uppercase italic">
               {pick({
-                ru: <>С главной страницы сразу понятно, <span className="text-[#10b981]">как начать помогать</span></>,
-                en: <>From the first screen, it is clear <span className="text-[#10b981]">how to start helping</span></>,
-                uz: <>Birinchi ekrandanoq <span className="text-[#10b981]">qanday yordam berish</span> aniq tushuniladi</>,
+                ru: <>Объединяем людей вокруг <span className="text-[#10b981]">реальной помощи</span></>,
+                en: <>Connecting people through <span className="text-[#10b981]">real-world impact</span></>,
+                uz: <>Odamlarni <span className="text-[#10b981]">haqiqiy yordam</span> atrofida birlashtiramiz</>,
               })}
             </h1>
 

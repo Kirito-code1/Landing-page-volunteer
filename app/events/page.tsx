@@ -13,6 +13,7 @@ import {
   Flame,
   FilterX,
   Crown,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -143,10 +144,12 @@ export default function AllEvents() {
     });
 
     return [...filtered].sort((a, b) => {
-      const aPremium = a.premium_priority === true ? 1 : 0;
-      const bPremium = b.premium_priority === true ? 1 : 0;
-      if (aPremium !== bPremium) {
-        return bPremium - aPremium;
+      if (sortOrder === "new") {
+        const aPremium = a.premium_priority === true ? 1 : 0;
+        const bPremium = b.premium_priority === true ? 1 : 0;
+        if (aPremium !== bPremium) {
+          return bPremium - aPremium;
+        }
       }
 
       const aTime = new Date(a.created_at).getTime();
@@ -172,6 +175,8 @@ export default function AllEvents() {
     setTeamSizeFilter("all");
     setSortOrder("new");
   };
+  const filterSelectClassName =
+    "min-w-0 w-full appearance-none rounded-[24px] border border-slate-200 bg-[#f8fafc] px-5 py-4 pr-12 text-sm font-semibold tracking-[0.02em] text-slate-700 outline-none transition-colors focus:border-[#10b981] focus:bg-white";
 
   if (loading)
     return (
@@ -181,30 +186,34 @@ export default function AllEvents() {
     );
 
   return (
-    <div className="min-h-screen bg-[#fcfdfd] py-12 px-6">
+    <div className="min-h-screen bg-[#fcfdfd] py-12 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
-        <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-8">
-          <div className="text-center md:text-left">
-            <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter text-gray-900 leading-none">
+        <header className="mb-10 grid grid-cols-1 xl:grid-cols-[minmax(340px,430px)_minmax(0,1fr)] items-start gap-8 xl:gap-12">
+          <div className="min-w-0 max-w-[440px] text-center xl:text-left">
+            <h1 className="text-[clamp(3.1rem,7vw,5.4rem)] font-black italic tracking-[-0.07em] text-slate-900 leading-[0.86]">
               {pick({
                 ru: (
                   <>
-                    Найти <span className="text-[#10b981]">Героя</span>
+                    <span className="block whitespace-nowrap">Найди</span>
+                    <span className="block whitespace-nowrap text-[#10b981]">героя</span>
                   </>
                 ),
                 en: (
                   <>
-                    Find a <span className="text-[#10b981]">Hero</span>
+                    <span className="block whitespace-nowrap">Find a</span>
+                    <span className="block whitespace-nowrap text-[#10b981]">hero</span>
                   </>
                 ),
                 uz: (
                   <>
-                    Yordamchi <span className="text-[#10b981]">Qahramonni</span> toping
+                    <span className="block whitespace-nowrap">Yordamchi</span>
+                    <span className="block whitespace-nowrap text-[#10b981]">qahramonni</span>
+                    <span className="block whitespace-nowrap">toping</span>
                   </>
                 ),
               })}
             </h1>
-            <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] mt-3 ml-1">
+            <p className="mt-4 max-w-md text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400 xl:ml-1">
               {pick({
                 ru: "Все актуальные задачи города",
                 en: "All current city tasks",
@@ -213,99 +222,137 @@ export default function AllEvents() {
             </p>
           </div>
 
-          <div className="w-full max-w-6xl space-y-3">
+          <div className="w-full min-w-0 rounded-[32px] border border-white bg-white/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                {pick({
+                  ru: "Поиск и фильтрация событий",
+                  en: "Search and filter events",
+                  uz: "Tadbirlarni qidirish va saralash",
+                })}
+              </p>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-[#f8fafc] px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-[#10b981] hover:text-[#10b981]"
+              >
+                <FilterX className="h-4 w-4" />
+                {pick({ ru: "Сбросить фильтры", en: "Reset filters", uz: "Filtrlarni tozalash" })}
+              </button>
+            </div>
+
+            <div className="space-y-4">
             <div className="relative">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5" />
+              <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-300" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={pick({
-                  ru: "ПОИСК ПО КЛЮЧЕВЫМ СЛОВАМ...",
-                  en: "SEARCH BY KEYWORDS...",
-                  uz: "KALIT SO'Z BO'YICHA QIDIRISH...",
+                  ru: "Поиск по названию, месту или категории",
+                  en: "Search by title, place or category",
+                  uz: "Nomi, joyi yoki toifasi bo'yicha qidiring",
                 })}
-                className="w-full pl-14 pr-6 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] transition-all font-bold uppercase text-[10px] tracking-widest"
+                className="w-full min-w-0 rounded-[24px] border border-slate-200 bg-[#f8fafc] py-4 pl-14 pr-6 text-sm font-medium text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#10b981] focus:bg-white"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] font-bold uppercase text-[10px] tracking-widest text-gray-700"
-            >
-              <option value="all">
-                {pick({ ru: "Все категории", en: "All categories", uz: "Barcha kategoriyalar" })}
-              </option>
-              {categoryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="relative">
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className={filterSelectClassName}
+                >
+                  <option value="all">
+                    {pick({ ru: "Все категории", en: "All categories", uz: "Barcha kategoriyalar" })}
+                  </option>
+                  {categoryOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </div>
 
-            <select
-              value={urgencyFilter}
-              onChange={(e) => setUrgencyFilter(e.target.value as "all" | "urgent" | "soon")}
-              className="w-full px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] font-bold uppercase text-[10px] tracking-widest text-gray-700"
-            >
-              <option value="all">
-                {pick({ ru: "Любая срочность", en: "Any urgency", uz: "Har qanday shoshilinchlik" })}
-              </option>
-              <option value="urgent">
-                {pick({ ru: "Только срочные (до 3 дней)", en: "Urgent only (<=3 days)", uz: "Faqat shoshilinch (3 kungacha)" })}
-              </option>
-              <option value="soon">
-                {pick({ ru: "Скоро (до 10 дней)", en: "Soon (<=10 days)", uz: "Tez orada (10 kungacha)" })}
-              </option>
-            </select>
+              <div className="relative">
+                <select
+                  value={urgencyFilter}
+                  onChange={(e) => setUrgencyFilter(e.target.value as "all" | "urgent" | "soon")}
+                  className={filterSelectClassName}
+                >
+                  <option value="all">
+                    {pick({ ru: "Срочность", en: "Urgency", uz: "Shoshilinchlik" })}
+                  </option>
+                  <option value="urgent">
+                    {pick({ ru: "Срочные: до 3 дней", en: "Urgent: up to 3 days", uz: "Shoshilinch: 3 kungacha" })}
+                  </option>
+                  <option value="soon">
+                    {pick({ ru: "Скоро: до 10 дней", en: "Soon: up to 10 days", uz: "Tez orada: 10 kungacha" })}
+                  </option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </div>
 
-            <select
-              value={teamSizeFilter}
-              onChange={(e) => setTeamSizeFilter(e.target.value as "all" | "small" | "medium" | "large")}
-              className="w-full px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] font-bold uppercase text-[10px] tracking-widest text-gray-700"
-            >
-              <option value="all">
-                {pick({ ru: "Любой размер команды", en: "Any team size", uz: "Har qanday jamoa hajmi" })}
-              </option>
-              <option value="small">{pick({ ru: "Малые (1-10)", en: "Small (1-10)", uz: "Kichik (1-10)" })}</option>
-              <option value="medium">
-                {pick({ ru: "Средние (11-30)", en: "Medium (11-30)", uz: "O'rta (11-30)" })}
-              </option>
-              <option value="large">{pick({ ru: "Большие (31+)", en: "Large (31+)", uz: "Katta (31+)" })}</option>
-            </select>
+              <div className="relative">
+                <select
+                  value={teamSizeFilter}
+                  onChange={(e) => setTeamSizeFilter(e.target.value as "all" | "small" | "medium" | "large")}
+                  className={filterSelectClassName}
+                >
+                  <option value="all">
+                    {pick({ ru: "Размер команды", en: "Team size", uz: "Jamoa hajmi" })}
+                  </option>
+                  <option value="small">{pick({ ru: "Малые: 1-10", en: "Small: 1-10", uz: "Kichik: 1-10" })}</option>
+                  <option value="medium">
+                    {pick({ ru: "Средние: 11-30", en: "Medium: 11-30", uz: "O'rta: 11-30" })}
+                  </option>
+                  <option value="large">{pick({ ru: "Большие: 31+", en: "Large: 31+", uz: "Katta: 31+" })}</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </div>
 
-            <div className="flex gap-3">
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as "new" | "old")}
-                className="flex-1 w-full px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm outline-none focus:border-[#10b981] font-bold uppercase text-[10px] tracking-widest text-gray-700"
-              >
-                <option value="new">
-                  {pick({
-                    ru: "Сначала новые",
-                    en: "Newest first",
-                    uz: "Avval yangilari",
-                  })}
-                </option>
-                <option value="old">
-                  {pick({
-                    ru: "Сначала старые",
-                    en: "Oldest first",
-                    uz: "Avval eskilari",
-                  })}
-                </option>
-              </select>
+              <div className="relative">
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as "new" | "old")}
+                  className={filterSelectClassName}
+                >
+                  <option value="new">
+                    {pick({
+                      ru: "Сначала новые",
+                      en: "Newest first",
+                      uz: "Avval yangilari",
+                    })}
+                  </option>
+                  <option value="old">
+                    {pick({
+                      ru: "Сначала старые",
+                      en: "Oldest first",
+                      uz: "Avval eskilari",
+                    })}
+                  </option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </div>
+            </div>
 
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="px-5 py-5 bg-white border border-gray-100 rounded-[30px] shadow-sm hover:border-[#10b981] text-gray-700 inline-flex items-center justify-center gap-2 font-bold uppercase text-[10px] tracking-widest transition-colors"
-              >
-                <FilterX className="w-4 h-4" />
-                {pick({ ru: "Сброс", en: "Reset", uz: "Tozalash" })}
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+              <p className="text-sm text-slate-500">
+                {pick({
+                  ru: "Подберите события по категории, срочности и размеру команды.",
+                  en: "Filter events by category, urgency and team size.",
+                  uz: "Tadbirlarni toifa, shoshilinchlik va jamoa hajmi bo'yicha tanlang.",
+                })}
+              </p>
+              <p className="text-sm font-semibold text-slate-700">
+                {pick({
+                  ru: `${visibleEvents.length} событий`,
+                  en: `${visibleEvents.length} events`,
+                  uz: `${visibleEvents.length} ta tadbir`,
+                })}
+              </p>
             </div>
             </div>
           </div>
