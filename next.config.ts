@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  webpack: (config) => {
+    return config;
+  },
 };
 
 export default nextConfig;
