@@ -2,10 +2,11 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Crown, Loader2, TriangleAlert } from "lucide-react";
+import { Compass, Loader2, PlusCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
+import AnimatedStatusIndicator from "@/components/system/AnimatedStatusIndicator";
 
 type StatusState = "loading" | "paid" | "pending" | "failed" | "cancelled" | "missing";
 type TrackingMode = "manual" | "order" | "missing";
@@ -145,15 +146,6 @@ function PremiumSuccessContent() {
     };
   }, [pick, trackingMode]);
 
-  const icon =
-    status === "paid" ? (
-      <CheckCircle2 className="h-16 w-16 text-emerald-500" />
-    ) : status === "loading" || status === "pending" ? (
-      <Loader2 className="h-16 w-16 animate-spin text-emerald-500" />
-    ) : (
-      <TriangleAlert className="h-16 w-16 text-amber-500" />
-    );
-
   const waitingNote =
     status === "loading" || status === "pending"
       ? pick({
@@ -162,11 +154,19 @@ function PremiumSuccessContent() {
           uz: "Odatda Premium 5-10 daqiqa ichida tasdiqlanadi. Faollashgach, siz bildirishnoma olasiz va kirish avtomatik ochiladi.",
         })
       : "";
+  const showContinueActions = status === "paid" || status === "pending" || status === "loading";
+  const continueTitle = pick({
+    ru: "Пока статус обновляется, вы можете продолжить работу на платформе",
+    en: "While the status is updating, you can keep working on the platform",
+    uz: "Status yangilanayotganda platformada ishlashda davom etishingiz mumkin",
+  });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,_#fffaf1_0%,_#ffffff_50%,_#eff6ff_100%)] px-4">
       <div className="w-full max-w-xl rounded-[34px] border border-gray-100 bg-white p-10 text-center shadow-xl">
-        <div className="mb-5 flex justify-center">{icon}</div>
+        <div className="mb-5 flex justify-center">
+          <AnimatedStatusIndicator status={status} tone="amber" />
+        </div>
         <h1 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900">
           {content.titleByStatus[status]}
         </h1>
@@ -219,23 +219,64 @@ function PremiumSuccessContent() {
             )}
           </p>
         ) : null}
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Link
-            href={status === "paid" ? "/dashboard" : "/premium"}
-            className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-8 py-4 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-black"
-          >
-            {status === "paid"
-              ? pick({ ru: "Открыть кабинет", en: "Open dashboard", uz: "Kabinetni ochish" })
-              : pick({ ru: "Вернуться к Premium", en: "Back to Premium", uz: "Premium ga qaytish" })}
-          </Link>
-          <Link
-            href="/events"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-8 py-4 text-sm font-black uppercase tracking-widest text-amber-700 transition-colors hover:border-amber-300 hover:bg-amber-100"
-          >
-            <Crown className="h-4 w-4" />
-            {pick({ ru: "Каталог событий", en: "Events catalog", uz: "Tadbirlar katalogi" })}
-          </Link>
-        </div>
+        {showContinueActions ? (
+          <div className="mt-8 text-left">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              {pick({ ru: "Что можно сделать дальше", en: "What you can do next", uz: "Keyin nima qilish mumkin" })}
+            </p>
+            <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">{continueTitle}</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/events"
+                className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-5 transition-colors hover:border-amber-300 hover:bg-amber-100"
+              >
+                <Compass className="h-5 w-5 text-amber-600" />
+                <p className="mt-4 text-base font-black text-slate-950">
+                  {pick({ ru: "Искать события", en: "Browse events", uz: "Tadbirlarni ko'rish" })}
+                </p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+                  {pick({
+                    ru: "Посмотрите каталог мероприятий и найдите новые объявления, пока статус Premium обновляется.",
+                    en: "Browse the event catalog and discover new listings while your Premium status is updating.",
+                    uz: "Premium holati yangilanayotganda tadbirlar katalogini ko'rib, yangi e'lonlarni toping.",
+                  })}
+                </p>
+              </Link>
+              <Link
+                href="/dashboard"
+                className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5 transition-colors hover:border-slate-300 hover:bg-slate-100"
+              >
+                <PlusCircle className="h-5 w-5 text-slate-900" />
+                <p className="mt-4 text-base font-black text-slate-950">
+                  {pick({ ru: "Создать событие", en: "Create an event", uz: "Tadbir yaratish" })}
+                </p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+                  {pick({
+                    ru: "Откройте кабинет и продолжайте публиковать мероприятия или управлять уже созданными.",
+                    en: "Open the dashboard and keep publishing events or managing the ones you already created.",
+                    uz: "Kabinetni ochib, tadbirlarni joylash yoki allaqachon yaratilganlarini boshqarishda davom eting.",
+                  })}
+                </p>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/premium"
+              className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-8 py-4 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-black"
+            >
+              {pick({ ru: "Вернуться к Premium", en: "Back to Premium", uz: "Premium ga qaytish" })}
+            </Link>
+            <Link
+              href="/events"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-8 py-4 text-sm font-black uppercase tracking-widest text-amber-700 transition-colors hover:border-amber-300 hover:bg-amber-100"
+            >
+              <Compass className="h-4 w-4" />
+              {pick({ ru: "Каталог событий", en: "Events catalog", uz: "Tadbirlar katalogi" })}
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

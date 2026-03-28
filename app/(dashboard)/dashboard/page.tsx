@@ -44,6 +44,7 @@ import {
   getTodayEventDateInputMin,
   isPastEventDateTime,
 } from "@/lib/events/dates";
+import { optimizeEventImageFile } from "@/lib/events/optimizeImage";
 import EventVisual from "@/components/events/EventVisual";
 import { FREE_POST_LIMIT, getFreePostCreditsUsed } from "@/lib/events/limits";
 import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
@@ -117,6 +118,18 @@ interface ManualPaymentRequest {
   note: string | null;
   created_at: string;
 }
+
+type ManagedEventPayload = {
+  id: string;
+  title: string;
+  location: string;
+  date: string;
+  category?: string | null;
+  volunteers_needed?: number | null;
+  premium_priority?: boolean | null;
+  image_url?: string | null;
+  description?: string | null;
+};
 
 export default function Dashboard() {
   const { pick } = useLanguage();
@@ -671,7 +684,14 @@ export default function Dashboard() {
           cache: "no-store",
         });
         const adminStatusPayload = (await adminStatusResponse.json().catch(() => null)) as { isAdmin?: boolean } | null;
-        setIsAdmin(adminStatusPayload?.isAdmin === true);
+        const nextIsAdmin = adminStatusPayload?.isAdmin === true;
+        setIsAdmin(nextIsAdmin);
+
+        if (!nextIsAdmin) {
+          setCanReviewManualPayments(false);
+          setManualPaymentRequests([]);
+          return;
+        }
 
         setManualPaymentsLoading(true);
         const response = await fetch("/api/manual-payments/review", {
@@ -741,6 +761,31 @@ export default function Dashboard() {
       setImagePreview(URL.createObjectURL(file));
     }
   };
+
+  const upsertLocalEvent = useCallback((savedEvent: ManagedEventPayload) => {
+    const normalizedEvent: DashboardEvent = {
+      id: savedEvent.id,
+      title: savedEvent.title,
+      location: savedEvent.location,
+      date: savedEvent.date,
+      category: savedEvent.category ?? null,
+      volunteers_needed: savedEvent.volunteers_needed ?? null,
+      premium_priority: savedEvent.premium_priority ?? null,
+      image_url: savedEvent.image_url ?? null,
+      description: savedEvent.description ?? null,
+    };
+
+    setMyEvents((prev) => {
+      const existingIndex = prev.findIndex((item) => item.id === normalizedEvent.id);
+      if (existingIndex === -1) {
+        return [normalizedEvent, ...prev];
+      }
+
+      const next = [...prev];
+      next[existingIndex] = normalizedEvent;
+      return next;
+    });
+  }, []);
 
   const openDeleteModal = (id: string, title: string) => {
     setDeleteModal({ isOpen: true, id, title });
@@ -1156,10 +1201,11 @@ export default function Dashboard() {
       }
 
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
+        const optimizedImage = await optimizeEventImageFile(imageFile);
+        const fileExt = optimizedImage.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
-        const { error: uploadError } = await supabase.storage.from('event-images').upload(filePath, imageFile);
+        const { error: uploadError } = await supabase.storage.from('event-images').upload(filePath, optimizedImage);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(filePath);
         finalImageUrl = publicUrl;
@@ -1184,6 +1230,7 @@ export default function Dashboard() {
 
       const result = (await response.json().catch(() => null)) as
         | {
+            event?: ManagedEventPayload;
             error?: string;
             consumedFreePostCredit?: boolean;
             majorChange?: boolean;
@@ -1224,11 +1271,14 @@ export default function Dashboard() {
               }
             : prev,
         );
-        await supabase.auth.refreshSession();
+        void supabase.auth.refreshSession();
+      }
+
+      if (result?.event) {
+        upsertLocalEvent(result.event);
       }
 
       closeAndReset();
-      await fetchData();
       if (usedFallbackWithoutNewColumns) {
         showAlertModal(
           pick({ ru: "Событие сохранено", en: "Event saved", uz: "Tadbir saqlandi" }),

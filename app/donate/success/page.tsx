@@ -2,9 +2,10 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Loader2, ShieldCheck, TriangleAlert } from "lucide-react";
+import { Compass, Loader2, PlusCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import AnimatedStatusIndicator from "@/components/system/AnimatedStatusIndicator";
 
 type StatusState = "loading" | "paid" | "pending" | "failed" | "cancelled" | "missing";
 type TrackingMode = "manual" | "order" | "missing";
@@ -153,15 +154,6 @@ function DonationSuccessContent() {
     };
   }, [pick, trackingMode]);
 
-  const icon =
-    status === "paid" ? (
-      <CheckCircle2 className="h-16 w-16 text-emerald-500" />
-    ) : status === "loading" || status === "pending" ? (
-      <Loader2 className="h-16 w-16 animate-spin text-emerald-500" />
-    ) : (
-      <TriangleAlert className="h-16 w-16 text-amber-500" />
-    );
-
   const donorNote =
     status === "paid" || status === "pending" || status === "loading"
       ? pick({
@@ -170,11 +162,19 @@ function DonationSuccessContent() {
           uz: "Qo'llab-quvvatlaganingiz uchun rahmat. Yig'im tugab, mablag' ishlatilgach, xayriya sahifasida natija va suratlar bilan hisobot e'lon qilamiz.",
         })
       : "";
+  const showContinueActions = status === "paid" || status === "pending" || status === "loading";
+  const continueTitle = pick({
+    ru: "Пока мы завершаем проверку, вы можете продолжить пользоваться платформой",
+    en: "While we finish the review, you can keep using the platform",
+    uz: "Tekshiruv tugaguncha platformadan foydalanishda davom etishingiz mumkin",
+  });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,_#f0fdf4_0%,_#ffffff_50%,_#eff6ff_100%)] px-4">
       <div className="w-full max-w-xl rounded-[34px] border border-gray-100 bg-white p-10 text-center shadow-xl">
-        <div className="mb-5 flex justify-center">{icon}</div>
+        <div className="mb-5 flex justify-center">
+          <AnimatedStatusIndicator status={status} tone="emerald" />
+        </div>
         <h1 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900">
           {content.titleByStatus[status]}
         </h1>
@@ -228,23 +228,64 @@ function DonationSuccessContent() {
           </p>
         ) : null}
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Link
-            href={status === "paid" ? "/" : "/donate"}
-            className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-8 py-4 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-black"
-          >
-            {status === "paid"
-              ? pick({ ru: "На главную", en: "Go home", uz: "Bosh sahifaga" })
-              : pick({ ru: "Вернуться к донату", en: "Back to donate", uz: "Xayriyaga qaytish" })}
-          </Link>
-          <Link
-            href="/events"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-8 py-4 text-sm font-black uppercase tracking-widest text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100"
-          >
-            <ShieldCheck className="h-4 w-4" />
-            {pick({ ru: "Посмотреть события", en: "View events", uz: "Tadbirlarni ko'rish" })}
-          </Link>
-        </div>
+        {showContinueActions ? (
+          <div className="mt-8 text-left">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              {pick({ ru: "Что можно сделать дальше", en: "What you can do next", uz: "Keyin nima qilish mumkin" })}
+            </p>
+            <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">{continueTitle}</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/events"
+                className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-5 transition-colors hover:border-emerald-300 hover:bg-emerald-100"
+              >
+                <Compass className="h-5 w-5 text-emerald-600" />
+                <p className="mt-4 text-base font-black text-slate-950">
+                  {pick({ ru: "Искать события", en: "Browse events", uz: "Tadbirlarni ko'rish" })}
+                </p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+                  {pick({
+                    ru: "Посмотрите новые мероприятия и инициативы, пока мы завершаем проверку перевода.",
+                    en: "Explore new events and initiatives while we finish checking the transfer.",
+                    uz: "O'tkazma tekshiruvini yakunlayotganimizda yangi tadbir va tashabbuslarni ko'ring.",
+                  })}
+                </p>
+              </Link>
+              <Link
+                href="/dashboard"
+                className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5 transition-colors hover:border-slate-300 hover:bg-slate-100"
+              >
+                <PlusCircle className="h-5 w-5 text-slate-900" />
+                <p className="mt-4 text-base font-black text-slate-950">
+                  {pick({ ru: "Создать событие", en: "Create an event", uz: "Tadbir yaratish" })}
+                </p>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+                  {pick({
+                    ru: "Откройте кабинет и опубликуйте своё мероприятие, если хотите собрать команду волонтёров.",
+                    en: "Open the dashboard and publish your own event if you want to gather volunteers.",
+                    uz: "Agar ko'ngillilar jamoasini yig'moqchi bo'lsangiz, kabinetni ochib o'z tadbiringizni joylang.",
+                  })}
+                </p>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/donate"
+              className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-8 py-4 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-black"
+            >
+              {pick({ ru: "Вернуться к донату", en: "Back to donate", uz: "Xayriyaga qaytish" })}
+            </Link>
+            <Link
+              href="/events"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-8 py-4 text-sm font-black uppercase tracking-widest text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100"
+            >
+              <Compass className="h-4 w-4" />
+              {pick({ ru: "Посмотреть события", en: "View events", uz: "Tadbirlarni ko'rish" })}
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
