@@ -15,7 +15,7 @@ import {
   faCrown,
   IconDefinition 
 } from "@fortawesome/free-solid-svg-icons";
-import { LogOut, Heart, Bell, Clock3, CheckCircle2, XCircle, Loader2, Crown } from "lucide-react";
+import { LogOut, Heart, Bell, Clock3, CheckCircle2, XCircle, Loader2, Crown, ShieldCheck } from "lucide-react";
 import { getPremiumAccessType, hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
 import { getBrowserSupabaseClient, hasBrowserSupabaseEnv } from "@/lib/supabase/browser";
 import { useLanguage, type Locale } from "@/components/providers/LanguageProvider";
@@ -68,6 +68,7 @@ export default function Navbar() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [notifications, setNotifications] = useState<NavbarNotification[]>([]);
   const [lastSeenMs, setLastSeenMs] = useState(0);
@@ -324,6 +325,42 @@ export default function Navbar() {
   }, [supabase, fetchNotifications, syncPremiumSession]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const resolveAdminState = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/admin/status", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Admin status unavailable");
+        }
+
+        const payload = (await response.json().catch(() => null)) as { isAdmin?: boolean } | null;
+        if (!cancelled) {
+          setIsAdmin(payload?.isAdmin === true);
+        }
+      } catch {
+        if (!cancelled) {
+          setIsAdmin(false);
+        }
+      }
+    };
+
+    void resolveAdminState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
     if (!isNotificationsOpen && !isLangOpen && !isMoreOpen && !isMenuOpen) return;
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -389,6 +426,7 @@ export default function Navbar() {
     hasNotificationsFetchedRef.current = false;
     hasNotificationDetailsRef.current = false;
     setLastSeenMs(0);
+    setIsAdmin(false);
     router.push("/");
     router.refresh();
   };
@@ -525,6 +563,15 @@ export default function Navbar() {
           label: pick({ ru: "Профиль", en: "Profile", uz: "Profil" }),
           icon: faCircleUser,
         },
+        ...(isAdmin
+          ? [
+              {
+                href: "/admin",
+                label: pick({ ru: "Админ", en: "Admin", uz: "Admin" }),
+                icon: faTableColumns,
+              },
+            ]
+          : []),
       ]
     : [
         { href: "/", label: pick({ ru: "Главная", en: "Home", uz: "Bosh sahifa" }) },
@@ -544,22 +591,22 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-[100] w-full border-b border-slate-200/70 bg-white/82 backdrop-blur-xl">
       <div className="mx-auto max-w-screen-xl px-4 py-3 md:px-6">
-        <div className="flex items-center gap-4 lg:gap-6">
+        <div className="flex w-full items-center gap-3 md:gap-4 xl:gap-6">
           <Link href="/" className="group inline-flex shrink-0 items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#10b981] text-white shadow-lg shadow-emerald-100 transition-transform group-hover:scale-105">
               <Heart className="h-6 w-6 fill-current" />
             </div>
             <div>
-              <span className="block text-lg font-black uppercase italic tracking-tighter text-slate-950 md:text-xl">
+              <span className="block text-base font-black uppercase italic tracking-tighter text-slate-950 md:text-lg xl:text-xl">
                 Volo<span className="text-[#10b981]">Hero</span>
               </span>
-              <span className="hidden text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 xl:block">
+              <span className="hidden text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 2xl:block">
                 {pick({ ru: "Volunteer Platform", en: "Volunteer Platform", uz: "Volunteer Platform" })}
               </span>
             </div>
           </Link>
 
-          <div className="hidden min-w-0 flex-1 justify-center lg:flex">
+          <div className="hidden min-w-0 flex-1 justify-center xl:flex">
             <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white/95 p-1.5 shadow-sm">
               {primaryMenuItems.map((item) => {
                 const isActive = isActiveMenuItem(item.href);
@@ -620,14 +667,24 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
             {isLoggedIn && isPremiumUser ? (
               <Link
                 href="/premium"
-                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] xl:inline-flex ${premiumBadgeClasses}`}
+                className={`hidden items-center gap-2 rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] 2xl:inline-flex ${premiumBadgeClasses}`}
               >
                 <Crown className="h-3.5 w-3.5" />
                 {premiumBadgeLabel}
+              </Link>
+            ) : null}
+
+            {isLoggedIn && isAdmin ? (
+              <Link
+                href="/admin"
+                className="hidden items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-sky-700 2xl:inline-flex"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Admin
               </Link>
             ) : null}
 
@@ -688,7 +745,7 @@ export default function Navbar() {
                 </button>
 
                 {isNotificationsOpen && (
-                  <div className="absolute right-0 z-50 mt-2 w-[340px] overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-xl animate-in fade-in zoom-in-95">
+                  <div className="absolute right-0 z-50 mt-2 w-[min(340px,calc(100vw-1rem))] overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-xl animate-in fade-in zoom-in-95 sm:w-[340px]">
                     <div className="border-b border-slate-100 px-4 py-4">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                         {pick({ ru: "Уведомления", en: "Notifications", uz: "Bildirishnomalar" })}
@@ -707,7 +764,7 @@ export default function Navbar() {
                             })}
                       </p>
                     </div>
-                    <div className="max-h-[340px] overflow-y-auto p-2">
+                    <div className="max-h-[min(340px,70vh)] overflow-y-auto p-2">
                       {!notificationsSupported ? (
                         <div className="rounded-[22px] bg-amber-50 px-4 py-6 text-center text-xs font-bold text-amber-700">
                           {pick({
@@ -773,7 +830,7 @@ export default function Navbar() {
             {isLoggedIn ? (
               <button
                 onClick={handleLogout}
-                className="hidden items-center rounded-full bg-slate-950 px-5 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-red-500 sm:inline-flex"
+                className="hidden items-center rounded-full bg-slate-950 px-5 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-red-500 md:inline-flex"
               >
                 <LogOut className="me-2 h-4 w-4" />
                 {pick({ ru: "Выйти", en: "Logout", uz: "Chiqish" })}
@@ -781,14 +838,14 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/auth/login"
-                className="hidden items-center rounded-full bg-[#10b981] px-6 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-all hover:bg-[#0da975] hover:shadow-lg hover:shadow-green-100 sm:inline-flex"
+                className="hidden items-center rounded-full bg-[#10b981] px-6 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-all hover:bg-[#0da975] hover:shadow-lg hover:shadow-green-100 md:inline-flex"
               >
                 <FontAwesomeIcon icon={faUser} className="me-2" />
                 {pick({ ru: "Войти", en: "Login", uz: "Kirish" })}
               </Link>
             )}
 
-            <div ref={mobileMenuAreaRef} className="relative lg:hidden">
+            <div ref={mobileMenuAreaRef} className="relative xl:hidden">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50"
@@ -804,7 +861,7 @@ export default function Navbar() {
         </div>
 
         {isMenuOpen && (
-          <div ref={mobileMenuPanelRef} className="mt-3 rounded-[28px] border border-slate-100 bg-white p-3 shadow-xl md:hidden">
+          <div ref={mobileMenuPanelRef} className="mt-3 rounded-[28px] border border-slate-100 bg-white p-3 shadow-xl xl:hidden">
             {isLoggedIn && isPremiumUser ? (
               <Link
                 href="/premium"
@@ -822,6 +879,29 @@ export default function Navbar() {
                     <p className="mt-1 text-sm font-black">
                       {premiumBadgeLabel}
                     </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.18em]">
+                  {pick({ ru: "Открыть", en: "Open", uz: "Ochish" })}
+                </span>
+              </Link>
+            ) : null}
+
+            {isLoggedIn && isAdmin ? (
+              <Link
+                href="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className="mb-3 flex items-center justify-between rounded-[22px] border border-sky-200 bg-sky-50 px-4 py-3 text-sky-700"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/90">
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em]">
+                      {pick({ ru: "Панель управления", en: "Control center", uz: "Boshqaruv markazi" })}
+                    </p>
+                    <p className="mt-1 text-sm font-black">Admin</p>
                   </div>
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-[0.18em]">

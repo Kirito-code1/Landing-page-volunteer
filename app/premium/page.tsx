@@ -622,13 +622,13 @@ export default function PremiumPage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,_#fffaf1_0%,_#ffffff_38%,_#f8fafc_100%)] px-4 py-10 md:py-14">
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="overflow-hidden rounded-[40px] border border-amber-200/70 bg-[linear-gradient(135deg,_#fff7ed_0%,_#ffffff_54%,_#fffbeb_100%)] shadow-[0_30px_90px_rgba(17,24,39,0.08)]">
-          <div className="grid gap-8 p-7 md:p-10 xl:grid-cols-[minmax(0,1.1fr)_380px]">
+          <div className="grid gap-8 p-7 md:p-10 2xl:grid-cols-[minmax(0,1.1fr)_380px]">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-100/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">
                 <Crown className="h-3.5 w-3.5" />
                 {pick({ ru: "Premium для организаторов", en: "Premium for organizers", uz: "Tashkilotchilar uchun Premium" })}
               </div>
-              <h1 className="mt-5 max-w-4xl text-4xl font-black uppercase italic tracking-[-0.05em] text-slate-950 md:text-5xl">
+              <h1 className="mt-5 max-w-4xl text-[clamp(2.5rem,8vw,4.75rem)] font-black uppercase italic tracking-[-0.05em] text-slate-950">
                 {pick({
                   ru: "Выберите: попробовать Premium бесплатно или подключить полный месяц",
                   en: "Choose: try Premium for free or activate the full month",
@@ -643,7 +643,7 @@ export default function PremiumPage() {
                 })}
               </p>
 
-              <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-[24px] border border-white bg-white/90 px-5 py-4 shadow-sm">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                     {pick({ ru: "Цена", en: "Price", uz: "Narx" })}
@@ -920,7 +920,7 @@ export default function PremiumPage() {
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                               {pick({ ru: "Номер карты", en: "Card number", uz: "Karta raqami" })}
                             </p>
-                            <div className="mt-2 flex items-center gap-3">
+                            <div className="mt-2 flex flex-wrap items-center gap-3">
                               <p className="text-base font-black text-slate-900">{formatCardNumber(CARD_NUMBER)}</p>
                               <button
                                 type="button"
@@ -938,7 +938,7 @@ export default function PremiumPage() {
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                               {pick({ ru: "Владелец", en: "Card holder", uz: "Karta egasi" })}
                             </p>
-                            <div className="mt-2 flex items-center gap-3">
+                            <div className="mt-2 flex flex-wrap items-center gap-3">
                               <p className="text-base font-black text-slate-900">{CARD_HOLDER}</p>
                               <button
                                 type="button"
@@ -992,7 +992,7 @@ export default function PremiumPage() {
                               <label className="ml-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                                 {pick({ ru: "Фото чека или файл", en: "Receipt photo or file", uz: "Chek rasmi yoki fayl" })}
                               </label>
-                              <label className="mt-2 flex cursor-pointer items-center justify-between gap-3 rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition-colors hover:border-amber-300 hover:bg-white">
+                              <label className="mt-2 flex cursor-pointer flex-col items-start gap-3 rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition-colors hover:border-amber-300 hover:bg-white sm:flex-row sm:items-center sm:justify-between">
                                 <div className="flex items-center gap-3">
                                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm">
                                     <Paperclip className="h-5 w-5" />
@@ -1176,7 +1176,7 @@ export default function PremiumPage() {
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <article className="rounded-[32px] border border-slate-100 bg-white p-7 shadow-sm">

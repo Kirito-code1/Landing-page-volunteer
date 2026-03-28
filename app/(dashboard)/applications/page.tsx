@@ -389,12 +389,12 @@ export default function ApplicationsPage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,_#edf9f4_0%,_#f8fafc_18%,_#f8fafc_100%)] px-4 py-8 md:py-12">
       <div className="max-w-6xl mx-auto">
         <header className="rounded-[34px] border border-white/80 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.08)] backdrop-blur md:p-8">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+          <div className="grid gap-8 2xl:grid-cols-[minmax(0,1fr)_340px] 2xl:items-start">
             <div>
               <div className="inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">
                 {pick({ ru: "Волонтёр", en: "Volunteer", uz: "Volontyor" })}
               </div>
-              <h1 className="mt-5 text-4xl font-black italic tracking-[-0.06em] text-slate-950 md:text-5xl">
+              <h1 className="mt-5 text-3xl font-black italic tracking-[-0.06em] text-slate-950 md:text-5xl">
                 {pick({ ru: "Мои отклики", en: "My applications", uz: "Mening arizalarim" })}
               </h1>
               <p className="mt-4 max-w-3xl text-base font-semibold leading-8 text-slate-600">
@@ -405,7 +405,7 @@ export default function ApplicationsPage() {
                 })}
               </p>
 
-              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-[24px] border border-white bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] px-5 py-4 shadow-sm">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                     {pick({ ru: "Всего", en: "Total", uz: "Jami" })}

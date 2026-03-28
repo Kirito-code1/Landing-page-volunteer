@@ -671,7 +671,7 @@ export default function EventPage() {
         </button>
 
         <section className="overflow-hidden rounded-[38px] border border-white/80 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.08)]">
-          <div className="grid xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+          <div className="grid 2xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
             <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_45%),linear-gradient(180deg,_#ffffff_0%,_#f8fcfb_100%)] p-6 sm:p-8 lg:p-10">
               <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/60 blur-3xl" />
               <div className="relative">
@@ -690,7 +690,7 @@ export default function EventPage() {
                   ) : null}
                 </div>
 
-                <h1 className="mt-6 max-w-3xl text-4xl font-black italic tracking-[-0.06em] text-slate-950 sm:text-5xl lg:text-[4.2rem] lg:leading-[0.9]">
+                <h1 className="mt-6 max-w-3xl text-[clamp(2.6rem,9vw,4.2rem)] font-black italic tracking-[-0.06em] text-slate-950 lg:leading-[0.9]">
                   {event.title}
                 </h1>
 
@@ -756,7 +756,7 @@ export default function EventPage() {
                   <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/60">
                     {pick({ ru: "Локация", en: "Location", uz: "Joylashuv" })}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-white">{event.location}</p>
+                  <p className="mt-1 break-words text-sm font-bold text-white">{event.location}</p>
                 </div>
               </div>
             </div>
@@ -809,7 +809,7 @@ export default function EventPage() {
           })}
         </section>
 
-        <div className="mt-8 grid items-start gap-8 xl:grid-cols-[minmax(0,1.1fr)_360px]">
+        <div className="mt-8 grid items-start gap-8 2xl:grid-cols-[minmax(0,1.1fr)_360px]">
           <div className="space-y-6">
             <section className="rounded-[34px] border border-gray-100 bg-white p-6 shadow-sm md:p-8">
               <div className="flex items-center gap-3">
@@ -862,7 +862,7 @@ export default function EventPage() {
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <div className="mt-6 grid gap-4 lg:grid-cols-3">
                 <article className="rounded-[26px] bg-slate-50 p-5">
                   <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
                     {pick({ ru: "Формат", en: "Format", uz: "Format" })}
@@ -935,7 +935,7 @@ export default function EventPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
                   {recentOrganizerReviews.map((review) => (
                     <article key={review.id} className="rounded-[28px] border border-slate-100 bg-slate-50 p-5">
                       <div className="flex items-center gap-1 text-amber-500">
@@ -964,7 +964,7 @@ export default function EventPage() {
             ) : null}
           </div>
 
-          <aside className="space-y-6 xl:sticky xl:top-24">
+          <aside className="space-y-6 2xl:sticky 2xl:top-24">
             <section className="overflow-hidden rounded-[34px] bg-[linear-gradient(180deg,_#0f172a_0%,_#111827_100%)] p-6 text-white shadow-[0_30px_90px_rgba(15,23,42,0.25)] md:p-7">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300">
                 {pick({ ru: "Участие", en: "Participation", uz: "Ishtirok" })}

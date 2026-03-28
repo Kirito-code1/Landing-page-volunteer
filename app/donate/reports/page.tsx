@@ -108,7 +108,7 @@ export default function DonationReportsPage() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_15%_18%,_#dcfce7_0%,_transparent_32%),radial-gradient(circle_at_85%_10%,_#dbeafe_0%,_transparent_32%),linear-gradient(180deg,_#f8fafc_0%,_#ffffff_52%,_#f1f5f9_100%)] px-4 py-10 md:py-14">
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="overflow-hidden rounded-[38px] border border-white bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.08)]">
-          <div className="grid gap-8 p-7 md:p-10 xl:grid-cols-[minmax(0,1.15fr)_360px]">
+          <div className="grid gap-8 p-7 md:p-10 2xl:grid-cols-[minmax(0,1.15fr)_360px]">
             <div>
               <Link
                 href="/donate"
@@ -123,7 +123,7 @@ export default function DonationReportsPage() {
                 {pick({ ru: "Фотоотчёты и прозрачность", en: "Photo reports and transparency", uz: "Foto hisobotlar va shaffoflik" })}
               </div>
 
-              <h1 className="mt-5 max-w-4xl text-4xl font-black uppercase italic tracking-[-0.05em] text-slate-950 md:text-5xl">
+              <h1 className="mt-5 max-w-4xl text-[clamp(2.5rem,8vw,4.75rem)] font-black uppercase italic tracking-[-0.05em] text-slate-950">
                 {pick({
                   ru: "Показываем, куда идут пожертвования и что уже удалось сделать",
                   en: "Showing where donations go and what has already been done",
@@ -187,7 +187,7 @@ export default function DonationReportsPage() {
                 key={report.id}
                 className="overflow-hidden rounded-[36px] border border-white bg-white/90 shadow-[0_24px_70px_rgba(15,23,42,0.08)]"
               >
-                <div className="grid gap-0 xl:grid-cols-[1.05fr_0.95fr]">
+                <div className="grid gap-0 2xl:grid-cols-[1.05fr_0.95fr]">
                   <div className="grid gap-3 bg-slate-100 p-3 md:grid-cols-[1.1fr_0.9fr]">
                     <div className="relative min-h-[320px] overflow-hidden rounded-[28px]">
                       <Image
@@ -238,7 +238,7 @@ export default function DonationReportsPage() {
                     </div>
 
                     {report.metrics.length > 0 ? (
-                      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {report.metrics.map((metric) => (
                           <div key={`${report.id}-${metric.label}`} className="rounded-[22px] border border-slate-200 bg-white px-4 py-4">
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">

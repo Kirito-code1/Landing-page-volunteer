@@ -1578,16 +1578,16 @@ export default function Dashboard() {
       )}
 
       {/* --- MAIN CONTENT --- */}
-      <main className="max-w-7xl mx-auto p-6 md:p-12">
+      <main className="mx-auto max-w-7xl p-4 sm:p-6 md:p-10">
         <section className="mb-14 rounded-[36px] border border-white/90 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.08)] backdrop-blur md:p-8">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+          <div className="grid gap-8 2xl:grid-cols-[minmax(0,1fr)_320px] 2xl:items-start">
             <div>
               <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-[22px] bg-[#10b981] text-white shadow-lg shadow-green-100">
                   <Heart className="h-7 w-7 fill-current" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-black uppercase italic tracking-[-0.05em] text-slate-950 md:text-5xl">
+                  <h1 className="text-3xl font-black uppercase italic tracking-[-0.05em] text-slate-950 md:text-5xl">
                     VoloHero
                   </h1>
                   <p className="mt-2 text-[10px] font-black uppercase tracking-[0.26em] text-slate-400">
@@ -1612,7 +1612,7 @@ export default function Dashboard() {
                 </p>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-[24px] border border-white bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] px-5 py-4 shadow-sm">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                     {pick({ ru: "Мои события", en: "My events", uz: "Mening tadbirlarim" })}
@@ -1725,7 +1725,7 @@ export default function Dashboard() {
                 </p>
               </div>
             ) : (
-              <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+              <div className="mt-6 grid grid-cols-1 gap-4 2xl:grid-cols-2">
                 {manualPaymentRequests.map((paymentRequest) => (
                   <article
                     key={paymentRequest.id}

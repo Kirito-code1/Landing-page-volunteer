@@ -313,7 +313,7 @@ export default function DonationReportsManager({ initialReports }: DonationRepor
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="mt-6 grid gap-6 2xl:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 md:p-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
@@ -438,7 +438,7 @@ export default function DonationReportsManager({ initialReports }: DonationRepor
             </div>
 
             {draft.photos.length > 0 ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
                 {draft.photos.map((photo, index) => (
                   <div key={`${photo.url}-${index}`} className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50">
                     <div className="relative aspect-[4/3]">

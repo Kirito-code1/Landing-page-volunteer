@@ -362,11 +362,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden scroll-smooth">
-      <section className="relative px-4 pb-12 pt-10 md:pt-14 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_48%,_#eff6ff_100%)]">
+      <section className="relative px-4 pb-12 pt-8 md:pt-14 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_48%,_#eff6ff_100%)]">
         <div className="pointer-events-none absolute -top-16 -left-20 h-64 w-64 rounded-full bg-emerald-200/60 blur-3xl" />
         <div className="pointer-events-none absolute top-24 -right-24 h-72 w-72 rounded-full bg-sky-200/50 blur-3xl" />
 
-        <div className="relative z-10 w-full max-w-7xl mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
+        <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 items-center xl:grid-cols-[1.1fr_0.9fr]">
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">
               {pick({
@@ -376,7 +376,7 @@ export default function Home() {
               })}
             </span>
 
-            <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 leading-[0.95] tracking-tighter uppercase italic">
+            <h1 className="mt-6 text-[clamp(2.75rem,10vw,4.75rem)] font-black text-gray-900 leading-[0.95] tracking-tighter uppercase italic">
               {pick({
                 ru: <>Объединяем людей вокруг <span className="text-[#10b981]">реальной помощи</span></>,
                 en: <>Connecting people through <span className="text-[#10b981]">real-world impact</span></>,
@@ -416,7 +416,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
+            <div className="mt-8 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {quickFacts.map((item, index) => (
                 <div key={index} className="rounded-2xl border border-white/80 bg-white/80 backdrop-blur px-4 py-3 shadow-sm">
                   <p className="text-sm font-black text-gray-900">{item.value}</p>
@@ -426,7 +426,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="relative animate-in fade-in slide-in-from-bottom-4 pb-4 duration-500 sm:pb-8 xl:pb-0">
             <div className="relative w-full max-w-[500px] mx-auto aspect-[4/5] rounded-[44px] overflow-hidden border-[12px] border-white shadow-[0_30px_80px_rgba(15,23,42,0.16)]">
               <Image
                 src="https://img.freepik.com/free-photo/environmental-conservation-garden-children_1150-15276.jpg"
@@ -436,7 +436,7 @@ export default function Home() {
                 priority
               />
             </div>
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[90%] rounded-3xl border border-emerald-100 bg-white/95 backdrop-blur px-5 py-4 shadow-xl">
+            <div className="relative mx-auto mt-4 w-[92%] rounded-3xl border border-emerald-100 bg-white/95 px-5 py-4 shadow-xl backdrop-blur sm:absolute sm:-bottom-4 sm:left-1/2 sm:mt-0 sm:w-[90%] sm:-translate-x-1/2">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">
                 {pick({
                   ru: "Следующий шаг",

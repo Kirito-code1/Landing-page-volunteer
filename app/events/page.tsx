@@ -206,25 +206,25 @@ export default function AllEvents() {
                   uz: "Tadbirlar katalogi",
                 })}
               </div>
-              <h1 className="mt-5 text-[clamp(3.1rem,7vw,5.4rem)] font-black italic tracking-[-0.07em] text-slate-950 leading-[0.86]">
+              <h1 className="mt-5 text-[clamp(2.7rem,10vw,5.1rem)] font-black italic tracking-[-0.07em] text-slate-950 leading-[0.86]">
                 {pick({
                   ru: (
                     <>
-                      <span className="block whitespace-nowrap">Найди</span>
-                      <span className="block whitespace-nowrap text-[#10b981]">героя</span>
+                      <span className="block">Найди</span>
+                      <span className="block text-[#10b981]">героя</span>
                     </>
                   ),
                   en: (
                     <>
-                      <span className="block whitespace-nowrap">Find a</span>
-                      <span className="block whitespace-nowrap text-[#10b981]">hero</span>
+                      <span className="block">Find a</span>
+                      <span className="block text-[#10b981]">hero</span>
                     </>
                   ),
                   uz: (
                     <>
-                      <span className="block whitespace-nowrap">Yordamchi</span>
-                      <span className="block whitespace-nowrap text-[#10b981]">qahramonni</span>
-                      <span className="block whitespace-nowrap">toping</span>
+                      <span className="block">Yordamchi</span>
+                      <span className="block text-[#10b981]">qahramonni</span>
+                      <span className="block">toping</span>
                     </>
                   ),
                 })}
@@ -303,7 +303,7 @@ export default function AllEvents() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
                   <div className="relative">
                     <select
                       value={categoryFilter}
@@ -384,7 +384,7 @@ export default function AllEvents() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-100 bg-white px-4 py-3">
+                <div className="flex flex-col gap-3 rounded-[24px] border border-slate-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm font-semibold text-slate-500">
                     {pick({
                       ru: "Каталог автоматически выводит premium выше при сортировке по новым.",
@@ -411,7 +411,7 @@ export default function AllEvents() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-3">
           {visibleEvents.map((event) => {
             const urgency = getUrgencyTag(event.date);
             const isPremiumEvent = event.premium_priority === true;

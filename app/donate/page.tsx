@@ -488,14 +488,14 @@ export default function DonatePage() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_18%,_#dcfce7_0%,_transparent_34%),radial-gradient(circle_at_85%_10%,_#dbeafe_0%,_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#ffffff_52%,_#f1f5f9_100%)] px-4 py-10 md:py-16">
-      <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:gap-8">
+      <div className="mx-auto grid max-w-6xl gap-6 xl:grid-cols-[1.2fr_0.8fr] xl:gap-8">
         <section className="overflow-hidden rounded-[34px] border border-white bg-white/90 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="border-b border-white/10 bg-[linear-gradient(135deg,_#052e2b_0%,_#0f766e_48%,_#1d4ed8_100%)] px-6 py-7 text-white md:px-10 md:py-9">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.28em]">
               <HeartHandshake className="h-3.5 w-3.5" />
               {pick({ ru: "Пожертвование", en: "Donation", uz: "Xayriya" })}
             </div>
-            <h1 className="mt-5 text-3xl font-black uppercase italic leading-none tracking-tight md:text-5xl">
+            <h1 className="mt-5 text-[clamp(2.35rem,8vw,4.7rem)] font-black uppercase italic leading-[0.95] tracking-tight">
               {pick({
                 ru: "Поддержите проект переводом на карту",
                 en: "Support the project with a card transfer",
@@ -560,7 +560,7 @@ export default function DonatePage() {
                   {pick({ ru: "Минимум: 1 000 сум", en: "Minimum: 1,000 UZS", uz: "Minimal: 1 000 so'm" })}
                 </p>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {AMOUNTS.map((value) => (
                     <button
                       key={value}
@@ -644,7 +644,7 @@ export default function DonatePage() {
                       <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
                         {pick({ ru: "Номер карты", en: "Card number", uz: "Karta raqami" })}
                       </p>
-                      <div className="mt-2 flex items-center gap-3">
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
                         <p className="text-lg font-black">{formatCardNumber(CARD_NUMBER)}</p>
                         <button
                           type="button"
@@ -668,7 +668,7 @@ export default function DonatePage() {
                       <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
                         {pick({ ru: "Владелец", en: "Card holder", uz: "Karta egasi" })}
                       </p>
-                      <div className="mt-2 flex items-center gap-3">
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
                         <p className="text-lg font-black">{CARD_HOLDER}</p>
                         <button
                           type="button"
@@ -930,7 +930,7 @@ export default function DonatePage() {
                     uz: `${formatMonthLabel(summary.monthLabel, summaryLocale)} uchun tasdiqlangan xayriyalar.`,
                   })}
                 </p>
-                <div className="mb-3 mt-4 flex items-end justify-between gap-4">
+                <div className="mb-3 mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <p className="text-3xl font-black text-slate-950">{summary.progressPercent}%</p>
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
                     {formatAmount(summary.collectedAmountUzs)} / {formatAmount(summary.goalAmountUzs)}
@@ -1050,7 +1050,7 @@ export default function DonatePage() {
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-[22px] bg-slate-50 px-4 py-4">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                 {pick({ ru: "Отчётов опубликовано", en: "Reports published", uz: "Nashr qilingan hisobotlar" })}
@@ -1084,7 +1084,7 @@ export default function DonatePage() {
             {reportsError}
           </div>
         ) : reports.length > 0 ? (
-          <div className="mt-6 grid gap-6 xl:grid-cols-2">
+          <div className="mt-6 grid gap-6 2xl:grid-cols-2">
             {reports.map((report) => (
               <article
                 key={report.id}
