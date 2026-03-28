@@ -8,7 +8,6 @@ import {
   MapPin,
   Calendar,
   Clock3,
-  Users,
   ArrowRight,
   Flame,
   FilterX,
@@ -16,8 +15,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import EventVisual from "@/components/events/EventVisual";
 import {
   getEventCategoryLabel,
   getEventCategoryOptions,
@@ -167,6 +166,10 @@ export default function AllEvents() {
       }, 0),
     [visibleEvents],
   );
+  const urgentEventsCount = useMemo(
+    () => visibleEvents.filter((event) => getUrgencyTag(event.date) === "urgent").length,
+    [visibleEvents],
+  );
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -186,200 +189,216 @@ export default function AllEvents() {
     );
 
   return (
-    <div className="min-h-screen bg-[#fcfdfd] py-12 px-4 md:px-6">
+    <div className="min-h-screen bg-[linear-gradient(180deg,_#eefaf5_0%,_#fcfdfd_18%,_#fcfdfd_100%)] py-10 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-10 grid grid-cols-1 xl:grid-cols-[minmax(340px,430px)_minmax(0,1fr)] items-start gap-8 xl:gap-12">
-          <div className="min-w-0 max-w-[440px] text-center xl:text-left">
-            <h1 className="text-[clamp(3.1rem,7vw,5.4rem)] font-black italic tracking-[-0.07em] text-slate-900 leading-[0.86]">
-              {pick({
-                ru: (
-                  <>
-                    <span className="block whitespace-nowrap">Найди</span>
-                    <span className="block whitespace-nowrap text-[#10b981]">героя</span>
-                  </>
-                ),
-                en: (
-                  <>
-                    <span className="block whitespace-nowrap">Find a</span>
-                    <span className="block whitespace-nowrap text-[#10b981]">hero</span>
-                  </>
-                ),
-                uz: (
-                  <>
-                    <span className="block whitespace-nowrap">Yordamchi</span>
-                    <span className="block whitespace-nowrap text-[#10b981]">qahramonni</span>
-                    <span className="block whitespace-nowrap">toping</span>
-                  </>
-                ),
-              })}
-            </h1>
-            <p className="mt-4 max-w-md text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400 xl:ml-1">
-              {pick({
-                ru: "Все актуальные задачи города",
-                en: "All current city tasks",
-                uz: "Shahardagi dolzarb vazifalar",
-              })}
-            </p>
-          </div>
-
-          <div className="w-full min-w-0 rounded-[32px] border border-white bg-white/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] sm:p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+        <header className="mb-8 rounded-[38px] border border-white/90 bg-white/90 p-5 shadow-[0_30px_90px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6 lg:p-8">
+          <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(320px,430px)_minmax(0,1fr)] xl:items-start">
+            <div className="min-w-0">
+              <div className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
                 {pick({
-                  ru: "Поиск и фильтрация событий",
-                  en: "Search and filter events",
-                  uz: "Tadbirlarni qidirish va saralash",
+                  ru: "Каталог событий",
+                  en: "Event catalog",
+                  uz: "Tadbirlar katalogi",
+                })}
+              </div>
+              <h1 className="mt-5 text-[clamp(3.1rem,7vw,5.4rem)] font-black italic tracking-[-0.07em] text-slate-950 leading-[0.86]">
+                {pick({
+                  ru: (
+                    <>
+                      <span className="block whitespace-nowrap">Найди</span>
+                      <span className="block whitespace-nowrap text-[#10b981]">героя</span>
+                    </>
+                  ),
+                  en: (
+                    <>
+                      <span className="block whitespace-nowrap">Find a</span>
+                      <span className="block whitespace-nowrap text-[#10b981]">hero</span>
+                    </>
+                  ),
+                  uz: (
+                    <>
+                      <span className="block whitespace-nowrap">Yordamchi</span>
+                      <span className="block whitespace-nowrap text-[#10b981]">qahramonni</span>
+                      <span className="block whitespace-nowrap">toping</span>
+                    </>
+                  ),
+                })}
+              </h1>
+              <p className="mt-5 max-w-md text-base font-semibold leading-8 text-slate-600">
+                {pick({
+                  ru: "Смотрите активные объявления, быстро фильтруйте их по срочности и команде и открывайте те события, где помощь нужна прямо сейчас.",
+                  en: "Browse active listings, filter them by urgency and team size, and open the events where help is needed right now.",
+                  uz: "Faol e'lonlarni ko'ring, ularni shoshilinchligi va jamoa soni bo'yicha saralang va hozir yordam kerak bo'lgan tadbirlarni oching.",
                 })}
               </p>
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-[#f8fafc] px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-[#10b981] hover:text-[#10b981]"
-              >
-                <FilterX className="h-4 w-4" />
-                {pick({ ru: "Сбросить фильтры", en: "Reset filters", uz: "Filtrlarni tozalash" })}
-              </button>
+
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1 xl:gap-4">
+                <div className="rounded-[26px] border border-emerald-100 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_100%)] px-5 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-600">
+                    {pick({ ru: "Найдено событий", en: "Events found", uz: "Topilgan tadbirlar" })}
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-slate-950">{visibleEvents.length}</p>
+                </div>
+                <div className="rounded-[26px] border border-slate-100 bg-slate-50 px-5 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                    {pick({ ru: "Нужно волонтёров", en: "Volunteers needed", uz: "Kerakli volontyorlar" })}
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-slate-950">{selectedVolunteers}</p>
+                </div>
+                <div className="rounded-[26px] border border-red-100 bg-[linear-gradient(180deg,_#fff1f2_0%,_#ffffff_100%)] px-5 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-red-500">
+                    {pick({ ru: "Срочные события", en: "Urgent events", uz: "Shoshilinch tadbirlar" })}
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-red-500">{urgentEventsCount}</p>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-300" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={pick({
-                  ru: "Поиск по названию, месту или категории",
-                  en: "Search by title, place or category",
-                  uz: "Nomi, joyi yoki toifasi bo'yicha qidiring",
-                })}
-                className="w-full min-w-0 rounded-[24px] border border-slate-200 bg-[#f8fafc] py-4 pl-14 pr-6 text-sm font-medium text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#10b981] focus:bg-white"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="relative">
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className={filterSelectClassName}
-                >
-                  <option value="all">
-                    {pick({ ru: "Все категории", en: "All categories", uz: "Barcha kategoriyalar" })}
-                  </option>
-                  {categoryOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              </div>
-
-              <div className="relative">
-                <select
-                  value={urgencyFilter}
-                  onChange={(e) => setUrgencyFilter(e.target.value as "all" | "urgent" | "soon")}
-                  className={filterSelectClassName}
-                >
-                  <option value="all">
-                    {pick({ ru: "Срочность", en: "Urgency", uz: "Shoshilinchlik" })}
-                  </option>
-                  <option value="urgent">
-                    {pick({ ru: "Срочные: до 3 дней", en: "Urgent: up to 3 days", uz: "Shoshilinch: 3 kungacha" })}
-                  </option>
-                  <option value="soon">
-                    {pick({ ru: "Скоро: до 10 дней", en: "Soon: up to 10 days", uz: "Tez orada: 10 kungacha" })}
-                  </option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              </div>
-
-              <div className="relative">
-                <select
-                  value={teamSizeFilter}
-                  onChange={(e) => setTeamSizeFilter(e.target.value as "all" | "small" | "medium" | "large")}
-                  className={filterSelectClassName}
-                >
-                  <option value="all">
-                    {pick({ ru: "Размер команды", en: "Team size", uz: "Jamoa hajmi" })}
-                  </option>
-                  <option value="small">{pick({ ru: "Малые: 1-10", en: "Small: 1-10", uz: "Kichik: 1-10" })}</option>
-                  <option value="medium">
-                    {pick({ ru: "Средние: 11-30", en: "Medium: 11-30", uz: "O'rta: 11-30" })}
-                  </option>
-                  <option value="large">{pick({ ru: "Большие: 31+", en: "Large: 31+", uz: "Katta: 31+" })}</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              </div>
-
-              <div className="relative">
-                <select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as "new" | "old")}
-                  className={filterSelectClassName}
-                >
-                  <option value="new">
+            <div className="w-full min-w-0 rounded-[32px] border border-slate-100 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] sm:p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
                     {pick({
-                      ru: "Сначала новые",
-                      en: "Newest first",
-                      uz: "Avval yangilari",
+                      ru: "Поиск и фильтрация",
+                      en: "Search and filters",
+                      uz: "Qidiruv va filtrlar",
                     })}
-                  </option>
-                  <option value="old">
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-500">
                     {pick({
-                      ru: "Сначала старые",
-                      en: "Oldest first",
-                      uz: "Avval eskilari",
+                      ru: "Подберите события по категории, срочности и размеру команды.",
+                      en: "Narrow events by category, urgency, and team size.",
+                      uz: "Tadbirlarni toifa, shoshilinchlik va jamoa hajmi bo'yicha tanlang.",
                     })}
-                  </option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-[#10b981] hover:text-[#10b981]"
+                >
+                  <FilterX className="h-4 w-4" />
+                  {pick({ ru: "Сбросить", en: "Reset", uz: "Tozalash" })}
+                </button>
               </div>
-            </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-              <p className="text-sm text-slate-500">
-                {pick({
-                  ru: "Подберите события по категории, срочности и размеру команды.",
-                  en: "Filter events by category, urgency and team size.",
-                  uz: "Tadbirlarni toifa, shoshilinchlik va jamoa hajmi bo'yicha tanlang.",
-                })}
-              </p>
-              <p className="text-sm font-semibold text-slate-700">
-                {pick({
-                  ru: `${visibleEvents.length} событий`,
-                  en: `${visibleEvents.length} events`,
-                  uz: `${visibleEvents.length} ta tadbir`,
-                })}
-              </p>
-            </div>
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-300" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={pick({
+                      ru: "Поиск по названию, месту или категории",
+                      en: "Search by title, place or category",
+                      uz: "Nomi, joyi yoki toifasi bo'yicha qidiring",
+                    })}
+                    className="w-full min-w-0 rounded-[24px] border border-slate-200 bg-white py-4 pl-14 pr-6 text-sm font-medium text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-[#10b981]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="relative">
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className={filterSelectClassName}
+                    >
+                      <option value="all">
+                        {pick({ ru: "Все категории", en: "All categories", uz: "Barcha kategoriyalar" })}
+                      </option>
+                      {categoryOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  </div>
+
+                  <div className="relative">
+                    <select
+                      value={urgencyFilter}
+                      onChange={(e) => setUrgencyFilter(e.target.value as "all" | "urgent" | "soon")}
+                      className={filterSelectClassName}
+                    >
+                      <option value="all">
+                        {pick({ ru: "Срочность", en: "Urgency", uz: "Shoshilinchlik" })}
+                      </option>
+                      <option value="urgent">
+                        {pick({ ru: "Срочные: до 3 дней", en: "Urgent: up to 3 days", uz: "Shoshilinch: 3 kungacha" })}
+                      </option>
+                      <option value="soon">
+                        {pick({ ru: "Скоро: до 10 дней", en: "Soon: up to 10 days", uz: "Tez orada: 10 kungacha" })}
+                      </option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  </div>
+
+                  <div className="relative">
+                    <select
+                      value={teamSizeFilter}
+                      onChange={(e) => setTeamSizeFilter(e.target.value as "all" | "small" | "medium" | "large")}
+                      className={filterSelectClassName}
+                    >
+                      <option value="all">
+                        {pick({ ru: "Размер команды", en: "Team size", uz: "Jamoa hajmi" })}
+                      </option>
+                      <option value="small">{pick({ ru: "Малые: 1-10", en: "Small: 1-10", uz: "Kichik: 1-10" })}</option>
+                      <option value="medium">
+                        {pick({ ru: "Средние: 11-30", en: "Medium: 11-30", uz: "O'rta: 11-30" })}
+                      </option>
+                      <option value="large">{pick({ ru: "Большие: 31+", en: "Large: 31+", uz: "Katta: 31+" })}</option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  </div>
+
+                  <div className="relative">
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as "new" | "old")}
+                      className={filterSelectClassName}
+                    >
+                      <option value="new">
+                        {pick({
+                          ru: "Сначала новые",
+                          en: "Newest first",
+                          uz: "Avval yangilari",
+                        })}
+                      </option>
+                      <option value="old">
+                        {pick({
+                          ru: "Сначала старые",
+                          en: "Oldest first",
+                          uz: "Avval eskilari",
+                        })}
+                      </option>
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-100 bg-white px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-500">
+                    {pick({
+                      ru: "Каталог автоматически выводит premium выше при сортировке по новым.",
+                      en: "The catalog automatically keeps premium listings higher when sorted by newest.",
+                      uz: "Katalog yangi bo'yicha saralanganda premium e'lonlarni yuqorida ushlab turadi.",
+                    })}
+                  </p>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {pick({
+                      ru: `${visibleEvents.length} событий`,
+                      en: `${visibleEvents.length} events`,
+                      uz: `${visibleEvents.length} ta tadbir`,
+                    })}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </header>
-
-        <section className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-white bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-              {pick({ ru: "Найдено событий", en: "Events found", uz: "Topilgan tadbirlar" })}
-            </p>
-            <p className="text-2xl font-black text-gray-900 mt-1">{visibleEvents.length}</p>
-          </div>
-          <div className="rounded-2xl border border-white bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-              {pick({ ru: "Нужно волонтёров", en: "Volunteers needed", uz: "Kerakli volontyorlar" })}
-            </p>
-            <p className="text-2xl font-black text-gray-900 mt-1">{selectedVolunteers}</p>
-          </div>
-          <div className="rounded-2xl border border-white bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-              {pick({ ru: "Срочные события", en: "Urgent events", uz: "Shoshilinch tadbirlar" })}
-            </p>
-            <p className="text-2xl font-black text-red-500 mt-1">
-              {visibleEvents.filter((event) => getUrgencyTag(event.date) === "urgent").length}
-            </p>
-          </div>
-        </section>
 
         {error && (
           <div className="mb-8 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600">
@@ -387,45 +406,45 @@ export default function AllEvents() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {visibleEvents.map((event) => {
             const urgency = getUrgencyTag(event.date);
             const isPremiumEvent = event.premium_priority === true;
+            const volunteersNeeded = normalizeVolunteerCount(event.volunteers_needed);
+            const categoryLabel = getEventCategoryLabel(event.category, pick);
 
             return (
               <Link
                 href={`/events/${event.id}`}
                 key={event.id}
-                className={`group bg-white rounded-[45px] overflow-hidden shadow-sm transition-all duration-500 flex flex-col ${
+                className={`group overflow-hidden rounded-[34px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition-all duration-500 flex flex-col ${
                   isPremiumEvent
-                    ? "border-2 border-amber-300/80 hover:shadow-2xl hover:shadow-amber-100/60"
-                    : "border border-gray-100 hover:shadow-2xl hover:shadow-green-100/40"
+                    ? "border border-amber-200/80 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(245,158,11,0.18)]"
+                    : "border border-white/90 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(16,185,129,0.12)]"
                 }`}
               >
-                <div className="h-64 overflow-hidden relative">
-                  <Image
-                    src={event.image_url || "/placeholder.jpg"}
+                <div className="relative h-72 overflow-hidden">
+                  <EventVisual
+                    title={event.title}
+                    category={event.category}
+                    categoryLabel={categoryLabel}
+                    imageUrl={event.image_url}
                     className="object-cover group-hover:scale-105 transition-transform duration-700"
-                    alt={event.title}
-                    fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                    unoptimized
                   />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.05)_0%,rgba(15,23,42,0.78)_100%)]" />
                   {isPremiumEvent && (
-                    <div className="absolute top-6 left-6 bg-amber-500/95 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white shadow-sm inline-flex items-center gap-1.5">
+                    <div className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-400/95 px-4 py-2 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-sm">
                       <Crown className="w-3.5 h-3.5" />
                       {pick({ ru: "Premium", en: "Premium", uz: "Premium" })}
                     </div>
                   )}
-                  <div className={`absolute left-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-gray-900 shadow-sm ${isPremiumEvent ? "top-[4.15rem]" : "top-6"}`}>
-                    {event.location?.split(",")[0] || pick({ ru: "Локация", en: "Location", uz: "Joylashuv" })}
-                  </div>
-                  <div className="absolute top-6 right-6 bg-emerald-500/95 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white shadow-sm">
-                    {getEventCategoryLabel(event.category, pick)}
+                  <div className="absolute right-5 top-5 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur-md">
+                    {categoryLabel}
                   </div>
                   {urgency !== "none" && (
                     <div
-                      className={`absolute bottom-6 right-6 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white shadow-sm inline-flex items-center gap-1.5 ${
+                      className={`absolute right-5 top-16 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-sm backdrop-blur-md ${
                         urgency === "urgent" ? "bg-red-500/95" : "bg-amber-500/95"
                       }`}
                     >
@@ -435,47 +454,68 @@ export default function AllEvents() {
                         : pick({ ru: "Скоро", en: "Soon", uz: "Tez orada" })}
                     </div>
                   )}
-                </div>
-
-                <div className="p-8 flex-1 flex flex-col">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-black text-gray-900 uppercase italic tracking-tighter mb-4 leading-tight group-hover:text-[#10b981] transition-colors line-clamp-2">
+                  <div className="absolute inset-x-5 bottom-5">
+                    <h3 className="max-w-[92%] text-2xl font-black italic tracking-[-0.04em] text-white transition-colors group-hover:text-emerald-200 line-clamp-2">
                       {event.title}
                     </h3>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                        <MapPin className="h-3.5 w-3.5 text-emerald-300" />
+                        {event.location?.split(",")[0] || pick({ ru: "Локация", en: "Location", uz: "Joylashuv" })}
+                      </span>
+                      <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                        <Calendar className="h-3.5 w-3.5 text-emerald-300" />
+                        {formatDate(event.date, dateLocale)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-                    <div className="flex flex-col gap-2 mb-6">
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <MapPin size={14} className="text-[#10b981]" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">{event.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <Calendar size={14} className="text-[#10b981]" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">
-                          {formatDate(event.date, dateLocale)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <Clock3 size={14} className="text-[#10b981]" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">
-                          {pick({ ru: "Опубликовано", en: "Published", uz: "E'lon qilingan" })}:{" "}
-                          {formatDate(event.created_at, dateLocale)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <Users size={14} className="text-[#10b981]" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">
-                          {pick({ ru: "Волонтёров нужно", en: "Volunteers Needed", uz: "Kerakli volontyorlar" })}:{" "}
-                          {normalizeVolunteerCount(event.volunteers_needed) ??
-                            pick({ ru: "не указано", en: "not set", uz: "kiritilmagan" })}
-                        </span>
-                      </div>
+                <div className="flex flex-1 flex-col p-6">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-[22px] bg-slate-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                        {pick({ ru: "Нужно людей", en: "Need people", uz: "Kerakli odamlar" })}
+                      </p>
+                      <p className="mt-2 text-lg font-black text-slate-950">
+                        {volunteersNeeded ?? pick({ ru: "не указано", en: "not set", uz: "kiritilmagan" })}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] bg-slate-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                        {pick({ ru: "Опубликовано", en: "Published", uz: "E'lon qilingan" })}
+                      </p>
+                      <p className="mt-2 text-lg font-black text-slate-950">{formatDate(event.created_at, dateLocale)}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-4 py-5 border-t border-gray-50">
-                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 group-hover:translate-x-1 transition-transform flex items-center gap-2">
-                      {pick({ ru: "Подробнее", en: "Details", uz: "Batafsil" })} <ArrowRight size={14} />
+                  <div className="mt-5 flex items-start gap-3 rounded-[22px] border border-slate-100 bg-white px-4 py-4">
+                    <Clock3 className="mt-0.5 h-4 w-4 text-[#10b981]" />
+                    <p className="text-sm font-semibold leading-7 text-slate-500">
+                      {urgency === "urgent"
+                        ? pick({
+                            ru: "Событие скоро начинается, поэтому лучше откликнуться как можно раньше.",
+                            en: "This event starts soon, so it is better to apply as early as possible.",
+                            uz: "Tadbir tez orada boshlanadi, shuning uchun imkon qadar tezroq ariza yuborgan ma'qul.",
+                          })
+                        : pick({
+                            ru: "Откройте карточку, чтобы увидеть полные детали, статус участия и рейтинг организатора.",
+                            en: "Open the card to see full details, participation status, and organizer rating.",
+                            uz: "To'liq ma'lumotlar, ishtirok holati va tashkilotchi reytingini ko'rish uchun kartani oching.",
+                          })}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
+                    <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-900 transition-transform group-hover:translate-x-1 flex items-center gap-2">
+                      {pick({ ru: "Открыть событие", en: "Open event", uz: "Tadbirni ochish" })}
+                      <ArrowRight size={14} />
                     </span>
+                    {isPremiumEvent ? (
+                      <span className="rounded-full bg-amber-50 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-amber-700">
+                        {pick({ ru: "Выше в каталоге", en: "Pinned higher", uz: "Katalogda yuqorida" })}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </Link>

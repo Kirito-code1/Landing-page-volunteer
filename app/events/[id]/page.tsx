@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import {
   Loader2,
   MapPin,
@@ -19,7 +18,10 @@ import {
   UserPlus,
   CheckCircle2,
   XCircle,
+  Star,
+  MessageSquare,
 } from "lucide-react";
+import EventVisual from "@/components/events/EventVisual";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import {
   getEventCategoryLabel,
@@ -48,6 +50,13 @@ interface EventApplicationListItem {
   status: ApplicationStatus;
 }
 
+interface OrganizerReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
 function formatDate(value: string, locale: string) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
@@ -73,6 +82,8 @@ export default function EventPage() {
   const [myApplicationId, setMyApplicationId] = useState<string | null>(null);
   const [myApplicationStatus, setMyApplicationStatus] = useState<ApplicationStatus | null>(null);
   const [participationSetupMissing, setParticipationSetupMissing] = useState(false);
+  const [reviewsMissingSetup, setReviewsMissingSetup] = useState(false);
+  const [organizerReviews, setOrganizerReviews] = useState<OrganizerReview[]>([]);
   const [isApplying, setIsApplying] = useState(false);
 
   const [alertModal, setAlertModal] = useState<{
@@ -114,6 +125,12 @@ export default function EventPage() {
     return hasTableMention && hasSchemaMention;
   };
 
+  const isMissingReviewsTableError = (message: string) => {
+    const hasTableMention = /event_reviews/i.test(message);
+    const hasSchemaMention = /relation|table|schema cache|does not exist|PGRST/i.test(message);
+    return hasTableMention && hasSchemaMention;
+  };
+
   const loadParticipationData = useCallback(
     async (eventId: string, userId: string | null) => {
       const { data, error: supabaseError } = await supabase
@@ -143,6 +160,30 @@ export default function EventPage() {
       setPendingCount(pending);
       setMyApplicationId(myRow?.id ?? null);
       setMyApplicationStatus(myRow?.status ?? null);
+    },
+    [supabase],
+  );
+
+  const loadOrganizerReviews = useCallback(
+    async (organizerId: string) => {
+      const { data, error: supabaseError } = await supabase
+        .from("event_reviews")
+        .select("id, rating, comment, created_at")
+        .eq("target_id", organizerId)
+        .eq("target_role", "organizer")
+        .order("created_at", { ascending: false });
+
+      if (supabaseError) {
+        if (isMissingReviewsTableError(supabaseError.message)) {
+          setReviewsMissingSetup(true);
+          setOrganizerReviews([]);
+          return;
+        }
+        throw new Error(supabaseError.message);
+      }
+
+      setReviewsMissingSetup(false);
+      setOrganizerReviews((data ?? []) as OrganizerReview[]);
     },
     [supabase],
   );
@@ -182,7 +223,10 @@ export default function EventPage() {
         setCurrentUser(user);
         setEvent(data as EventDetails);
 
-        await loadParticipationData(data.id, user?.id ?? null);
+        await Promise.all([
+          loadParticipationData(data.id, user?.id ?? null),
+          loadOrganizerReviews(data.user_id),
+        ]);
       } catch (err: unknown) {
         const message =
           err instanceof Error
@@ -203,7 +247,7 @@ export default function EventPage() {
     }
 
     fetchEvent();
-  }, [id, supabase, pick, loadParticipationData]);
+  }, [id, supabase, pick, loadParticipationData, loadOrganizerReviews]);
 
   const handleShare = () => {
     if (typeof window !== "undefined") {
@@ -454,216 +498,604 @@ export default function EventPage() {
   const seatsLeft = volunteersNeeded ? Math.max(0, volunteersNeeded - approvedCount) : null;
   const isEventOwner = Boolean(currentUser && currentUser.id === event.user_id);
   const isEventFull = seatsLeft !== null && seatsLeft <= 0;
+  const organizerReviewCount = organizerReviews.length;
+  const organizerRating =
+    organizerReviewCount > 0
+      ? Math.round(
+          (organizerReviews.reduce((sum, review) => sum + review.rating, 0) / organizerReviewCount) * 10,
+        ) / 10
+      : null;
+  const recentOrganizerReviews = organizerReviews.slice(0, 3);
+  const eventDateLabel = formatDate(event.date, dateLocale);
+  const publishedLabel = formatDate(event.created_at, dateLocale);
+  const categoryLabel = getEventCategoryLabel(event.category, pick);
+  const participationProgress =
+    volunteersNeeded && volunteersNeeded > 0
+      ? Math.min(100, Math.round((approvedCount / volunteersNeeded) * 100))
+      : null;
+  const descriptionPreview =
+    event.description?.trim() ||
+    pick({
+      ru: "Организатор пока не добавил подробное описание, но вы уже можете увидеть дату, место и условия участия.",
+      en: "The organizer has not added a detailed description yet, but you can already see the date, location and participation details.",
+      uz: "Tashkilotchi hali batafsil tavsif qoldirmagan, ammo sana, joy va ishtirok shartlari allaqachon ko'rinadi.",
+    });
+
+  const renderParticipationActions = () => {
+    if (!currentUser) {
+      return (
+        <button
+          onClick={handleApply}
+          className="w-full rounded-[24px] bg-[#10b981] px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[0_18px_40px_rgba(16,185,129,0.28)] transition-colors hover:bg-[#0da975]"
+        >
+          <span className="flex items-center justify-center gap-3">
+            {pick({ ru: "Войти и участвовать", en: "Sign in to join", uz: "Qatnashish uchun kiring" })}
+            <UserPlus size={18} />
+          </span>
+        </button>
+      );
+    }
+
+    if (isEventOwner) {
+      return (
+        <button
+          disabled
+          className="w-full cursor-not-allowed rounded-[24px] border border-slate-200 bg-slate-100 px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500"
+        >
+          {pick({ ru: "Вы организатор", en: "You are organizer", uz: "Siz tashkilotchisiz" })}
+        </button>
+      );
+    }
+
+    if (myApplicationStatus === "approved") {
+      return (
+        <button
+          disabled
+          className="w-full cursor-not-allowed rounded-[24px] bg-emerald-500 px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-white"
+        >
+          <span className="flex items-center justify-center gap-3">
+            {pick({ ru: "Заявка принята", en: "Request approved", uz: "Ariza tasdiqlandi" })}
+            <CheckCircle2 size={18} />
+          </span>
+        </button>
+      );
+    }
+
+    if (myApplicationStatus === "pending") {
+      return (
+        <>
+          <button
+            disabled
+            className="w-full cursor-not-allowed rounded-[24px] bg-amber-500 px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-white"
+          >
+            {pick({ ru: "Заявка на проверке", en: "Under review", uz: "Ko'rib chiqilmoqda" })}
+          </button>
+          <button
+            onClick={handleCancelPendingRequest}
+            disabled={isApplying}
+            className="w-full rounded-[22px] border border-slate-200 bg-white px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-[#10b981] hover:text-[#10b981] disabled:opacity-60"
+          >
+            {pick({ ru: "Отменить заявку", en: "Cancel request", uz: "Arizani bekor qilish" })}
+          </button>
+        </>
+      );
+    }
+
+    if (participationSetupMissing) {
+      return (
+        <button
+          disabled
+          className="w-full cursor-not-allowed rounded-[24px] border border-slate-200 bg-slate-100 px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500"
+        >
+          {pick({ ru: "Заявки недоступны", en: "Requests unavailable", uz: "Arizalar mavjud emas" })}
+        </button>
+      );
+    }
+
+    if (isEventFull) {
+      return (
+        <button
+          disabled
+          className="w-full cursor-not-allowed rounded-[24px] bg-red-500 px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-white"
+        >
+          {pick({ ru: "Набор закрыт", en: "No spots left", uz: "Qabul yopildi" })}
+        </button>
+      );
+    }
+
+    return (
+      <button
+        onClick={handleApply}
+        disabled={isApplying}
+        className="w-full rounded-[24px] bg-[#10b981] px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[0_18px_40px_rgba(16,185,129,0.28)] transition-colors hover:bg-[#0da975] disabled:opacity-60"
+      >
+        <span className="flex items-center justify-center gap-3">
+          {isApplying
+            ? pick({ ru: "Отправка...", en: "Sending...", uz: "Yuborilmoqda..." })
+            : myApplicationStatus === "rejected"
+              ? pick({ ru: "Подать повторно", en: "Apply again", uz: "Qayta ariza" })
+              : pick({ ru: "Участвовать", en: "Join", uz: "Qatnashish" })}
+          {myApplicationStatus === "rejected" ? <XCircle size={18} /> : <UserPlus size={18} />}
+        </span>
+      </button>
+    );
+  };
+
+  const participationHint = currentUser
+    ? isEventOwner
+      ? pick({
+          ru: "Вы видите эту страницу как организатор. Управление заявками доступно в кабинете.",
+          en: "You are viewing this page as the organizer. Application management is available in the dashboard.",
+          uz: "Siz bu sahifani tashkilotchi sifatida ko'ryapsiz. Arizalarni boshqarish kabinetda mavjud.",
+        })
+      : myApplicationStatus === "approved"
+        ? pick({
+            ru: "Организатор уже подтвердил ваше участие. Следите за обновлениями и деталями события.",
+            en: "The organizer has already confirmed your participation. Keep an eye on updates and event details.",
+            uz: "Tashkilotchi sizning ishtirokingizni tasdiqlagan. Yangilanishlar va tadbir tafsilotlarini kuzating.",
+          })
+        : myApplicationStatus === "pending"
+          ? pick({
+              ru: "Заявка отправлена. Организатор примет решение в личном кабинете.",
+              en: "Your request has been sent. The organizer will review it in the dashboard.",
+              uz: "Ariza yuborildi. Tashkilotchi uni kabinetda ko'rib chiqadi.",
+            })
+          : myApplicationStatus === "rejected"
+            ? pick({
+                ru: "Ранее заявка была отклонена, но вы можете отправить её повторно.",
+                en: "Your request was previously rejected, but you can send it again.",
+                uz: "Arizangiz avval rad etilgan, ammo uni qayta yuborishingiz mumkin.",
+              })
+            : pick({
+                ru: "Оставьте заявку, и организатор свяжется с вами после проверки.",
+                en: "Send a request and the organizer will get back to you after review.",
+                uz: "Ariza qoldiring, tashkilotchi tekshiruvdan so'ng siz bilan bog'lanadi.",
+              })
+    : pick({
+        ru: "Чтобы отправить заявку, войдите в аккаунт. После этого вы сможете отслеживать статус участия.",
+        en: "Sign in to apply. After that you will be able to track your participation status.",
+        uz: "Ariza yuborish uchun akkauntga kiring. Shundan keyin ishtirok holatini kuzata olasiz.",
+      });
 
   return (
-    <div className="min-h-screen bg-[#fcfdfd] pb-20">
-      <div className="max-w-5xl mx-auto px-6 pt-8">
+    <div className="min-h-screen bg-[linear-gradient(180deg,_#edf9f4_0%,_#fcfdfd_18%,_#fcfdfd_100%)] pb-20">
+      <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-8">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#10b981] transition-all mb-8 group"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 shadow-sm backdrop-blur transition-colors hover:text-[#10b981]"
         >
-          <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          <ChevronLeft size={16} />
           {pick({ ru: "Назад к списку", en: "Back to list", uz: "Ro'yxatga qaytish" })}
         </button>
 
-        <div className="bg-white rounded-[50px] border border-gray-100 overflow-hidden shadow-2xl shadow-gray-200/40">
-          <div className="h-[400px] md:h-[550px] relative">
-            <Image
-              src={event.image_url || "https://images.unsplash.com/photo-1559027615-cd4451dff977?q=80&w=2069&auto=format&fit=crop"}
-              className="object-cover"
-              alt={event.title}
-              fill
-              sizes="100vw"
-              priority
-              unoptimized
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-            <div className="absolute bottom-10 left-8 right-8 md:left-14 md:right-14">
-              <h1 className="text-4xl md:text-7xl font-black text-white uppercase italic tracking-tighter leading-none mb-6">
-                {event.title}
-              </h1>
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-2xl text-white/90 border border-white/10">
-                  <MapPin size={16} className="text-[#10b981]" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">{event.location}</span>
-                </div>
-                <div className="flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-2xl text-white/90 border border-white/10">
-                  <Calendar size={16} className="text-[#10b981]" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    {formatDate(event.date, dateLocale)}
+        <section className="overflow-hidden rounded-[38px] border border-white/80 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.08)]">
+          <div className="grid xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+            <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_45%),linear-gradient(180deg,_#ffffff_0%,_#f8fcfb_100%)] p-6 sm:p-8 lg:p-10">
+              <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/60 blur-3xl" />
+              <div className="relative">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                    {categoryLabel}
                   </span>
-                </div>
-                <div className="flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-2xl text-white/90 border border-white/10">
-                  <Clock3 size={16} className="text-[#10b981]" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    {pick({ ru: "Опубликовано", en: "Published", uz: "E'lon qilingan" })}: {formatDate(event.created_at, dateLocale)}
+                  <span className="rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                    {pick({ ru: "Активное объявление", en: "Active listing", uz: "Faol e'lon" })}
                   </span>
+                  {!reviewsMissingSetup && organizerRating ? (
+                    <span className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-amber-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                      <Star className="h-4 w-4 fill-current" />
+                      {organizerRating.toFixed(1)} · {organizerReviewCount}
+                    </span>
+                  ) : null}
                 </div>
-                <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/80 backdrop-blur-md rounded-2xl text-white border border-emerald-300/40">
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    {getEventCategoryLabel(event.category, pick)}
-                  </span>
+
+                <h1 className="mt-6 max-w-3xl text-4xl font-black italic tracking-[-0.06em] text-slate-950 sm:text-5xl lg:text-[4.2rem] lg:leading-[0.9]">
+                  {event.title}
+                </h1>
+
+                <p className="mt-5 max-w-2xl text-base font-semibold leading-8 text-slate-600 sm:text-lg">
+                  {descriptionPreview}
+                </p>
+
+                <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="rounded-[26px] border border-white bg-white/90 p-4 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                      {pick({ ru: "Подтверждено", en: "Confirmed", uz: "Tasdiqlangan" })}
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-slate-950">{approvedCount}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">
+                      {pick({ ru: "волонтёров", en: "volunteers", uz: "volontyor" })}
+                    </p>
+                  </div>
+                  <div className="rounded-[26px] border border-white bg-white/90 p-4 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                      {pick({ ru: "На рассмотрении", en: "Pending", uz: "Ko'rib chiqilmoqda" })}
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-slate-950">{pendingCount}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">
+                      {pick({ ru: "заявок", en: "requests", uz: "ariza" })}
+                    </p>
+                  </div>
+                  <div className="rounded-[26px] border border-white bg-white/90 p-4 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                      {pick({ ru: "Свободные места", en: "Open spots", uz: "Bo'sh o'rinlar" })}
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-slate-950">
+                      {seatsLeft ?? "—"}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">
+                      {seatsLeft === null
+                        ? pick({ ru: "лимит не указан", en: "limit not set", uz: "limit ko'rsatilmagan" })
+                        : pick({ ru: "ещё доступны", en: "still available", uz: "hali mavjud" })}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-2xl text-white/90 border border-white/10">
-                  <Users size={16} className="text-[#10b981]" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    {pick({ ru: "Нужно волонтёров", en: "Volunteers Needed", uz: "Kerakli volontyorlar" })}: {volunteersNeeded ?? pick({ ru: "не указано", en: "not set", uz: "kiritilmagan" })}
-                  </span>
+              </div>
+            </div>
+
+            <div className="relative min-h-[320px] xl:min-h-full">
+              <EventVisual
+                title={event.title}
+                category={event.category}
+                categoryLabel={categoryLabel}
+                imageUrl={event.image_url}
+                className="object-cover"
+                sizes="(max-width: 1280px) 100vw, 42vw"
+                priority
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.06)_0%,rgba(15,23,42,0.68)_100%)]" />
+              <div className="absolute inset-x-5 bottom-5 flex flex-wrap gap-3">
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md">
+                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/60">
+                    {pick({ ru: "Дата", en: "Date", uz: "Sana" })}
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-white">{eventDateLabel}</p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md">
+                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/60">
+                    {pick({ ru: "Локация", en: "Location", uz: "Joylashuv" })}
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-white">{event.location}</p>
                 </div>
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="p-8 md:p-16 grid grid-cols-1 lg:grid-cols-3 gap-16">
-            <div className="lg:col-span-2">
-              <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-[#10b981] mb-8 flex items-center gap-3">
-                <Info size={16} /> {pick({ ru: "Описание задачи", en: "Task Description", uz: "Vazifa tavsifi" })}
-              </h2>
+        <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            {
+              icon: Calendar,
+              label: pick({ ru: "Когда", en: "When", uz: "Qachon" }),
+              value: eventDateLabel,
+              detail: pick({ ru: "Дата проведения", en: "Event date", uz: "Tadbir sanasi" }),
+            },
+            {
+              icon: MapPin,
+              label: pick({ ru: "Где", en: "Where", uz: "Qayerda" }),
+              value: event.location,
+              detail: pick({ ru: "Место встречи", en: "Meeting point", uz: "Uchrashuv joyi" }),
+            },
+            {
+              icon: Users,
+              label: pick({ ru: "Сколько людей", en: "Team size", uz: "Jamoa soni" }),
+              value: volunteersNeeded?.toString() ?? "—",
+              detail:
+                volunteersNeeded !== null
+                  ? pick({ ru: "нужно волонтёров", en: "volunteers needed", uz: "kerakli volontyor" })
+                  : pick({ ru: "лимит не указан", en: "limit not set", uz: "limit ko'rsatilmagan" }),
+            },
+            {
+              icon: Clock3,
+              label: pick({ ru: "Опубликовано", en: "Published", uz: "E'lon qilingan" }),
+              value: publishedLabel,
+              detail: `ID ${event.id.toString().split("-")[0]}`,
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <article key={item.label} className="rounded-[28px] border border-white bg-white/90 p-5 shadow-sm">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-[#10b981]">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <p className="mt-4 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                  {item.label}
+                </p>
+                <p className="mt-2 text-lg font-black text-slate-950">{item.value}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">{item.detail}</p>
+              </article>
+            );
+          })}
+        </section>
+
+        <div className="mt-8 grid items-start gap-8 xl:grid-cols-[minmax(0,1.1fr)_360px]">
+          <div className="space-y-6">
+            <section className="rounded-[34px] border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-[#10b981]">
+                  <Info className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#10b981]">
+                    {pick({ ru: "Описание", en: "Overview", uz: "Tavsif" })}
+                  </p>
+                  <h2 className="mt-1 text-2xl font-black text-slate-950">
+                    {pick({ ru: "Что это за событие", en: "What this event is about", uz: "Bu tadbir nima haqida" })}
+                  </h2>
+                </div>
+              </div>
 
               {event.description ? (
-                <div className="text-gray-600 font-medium leading-[1.8] text-lg whitespace-pre-wrap">
+                <div className="mt-6 whitespace-pre-wrap text-base font-medium leading-8 text-slate-600">
                   {event.description}
                 </div>
               ) : (
-                <div className="py-16 px-10 border-2 border-dashed border-gray-50 rounded-[40px] text-center bg-gray-50/30">
-                  <p className="text-gray-400 font-black uppercase text-[10px] tracking-[0.2em] italic">
+                <div className="mt-6 rounded-[28px] border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                  <p className="text-sm font-semibold leading-7 text-slate-500">
                     {pick({
-                      ru: "Детальное описание проекта пока не добавлено",
-                      en: "Detailed project description has not been added yet",
-                      uz: "Loyiha haqida batafsil tavsif hali qo'shilmagan",
+                      ru: "Организатор ещё не добавил подробное описание. Для быстрой оценки используйте блоки выше: дата, место, формат и количество мест.",
+                      en: "The organizer has not added a detailed description yet. Use the blocks above to quickly understand the date, place, format and available spots.",
+                      uz: "Tashkilotchi hali batafsil tavsif qoldirmagan. Sana, joy, format va bo'sh o'rinlar bo'yicha yuqoridagi bloklardan foydalaning.",
                     })}
                   </p>
                 </div>
               )}
-            </div>
+            </section>
 
-            <div className="flex flex-col gap-4">
-              <div className="p-10 bg-gray-900 rounded-[45px] text-white shadow-2xl shadow-gray-900/20">
-                <h3 className="text-sm font-black uppercase italic mb-4 tracking-tighter text-center">
-                  {pick({ ru: "Нужна ваша помощь", en: "Your Help Is Needed", uz: "Yordamingiz kerak" })}
-                </h3>
+            <section className="rounded-[34px] border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+                    {pick({ ru: "Перед откликом", en: "Before you apply", uz: "Ariza berishdan oldin" })}
+                  </p>
+                  <h2 className="mt-1 text-2xl font-black text-slate-950">
+                    {pick({
+                      ru: "Быстрая сводка по участию",
+                      en: "Quick participation summary",
+                      uz: "Ishtirok bo'yicha qisqa ma'lumot",
+                    })}
+                  </h2>
+                </div>
+              </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 mb-5 text-center">
-                  <p className="text-[9px] uppercase tracking-widest font-black text-white/60">
-                    {pick({ ru: "Подтверждено волонтёров", en: "Confirmed volunteers", uz: "Tasdiqlangan volontyorlar" })}
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <article className="rounded-[26px] bg-slate-50 p-5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                    {pick({ ru: "Формат", en: "Format", uz: "Format" })}
                   </p>
-                  <p className="text-2xl font-black text-white mt-1">{approvedCount}</p>
-                  <p className="mt-1 text-[10px] font-bold text-white/70">
-                    {pick({ ru: "Ожидают", en: "Pending", uz: "Kutilmoqda" })}: {pendingCount}
+                  <p className="mt-2 text-base font-black text-slate-950">
+                    {pick({ ru: "Офлайн событие", en: "Offline event", uz: "Oflayn tadbir" })}
                   </p>
-                  {seatsLeft !== null && (
-                    <p className={`mt-2 text-[10px] font-black uppercase tracking-widest ${isEventFull ? "text-red-300" : "text-emerald-300"}`}>
-                      {pick({ ru: "Свободных мест", en: "Spots left", uz: "Bo'sh o'rin" })}: {seatsLeft}
+                  <p className="mt-2 text-sm font-semibold leading-7 text-slate-500">
+                    {pick({
+                      ru: "Участие привязано к месту проведения, поэтому заранее проверьте дорогу и время.",
+                      en: "Participation is tied to the location, so check the route and timing in advance.",
+                      uz: "Ishtirok joyga bog'liq, shuning uchun yo'l va vaqtni oldindan tekshiring.",
+                    })}
+                  </p>
+                </article>
+                <article className="rounded-[26px] bg-slate-50 p-5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                    {pick({ ru: "Подтверждение", en: "Approval", uz: "Tasdiqlash" })}
+                  </p>
+                  <p className="mt-2 text-base font-black text-slate-950">
+                    {pick({ ru: "Через модерацию", en: "Reviewed by organizer", uz: "Tashkilotchi ko'rib chiqadi" })}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-7 text-slate-500">
+                    {pick({
+                      ru: "После отклика организатор вручную подтверждает участие, поэтому статус может измениться не сразу.",
+                      en: "After you apply, the organizer manually confirms participation, so the status may not change instantly.",
+                      uz: "Ariza yuborilgach, tashkilotchi uni qo'lda tasdiqlaydi, shuning uchun holat darhol o'zgarmasligi mumkin.",
+                    })}
+                  </p>
+                </article>
+                <article className="rounded-[26px] bg-slate-50 p-5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                    {pick({ ru: "Свободные места", en: "Availability", uz: "Mavjud joylar" })}
+                  </p>
+                  <p className="mt-2 text-base font-black text-slate-950">
+                    {seatsLeft === null
+                      ? pick({ ru: "Без ограничения", en: "Open capacity", uz: "Cheklovsiz" })
+                      : isEventFull
+                        ? pick({ ru: "Набор закрыт", en: "Spots filled", uz: "Joylar to'lgan" })
+                        : pick({ ru: `${seatsLeft} мест осталось`, en: `${seatsLeft} spots left`, uz: `${seatsLeft} ta joy qoldi` })}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-7 text-slate-500">
+                    {pick({
+                      ru: "Если мест осталось мало, лучше отправить заявку сразу, пока набор ещё открыт.",
+                      en: "If only a few spots remain, it is better to apply now while registration is still open.",
+                      uz: "Agar joylar kam qolgan bo'lsa, qabul yopilmasdan oldin tezroq ariza yuborgan ma'qul.",
+                    })}
+                  </p>
+                </article>
+              </div>
+            </section>
+
+            {!reviewsMissingSetup && recentOrganizerReviews.length > 0 ? (
+              <section className="rounded-[34px] border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-[#10b981]">
+                    <MessageSquare className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#10b981]">
+                      {pick({ ru: "Отзывы", en: "Reviews", uz: "Sharhlar" })}
                     </p>
-                  )}
+                    <h2 className="mt-1 text-2xl font-black text-slate-950">
+                      {pick({
+                        ru: "Что волонтёры говорят об организаторе",
+                        en: "What volunteers say about the organizer",
+                        uz: "Volontyorlar tashkilotchi haqida nima deydi",
+                      })}
+                    </h2>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  {!currentUser ? (
-                    <button
-                      onClick={handleApply}
-                      className="w-full py-5 bg-[#10b981] text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] shadow-lg shadow-green-900/20 hover:bg-[#0da975] transition-all flex items-center justify-center gap-3"
-                    >
-                      {pick({ ru: "Войти и участвовать", en: "Sign in to join", uz: "Qatnashish uchun kiring" })}
-                      <UserPlus size={18} />
-                    </button>
-                  ) : isEventOwner ? (
-                    <button
-                      disabled
-                      className="w-full py-5 bg-white/10 text-white/70 rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] border border-white/10 cursor-not-allowed"
-                    >
-                      {pick({ ru: "Вы организатор", en: "You are organizer", uz: "Siz tashkilotchisiz" })}
-                    </button>
-                  ) : myApplicationStatus === "approved" ? (
-                    <button
-                      disabled
-                      className="w-full py-5 bg-emerald-500 text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] flex items-center justify-center gap-3 cursor-not-allowed"
-                    >
-                      {pick({ ru: "Заявка принята", en: "Request approved", uz: "Ariza tasdiqlandi" })}
-                      <CheckCircle2 size={18} />
-                    </button>
-                  ) : myApplicationStatus === "pending" ? (
-                    <>
-                      <button
-                        disabled
-                        className="w-full py-5 bg-amber-500 text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] cursor-not-allowed"
-                      >
-                        {pick({ ru: "Заявка на проверке", en: "Under review", uz: "Ko'rib chiqilmoqda" })}
-                      </button>
-                      <button
-                        onClick={handleCancelPendingRequest}
-                        disabled={isApplying}
-                        className="w-full py-4 bg-white/10 text-white rounded-[20px] font-black uppercase text-[10px] tracking-[0.18em] border border-white/20 hover:bg-white/15 transition-colors"
-                      >
-                        {pick({ ru: "Отменить заявку", en: "Cancel request", uz: "Arizani bekor qilish" })}
-                      </button>
-                    </>
-                  ) : participationSetupMissing ? (
-                    <button
-                      disabled
-                      className="w-full py-5 bg-white/10 text-white/70 rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] border border-white/10 cursor-not-allowed"
-                    >
-                      {pick({ ru: "Заявки недоступны", en: "Requests unavailable", uz: "Arizalar mavjud emas" })}
-                    </button>
-                  ) : isEventFull ? (
-                    <button
-                      disabled
-                      className="w-full py-5 bg-red-500/80 text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] cursor-not-allowed"
-                    >
-                      {pick({ ru: "Набор закрыт", en: "No spots left", uz: "Qabul yopildi" })}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleApply}
-                      disabled={isApplying}
-                      className="w-full py-5 bg-[#10b981] text-white rounded-[24px] font-black uppercase text-[11px] tracking-[0.2em] shadow-lg shadow-green-900/20 hover:bg-[#0da975] transition-all flex items-center justify-center gap-3 disabled:opacity-60"
-                    >
-                      {isApplying
-                        ? pick({ ru: "Отправка...", en: "Sending...", uz: "Yuborilmoqda..." })
-                        : myApplicationStatus === "rejected"
-                          ? pick({ ru: "Подать повторно", en: "Apply again", uz: "Qayta ariza" })
-                          : pick({ ru: "Участвовать", en: "Join", uz: "Qatnashish" })}
-                      {myApplicationStatus === "rejected" ? <XCircle size={18} /> : <UserPlus size={18} />}
-                    </button>
-                  )}
-
-                  <a
-                    href={`mailto:support@volohero.com?subject=${pick({
-                      ru: "Отклик",
-                      en: "Response",
-                      uz: "Murojaat",
-                    })}: ${event.title}`}
-                    className="w-full py-4 bg-white/10 text-white rounded-[20px] font-black uppercase text-[10px] tracking-[0.18em] border border-white/20 hover:bg-white/15 transition-all flex items-center justify-center gap-3"
-                  >
-                    {pick({ ru: "Связаться", en: "Contact", uz: "Bog'lanish" })} <Mail size={16} />
-                  </a>
-
-                  <button
-                    onClick={handleShare}
-                    className={`w-full py-4 rounded-[20px] font-black uppercase text-[10px] tracking-[0.18em] transition-all flex items-center justify-center gap-3 border ${
-                      copied
-                        ? "bg-white text-gray-900 border-white scale-95"
-                        : "bg-transparent text-white border-white/20 hover:bg-white/10"
-                    }`}
-                  >
-                    {copied
-                      ? pick({ ru: "Готово!", en: "Copied!", uz: "Tayyor!" })
-                      : pick({ ru: "Поделиться", en: "Share", uz: "Ulashish" })}{" "}
-                    <Share2 size={16} />
-                  </button>
+                <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {recentOrganizerReviews.map((review) => (
+                    <article key={review.id} className="rounded-[28px] border border-slate-100 bg-slate-50 p-5">
+                      <div className="flex items-center gap-1 text-amber-500">
+                        {Array.from({ length: 5 }).map((_, index) => (
+                          <Star
+                            key={index}
+                            className={`h-4 w-4 ${index < review.rating ? "fill-current" : "text-gray-200"}`}
+                          />
+                        ))}
+                      </div>
+                      <p className="mt-4 text-sm font-semibold leading-7 text-slate-700">
+                        {review.comment ||
+                          pick({
+                            ru: "Пользователь поставил оценку без комментария.",
+                            en: "The volunteer left a rating without a comment.",
+                            uz: "Foydalanuvchi izohsiz baho qoldirdi.",
+                          })}
+                      </p>
+                      <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                        {formatDate(review.created_at, dateLocale)}
+                      </p>
+                    </article>
+                  ))}
                 </div>
-              </div>
-
-              <div className="mt-4 px-6 text-center space-y-1">
-                <p className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-300">
-                  ID: {event.id.toString().split("-")[0]}
-                </p>
-                <p className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-300">
-                  {pick({ ru: "Статус: Активно", en: "Status: Active", uz: "Holat: Faol" })}
-                </p>
-              </div>
-            </div>
+              </section>
+            ) : null}
           </div>
+
+          <aside className="space-y-6 xl:sticky xl:top-24">
+            <section className="overflow-hidden rounded-[34px] bg-[linear-gradient(180deg,_#0f172a_0%,_#111827_100%)] p-6 text-white shadow-[0_30px_90px_rgba(15,23,42,0.25)] md:p-7">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300">
+                {pick({ ru: "Участие", en: "Participation", uz: "Ishtirok" })}
+              </p>
+              <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-white">
+                {pick({ ru: "Присоединиться к событию", en: "Join this event", uz: "Tadbirga qo'shilish" })}
+              </h2>
+              <p className="mt-4 text-sm font-semibold leading-7 text-slate-300">
+                {participationHint}
+              </p>
+
+              <div className="mt-6 rounded-[26px] border border-white/10 bg-white/5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/50">
+                      {pick({ ru: "Заполнение", en: "Filled", uz: "Bandlik" })}
+                    </p>
+                    <p className="mt-1 text-xl font-black text-white">
+                      {participationProgress !== null ? `${participationProgress}%` : "—"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/50">
+                      {pick({ ru: "Мест всего", en: "Capacity", uz: "Jami joy" })}
+                    </p>
+                    <p className="mt-1 text-xl font-black text-white">{volunteersNeeded ?? "—"}</p>
+                  </div>
+                </div>
+                <div className="mt-4 h-2 rounded-full bg-white/10">
+                  <div
+                    className="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-300 transition-all"
+                    style={{ width: `${participationProgress ?? 0}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                {renderParticipationActions()}
+              </div>
+            </section>
+
+            <section className="rounded-[34px] border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-500">
+                  <Star className="h-5 w-5 fill-current" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-500">
+                    {pick({ ru: "Репутация", en: "Reputation", uz: "Obro'" })}
+                  </p>
+                  <h3 className="mt-1 text-2xl font-black text-slate-950">
+                    {pick({ ru: "Организатор", en: "Organizer", uz: "Tashkilotchi" })}
+                  </h3>
+                </div>
+              </div>
+
+              {!reviewsMissingSetup && organizerRating ? (
+                <>
+                  <div className="mt-5 flex items-end gap-3">
+                    <p className="text-4xl font-black text-slate-950">{organizerRating.toFixed(1)}</p>
+                    <p className="pb-1 text-sm font-semibold text-slate-500">
+                      {pick({
+                        ru: `${organizerReviewCount} отзывов`,
+                        en: `${organizerReviewCount} reviews`,
+                        uz: `${organizerReviewCount} ta sharh`,
+                      })}
+                    </p>
+                  </div>
+                  <div className="mt-3 flex items-center gap-1 text-amber-500">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <Star
+                        key={index}
+                        className={`h-5 w-5 ${organizerRating >= index + 1 ? "fill-current" : "text-gray-200"}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="mt-5 text-sm font-semibold leading-7 text-slate-500">
+                  {pick({
+                    ru: "Пока нет отзывов. Это хороший шанс стать одним из первых участников и задать тон репутации события.",
+                    en: "There are no reviews yet. This is a good chance to be among the first participants and shape the event's reputation.",
+                    uz: "Hozircha sharhlar yo'q. Bu tadbir obro'sini birinchi bo'lib shakllantirish uchun yaxshi imkoniyat.",
+                  })}
+                </p>
+              )}
+            </section>
+
+            <section className="rounded-[34px] border border-gray-100 bg-white p-6 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+                {pick({ ru: "Полезные действия", en: "Helpful actions", uz: "Foydali amallar" })}
+              </p>
+              <div className="mt-5 space-y-3">
+                <a
+                  href={`mailto:support@volohero.com?subject=${pick({
+                    ru: "Отклик",
+                    en: "Response",
+                    uz: "Murojaat",
+                  })}: ${event.title}`}
+                  className="flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-5 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-[#10b981] hover:text-[#10b981]"
+                >
+                  {pick({ ru: "Связаться", en: "Contact", uz: "Bog'lanish" })}
+                  <Mail size={16} />
+                </a>
+
+                <button
+                  onClick={handleShare}
+                  className={`flex w-full items-center justify-center gap-3 rounded-[22px] border px-5 py-4 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${
+                    copied
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-[#10b981] hover:text-[#10b981]"
+                  }`}
+                >
+                  {copied
+                    ? pick({ ru: "Ссылка скопирована", en: "Link copied", uz: "Havola nusxalandi" })
+                    : pick({ ru: "Поделиться", en: "Share", uz: "Ulashish" })}
+                  <Share2 size={16} />
+                </button>
+              </div>
+
+              <div className="mt-5 rounded-[24px] bg-slate-50 px-4 py-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                  {pick({ ru: "Статус", en: "Status", uz: "Holat" })}
+                </p>
+                <p className="mt-2 text-base font-black text-slate-950">
+                  {pick({ ru: "Объявление активно", en: "Listing is active", uz: "E'lon faol" })}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">
+                  ID {event.id.toString().split("-")[0]}
+                </p>
+              </div>
+            </section>
+          </aside>
         </div>
       </div>
 

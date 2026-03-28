@@ -27,6 +27,9 @@ import {
   Phone,
   BarChart3,
   UserCheck,
+  Star,
+  MessageSquare,
+  FileText,
 } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import {
@@ -36,6 +39,14 @@ import {
   normalizeVolunteerCount,
 } from "@/components/events/eventMeta";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
+import { hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
+import {
+  getCurrentEventTimeInputMin,
+  getTodayEventDateInputMin,
+  isPastEventDateTime,
+} from "@/lib/events/dates";
+import EventVisual from "@/components/events/EventVisual";
+import { FREE_POST_LIMIT, getFreePostCreditsUsed } from "@/lib/events/limits";
 
 interface DashboardEvent {
   id: string;
@@ -79,19 +90,52 @@ interface EventReport {
   updated_at: string;
 }
 
-const FREE_POST_LIMIT = 3;
+interface EventReview {
+  id: string;
+  event_id: string;
+  application_id: string;
+  volunteer_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ManualPaymentRequest {
+  id: string;
+  kind: "donation" | "premium";
+  status: "pending" | "approved" | "rejected";
+  amount_uzs: number;
+  user_id: string | null;
+  payer_name: string | null;
+  payer_email: string | null;
+  contact_phone: string | null;
+  transfer_reference: string | null;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_path: string | null;
+  note: string | null;
+  created_at: string;
+}
 
 export default function Dashboard() {
   const { pick } = useLanguage();
   const router = useRouter();
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [freePostCreditsUsed, setFreePostCreditsUsed] = useState(0);
   const [loading, setLoading] = useState(true);
   const [myEvents, setMyEvents] = useState<DashboardEvent[]>([]);
   const [eventApplications, setEventApplications] = useState<EventApplication[]>([]);
   const [eventReports, setEventReports] = useState<EventReport[]>([]);
+  const [eventReviews, setEventReviews] = useState<EventReview[]>([]);
+  const [manualPaymentRequests, setManualPaymentRequests] = useState<ManualPaymentRequest[]>([]);
+  const [canReviewManualPayments, setCanReviewManualPayments] = useState(false);
+  const [manualPaymentsLoading, setManualPaymentsLoading] = useState(false);
   const [applicationsMissingSetup, setApplicationsMissingSetup] = useState(false);
   const [reportsMissingSetup, setReportsMissingSetup] = useState(false);
+  const [reviewsMissingSetup, setReviewsMissingSetup] = useState(false);
   const [applicationActionId, setApplicationActionId] = useState<string | null>(null);
+  const [manualPaymentActionId, setManualPaymentActionId] = useState<string | null>(null);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -162,12 +206,29 @@ export default function Dashboard() {
         router.push("/auth/login");
         return;
       }
-      setUser(session.user);
+      let currentUser = session.user;
+
+      if (needsPremiumStateSync(currentUser)) {
+        const response = await fetch("/api/premium/status", {
+          cache: "no-store",
+        });
+
+        if (response.ok) {
+          await supabase.auth.refreshSession();
+          const {
+            data: { session: refreshedSession },
+          } = await supabase.auth.getSession();
+          currentUser = refreshedSession?.user ?? currentUser;
+        }
+      }
+
+      setUser(currentUser);
+      setFreePostCreditsUsed(getFreePostCreditsUsed(currentUser));
 
       const { data: eventsData } = await supabase
         .from("events")
         .select("id, title, location, date, category, volunteers_needed, premium_priority, image_url, description")
-        .eq("user_id", session.user.id)
+        .eq("user_id", currentUser.id)
         .order('created_at', { ascending: false });
 
       const preparedEvents = eventsData ?? [];
@@ -176,13 +237,15 @@ export default function Dashboard() {
       if (preparedEvents.length === 0) {
         setEventApplications([]);
         setEventReports([]);
+        setEventReviews([]);
         setApplicationsMissingSetup(false);
         setReportsMissingSetup(false);
+        setReviewsMissingSetup(false);
         return;
       }
 
       const eventIds = preparedEvents.map((event) => event.id);
-      const [applicationsResponse, reportsResponse] = await Promise.all([
+      const [applicationsResponse, reportsResponse, reviewsResponse] = await Promise.all([
         supabase
           .from("event_applications")
           .select("id, event_id, organizer_id, volunteer_id, volunteer_name, volunteer_email, volunteer_phone, status, attended, checked_in_at, created_at, reviewed_at")
@@ -193,9 +256,17 @@ export default function Dashboard() {
           .select("id, event_id, organizer_id, actual_attendees, hours_per_volunteer, outcome_text, outcome_value, outcome_unit, created_at, updated_at")
           .in("event_id", eventIds)
           .order("updated_at", { ascending: false }),
+        supabase
+          .from("event_reviews")
+          .select("id, event_id, application_id, volunteer_id, rating, comment, created_at, updated_at")
+          .eq("target_id", currentUser.id)
+          .eq("target_role", "organizer")
+          .in("event_id", eventIds)
+          .order("updated_at", { ascending: false }),
       ]);
       const { data: applicationsData, error: applicationsError } = applicationsResponse;
       const { data: reportsData, error: reportsError } = reportsResponse;
+      const { data: reviewsData, error: reviewsError } = reviewsResponse;
 
       if (applicationsError) {
         const setupMissing =
@@ -228,6 +299,22 @@ export default function Dashboard() {
         setReportsMissingSetup(false);
         setEventReports((reportsData ?? []) as EventReport[]);
       }
+
+      if (reviewsError) {
+        const reviewsSetupMissing =
+          /event_reviews/i.test(reviewsError.message) &&
+          /relation|table|schema cache|does not exist|PGRST/i.test(reviewsError.message);
+        if (reviewsSetupMissing) {
+          setReviewsMissingSetup(true);
+          setEventReviews([]);
+        } else {
+          console.error("Error loading reviews:", reviewsError.message);
+          setReviewsMissingSetup(false);
+        }
+      } else {
+        setReviewsMissingSetup(false);
+        setEventReviews((reviewsData ?? []) as EventReview[]);
+      }
     } catch (err: unknown) {
       console.error("Error loading dashboard:", err);
     } finally {
@@ -237,11 +324,11 @@ export default function Dashboard() {
 
   const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
   const categoryOptions = getEventCategoryOptions(pick);
-  const isPremium =
-    user?.user_metadata?.is_premium === true ||
-    user?.user_metadata?.subscription_plan === "premium";
-  const postsLeftForFree = Math.max(0, FREE_POST_LIMIT - myEvents.length);
-  const reachedFreeLimit = !isPremium && myEvents.length >= FREE_POST_LIMIT;
+  const isPremium = hasPremiumAccess(user);
+  const postsLeftForFree = Math.max(0, FREE_POST_LIMIT - freePostCreditsUsed);
+  const reachedFreeLimit = !isPremium && freePostCreditsUsed >= FREE_POST_LIMIT;
+  const minimumEventDate = getTodayEventDateInputMin();
+  const minimumEventTime = formData.date === minimumEventDate ? getCurrentEventTimeInputMin() : undefined;
   const missingColumnsHint = pick({
     ru: "В базе нет новых полей category/volunteers_needed/premium_priority. Выполните SQL из файла database/events_extra_fields.sql.",
     en: "New columns category/volunteers_needed/premium_priority are missing in DB. Run SQL from database/events_extra_fields.sql.",
@@ -256,6 +343,11 @@ export default function Dashboard() {
     ru: "Таблица impact-отчётов не найдена. Выполните SQL из файла database/event_reports.sql.",
     en: "Impact reports table is missing. Run SQL from database/event_reports.sql.",
     uz: "Impact hisobotlar jadvali topilmadi. database/event_reports.sql faylidagi SQL ni ishga tushiring.",
+  });
+  const missingReviewsHint = pick({
+    ru: "Таблица отзывов не найдена. Выполните SQL из файла database/event_reviews.sql.",
+    en: "Reviews table is missing. Run SQL from database/event_reviews.sql.",
+    uz: "Sharhlar jadvali topilmadi. database/event_reviews.sql faylidagi SQL ni ishga tushiring.",
   });
 
   const isMissingNewColumnsError = (message: string) => {
@@ -281,6 +373,22 @@ export default function Dashboard() {
     const hasSchemaMention = /relation|table|schema cache|does not exist|PGRST/i.test(message);
     return hasTableMention && hasSchemaMention;
   };
+
+  const reviewStats = useMemo(() => {
+    const totalReviews = eventReviews.length;
+    const averageRating =
+      totalReviews > 0
+        ? Math.round((eventReviews.reduce((sum, item) => sum + item.rating, 0) / totalReviews) * 10) / 10
+        : 0;
+    const fiveStarCount = eventReviews.filter((item) => item.rating === 5).length;
+
+    return {
+      totalReviews,
+      averageRating,
+      fiveStarCount,
+      recentReviews: eventReviews.slice(0, 3),
+    };
+  }, [eventReviews]);
 
   const premiumStats = useMemo(() => {
     const now = Date.now();
@@ -414,9 +522,9 @@ export default function Dashboard() {
       showAlertModal(
         pick({ ru: "Лимит достигнут", en: "Limit reached", uz: "Limitga yetildi" }),
         pick({
-          ru: `Лимит free-тарифа: ${FREE_POST_LIMIT} объявления. Оформите premium на отдельной странице подписки.`,
-          en: `Free plan limit: ${FREE_POST_LIMIT} posts. Upgrade on the Premium page for more.`,
-          uz: `Free tarif limiti: ${FREE_POST_LIMIT} ta e'lon. Ko'proq imkoniyat uchun Premium sahifasiga o'ting.`,
+          ru: `Free-тариф даёт ${FREE_POST_LIMIT} публикационных слотов за всё время. Удаление не возвращает слот. Для новых объявлений нужен Premium.`,
+          en: `The free plan includes ${FREE_POST_LIMIT} lifetime publication slots. Deleting a post does not return a slot. Upgrade to Premium for more.`,
+          uz: `Free tarif ${FREE_POST_LIMIT} ta umrboqiy e'lon slotini beradi. O'chirish slotni qaytarmaydi. Yangi e'lonlar uchun Premium kerak.`,
         }),
         "warning",
       );
@@ -519,6 +627,77 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!user?.email) {
+      setCanReviewManualPayments(false);
+      setManualPaymentRequests([]);
+      setManualPaymentsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadManualPaymentRequests = async () => {
+      try {
+        setManualPaymentsLoading(true);
+        const response = await fetch("/api/manual-payments/review", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const payload = (await response.json().catch(() => null)) as
+          | { requests?: ManualPaymentRequest[]; error?: string }
+          | null;
+
+        if (cancelled) return;
+
+        if (response.status === 403) {
+          setCanReviewManualPayments(false);
+          setManualPaymentRequests([]);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(payload?.error || "Could not load manual payment requests.");
+        }
+
+        setCanReviewManualPayments(true);
+        setManualPaymentRequests(payload?.requests ?? []);
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Error loading manual payment requests:", error);
+        setCanReviewManualPayments(false);
+        setManualPaymentRequests([]);
+      } finally {
+        if (!cancelled) {
+          setManualPaymentsLoading(false);
+        }
+      }
+    };
+
+    void loadManualPaymentRequests();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.email]);
+
+  const getManualPaymentKindLabel = (kind: ManualPaymentRequest["kind"]) => {
+    return kind === "premium"
+      ? pick({ ru: "Premium", en: "Premium", uz: "Premium" })
+      : pick({ ru: "Донат", en: "Donation", uz: "Xayriya" });
+  };
+
+  const getManualPaymentKindClassName = (kind: ManualPaymentRequest["kind"]) => {
+    return kind === "premium"
+      ? "border-amber-100 bg-amber-50 text-amber-700"
+      : "border-emerald-100 bg-emerald-50 text-emerald-700";
+  };
+
+  const formatCurrency = (value: number) => {
+    return `${value.toLocaleString(dateLocale)} UZS`;
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -644,6 +823,81 @@ export default function Dashboard() {
       );
     } finally {
       setApplicationActionId(null);
+    }
+  };
+
+  const handleManualPaymentReview = async (
+    paymentRequest: ManualPaymentRequest,
+    action: "approve" | "reject",
+  ) => {
+    try {
+      setManualPaymentActionId(paymentRequest.id);
+      const response = await fetch("/api/manual-payments/review", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          requestId: paymentRequest.id,
+          action,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | { request?: ManualPaymentRequest; error?: string }
+        | null;
+
+      if (!response.ok || !payload?.request) {
+        throw new Error(
+          payload?.error ||
+            pick({
+              ru: "Не удалось обработать заявку.",
+              en: "Could not process the request.",
+              uz: "So'rovni qayta ishlab bo'lmadi.",
+            }),
+        );
+      }
+
+      setManualPaymentRequests((prev) => prev.filter((item) => item.id !== paymentRequest.id));
+
+      if (action === "approve" && paymentRequest.kind === "premium" && paymentRequest.user_id === user?.id) {
+        await supabase.auth.refreshSession();
+        await fetchData();
+      }
+
+      showAlertModal(
+        action === "approve"
+          ? pick({ ru: "Платёж подтверждён", en: "Payment approved", uz: "To'lov tasdiqlandi" })
+          : pick({ ru: "Платёж отклонён", en: "Payment rejected", uz: "To'lov rad etildi" }),
+        action === "approve"
+          ? pick({
+              ru: paymentRequest.kind === "premium"
+                ? "Premium будет активирован для владельца заявки."
+                : "Донат отмечен как подтверждённый.",
+              en: paymentRequest.kind === "premium"
+                ? "Premium will be activated for the request owner."
+                : "The donation has been marked as confirmed.",
+              uz: paymentRequest.kind === "premium"
+                ? "Premium so'rov egasi uchun yoqiladi."
+                : "Xayriya tasdiqlangan deb belgilandi.",
+            })
+          : pick({
+              ru: "Заявка помечена как отклонённая.",
+              en: "The request has been marked as rejected.",
+              uz: "So'rov rad etilgan deb belgilandi.",
+            }),
+        action === "approve" ? "success" : "warning",
+      );
+    } catch (error) {
+      showAlertModal(
+        pick({ ru: "Ошибка модерации", en: "Moderation error", uz: "Moderatsiya xatosi" }),
+        error instanceof Error
+          ? error.message
+          : pick({ ru: "Неизвестная ошибка", en: "Unknown error", uz: "Noma'lum xatolik" }),
+        "error",
+      );
+    } finally {
+      setManualPaymentActionId(null);
     }
   };
 
@@ -836,9 +1090,9 @@ export default function Dashboard() {
       if (!editingId && reachedFreeLimit) {
         throw new Error(
           pick({
-            ru: `Вы достигли лимита free-тарифа (${FREE_POST_LIMIT} объявления).`,
-            en: `You reached the free plan limit (${FREE_POST_LIMIT} posts).`,
-            uz: `Siz free tarif limitiga yetdingiz (${FREE_POST_LIMIT} ta e'lon).`,
+            ru: `Вы достигли лимита free-тарифа: ${FREE_POST_LIMIT} публикационных слотов за всё время.`,
+            en: `You reached the free plan limit: ${FREE_POST_LIMIT} lifetime publication slots.`,
+            uz: `Siz free tarif limitiga yetdingiz: jami ${FREE_POST_LIMIT} ta e'lon sloti.`,
           }),
         );
       }
@@ -855,6 +1109,17 @@ export default function Dashboard() {
         );
       }
 
+      const combinedDateTime = `${formData.date}T${formData.time}:00`;
+      if (isPastEventDateTime(combinedDateTime)) {
+        throw new Error(
+          pick({
+            ru: "Дата и время события не могут быть в прошлом.",
+            en: "The event date and time cannot be in the past.",
+            uz: "Tadbir sana va vaqti o'tgan bo'lishi mumkin emas.",
+          }),
+        );
+      }
+
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
@@ -865,54 +1130,91 @@ export default function Dashboard() {
         finalImageUrl = publicUrl;
       }
 
-      const combinedDateTime = `${formData.date}T${formData.time}:00`;
-      const basePayload = {
-        title: formData.title,
-        location: formData.location,
-        date: combinedDateTime,
-        image_url: finalImageUrl,
-        description: formData.description,
-        user_id: user.id,
-      };
-      const payload = {
-        ...basePayload,
-        category: normalizeEventCategory(formData.category),
-        volunteers_needed: volunteersNeeded,
-        premium_priority: isPremium,
-      };
-      let usedFallbackWithoutNewColumns = false;
+      const response = await fetch("/api/events/manage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: editingId,
+          title: formData.title,
+          category: normalizeEventCategory(formData.category),
+          volunteersNeeded,
+          location: formData.location,
+          date: combinedDateTime,
+          imageUrl: finalImageUrl,
+          description: formData.description,
+        }),
+      });
 
-      if (editingId) {
-        const { error } = await supabase.from("events").update(payload).eq("id", editingId);
-        if (error) {
-          if (isMissingNewColumnsError(error.message)) {
-            const retry = await supabase.from("events").update(basePayload).eq("id", editingId);
-            if (retry.error) throw retry.error;
-            usedFallbackWithoutNewColumns = true;
-          } else {
-            throw error;
+      const result = (await response.json().catch(() => null)) as
+        | {
+            error?: string;
+            consumedFreePostCredit?: boolean;
+            majorChange?: boolean;
+            missingColumnsFallback?: boolean;
+            quota?: {
+              freePostsUsed: number;
+              postsLeft: number;
+            } | null;
           }
-        }
-      } else {
-        const { error } = await supabase.from("events").insert([payload]);
-        if (error) {
-          if (isMissingNewColumnsError(error.message)) {
-            const retry = await supabase.from("events").insert([basePayload]);
-            if (retry.error) throw retry.error;
-            usedFallbackWithoutNewColumns = true;
-          } else {
-            throw error;
-          }
-        }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(
+          result?.error ||
+            pick({
+              ru: "Не удалось сохранить событие.",
+              en: "Could not save the event.",
+              uz: "Tadbirni saqlab bo'lmadi.",
+            }),
+        );
+      }
+
+      const usedFallbackWithoutNewColumns = result?.missingColumnsFallback === true;
+      if (result?.quota) {
+        setFreePostCreditsUsed(result.quota.freePostsUsed);
+        setUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                user_metadata: {
+                  ...(prev.user_metadata ?? {}),
+                  free_post_credits_used: result.quota?.freePostsUsed,
+                },
+                app_metadata: {
+                  ...(prev.app_metadata ?? {}),
+                  free_post_credits_used: result.quota?.freePostsUsed,
+                },
+              }
+            : prev,
+        );
+        await supabase.auth.refreshSession();
       }
 
       closeAndReset();
-      fetchData(); 
+      await fetchData();
       if (usedFallbackWithoutNewColumns) {
         showAlertModal(
           pick({ ru: "Событие сохранено", en: "Event saved", uz: "Tadbir saqlandi" }),
           missingColumnsHint,
           "warning",
+        );
+      } else if (!isPremium && result?.consumedFreePostCredit) {
+        showAlertModal(
+          pick({ ru: "Слот учтён", en: "Slot counted", uz: "Slot hisoblandi" }),
+          result.majorChange
+            ? pick({
+                ru: `Изменение ключевых полей засчитано как новое объявление. Использовано ${result.quota?.freePostsUsed ?? freePostCreditsUsed} из ${FREE_POST_LIMIT} слотов.`,
+                en: `Changing key fields counted as a new listing. Used ${result.quota?.freePostsUsed ?? freePostCreditsUsed} of ${FREE_POST_LIMIT} slots.`,
+                uz: `Asosiy maydonlarni o'zgartirish yangi e'lon sifatida hisoblandi. ${FREE_POST_LIMIT} slotdan ${result.quota?.freePostsUsed ?? freePostCreditsUsed} tasi ishlatildi.`,
+              })
+            : pick({
+                ru: `Объявление опубликовано. Использовано ${result.quota?.freePostsUsed ?? freePostCreditsUsed} из ${FREE_POST_LIMIT} слотов.`,
+                en: `Listing published. Used ${result.quota?.freePostsUsed ?? freePostCreditsUsed} of ${FREE_POST_LIMIT} slots.`,
+                uz: `E'lon joylandi. ${FREE_POST_LIMIT} slotdan ${result.quota?.freePostsUsed ?? freePostCreditsUsed} tasi ishlatildi.`,
+              }),
+          "info",
         );
       }
     } catch (err: unknown) {
@@ -961,6 +1263,22 @@ export default function Dashboard() {
                   <X size={20} />
                 </button>
               </div>
+
+              {!isPremium ? (
+                <div className="mb-5 rounded-[22px] border border-amber-100 bg-amber-50 px-4 py-4 text-sm font-semibold leading-7 text-amber-800">
+                  {editingId
+                    ? pick({
+                        ru: "Для free-плана изменение названия, категории, места, даты или числа волонтёров считается новым объявлением и использует ещё один слот.",
+                        en: "On the free plan, changing the title, category, location, date, or volunteer count counts as a new listing and uses another slot.",
+                        uz: "Free tarifda nom, kategoriya, joy, sana yoki volontyor sonini o'zgartirish yangi e'lon deb hisoblanadi va yana bitta slot ishlatadi.",
+                      })
+                    : pick({
+                        ru: "Free-план даёт ограниченное число публикационных слотов. Удаление объявления слот не возвращает.",
+                        en: "The free plan includes a limited number of publication slots. Deleting a listing does not return a slot.",
+                        uz: "Free tarif cheklangan e'lon slotlarini beradi. E'lonni o'chirish slotni qaytarmaydi.",
+                      })}
+                </div>
+              ) : null}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Фотография */}
@@ -1040,15 +1358,36 @@ export default function Dashboard() {
                     <label className="text-[10px] font-black uppercase text-gray-400 ml-4">
                       {pick({ ru: "Дата", en: "Date", uz: "Sana" })}
                     </label>
-                    <input required type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full px-6 py-4 bg-gray-50 rounded-[22px] font-bold text-gray-900" />
+                    <input
+                      required
+                      type="date"
+                      min={minimumEventDate}
+                      value={formData.date}
+                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                      className="w-full px-6 py-4 bg-gray-50 rounded-[22px] font-bold text-gray-900"
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase text-gray-400 ml-4">
                       {pick({ ru: "Время", en: "Time", uz: "Vaqt" })}
                     </label>
-                    <input required type="time" value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} className="w-full px-6 py-4 bg-gray-50 rounded-[22px] font-bold text-gray-900" />
+                    <input
+                      required
+                      type="time"
+                      min={minimumEventTime}
+                      value={formData.time}
+                      onChange={(e) => setFormData({...formData, time: e.target.value})}
+                      className="w-full px-6 py-4 bg-gray-50 rounded-[22px] font-bold text-gray-900"
+                    />
                   </div>
                 </div>
+                <p className="px-4 text-[11px] font-semibold text-gray-400">
+                  {pick({
+                    ru: "Событие можно назначить только на текущее или будущее время.",
+                    en: "Events can only be scheduled for the current or a future time.",
+                    uz: "Tadbirni faqat hozirgi yoki kelajakdagi vaqtga belgilash mumkin.",
+                  })}
+                </p>
 
                 {/* Место */}
                 <div className="space-y-1">
@@ -1199,34 +1538,274 @@ export default function Dashboard() {
 
       {/* --- MAIN CONTENT --- */}
       <main className="max-w-7xl mx-auto p-6 md:p-12">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
-          <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-[#10b981] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-green-100">
-                <Heart className="w-7 h-7 fill-current" />
-             </div>
-             <div>
-                <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase italic leading-none">VoloHero</h1>
-                <p className="text-gray-400 font-bold uppercase text-[9px] tracking-[0.3em] mt-2">
-                  {pick({ ru: "Личный кабинет героя", en: "Hero dashboard", uz: "Qahramon kabineti" })}: {user?.user_metadata?.full_name?.split(" ")[0]}
-                </p>
-                <p className={`mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${isPremium ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}>
+        <section className="mb-14 rounded-[36px] border border-white/90 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.08)] backdrop-blur md:p-8">
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+            <div>
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-[22px] bg-[#10b981] text-white shadow-lg shadow-green-100">
+                  <Heart className="h-7 w-7 fill-current" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-black uppercase italic tracking-[-0.05em] text-slate-950 md:text-5xl">
+                    VoloHero
+                  </h1>
+                  <p className="mt-2 text-[10px] font-black uppercase tracking-[0.26em] text-slate-400">
+                    {pick({ ru: "Личный кабинет героя", en: "Hero dashboard", uz: "Qahramon kabineti" })}: {user?.user_metadata?.full_name?.split(" ")[0]}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <p className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] ${isPremium ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
                   {isPremium ? <Crown className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
                   {isPremium
                     ? pick({ ru: "Premium", en: "Premium", uz: "Premium" })
                     : pick({ ru: "Free", en: "Free", uz: "Free" })}
                 </p>
-             </div>
+                <p className="text-sm font-semibold text-slate-500">
+                  {pick({
+                    ru: "Здесь вы управляете событиями, заявками, impact-аналитикой и репутацией организатора.",
+                    en: "Manage events, requests, impact analytics, and organizer reputation from here.",
+                    uz: "Bu yerda tadbirlar, arizalar, impact analitika va tashkilotchi obro'sini boshqarasiz.",
+                  })}
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-[24px] border border-white bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] px-5 py-4 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    {pick({ ru: "Мои события", en: "My events", uz: "Mening tadbirlarim" })}
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-slate-950">{myEvents.length}</p>
+                </div>
+                <div className="rounded-[24px] border border-amber-100 bg-[linear-gradient(180deg,_#fffbeb_0%,_#ffffff_100%)] px-5 py-4 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">
+                    {pick({ ru: "Ожидают решения", en: "Pending review", uz: "Ko'rib chiqilmoqda" })}
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-amber-700">{applicationsStats.pending}</p>
+                </div>
+                <div className="rounded-[24px] border border-emerald-100 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_100%)] px-5 py-4 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">
+                    {pick({ ru: "Средний рейтинг", en: "Average rating", uz: "O'rtacha reyting" })}
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-emerald-700">
+                    {reviewStats.totalReviews > 0 ? reviewStats.averageRating.toFixed(1) : "—"}
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-sky-100 bg-[linear-gradient(180deg,_#f0f9ff_0%,_#ffffff_100%)] px-5 py-4 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-600">
+                    {pick({ ru: "Impact отчёты", en: "Impact reports", uz: "Impact hisobotlar" })}
+                  </p>
+                  <p className="mt-2 text-3xl font-black text-sky-700">{impactStats.reportsCount}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[30px] border border-slate-100 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-5 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                {pick({ ru: "Быстрые действия", en: "Quick actions", uz: "Tez amallar" })}
+              </p>
+              <p className="mt-3 text-sm font-semibold leading-7 text-slate-500">
+                {pick({
+                  ru: "Создавайте новые объявления, отслеживайте отклики и держите под рукой ключевые метрики по вашим событиям.",
+                  en: "Create new listings, track applications, and keep your key event metrics close at hand.",
+                  uz: "Yangi e'lonlar yarating, arizalarni kuzating va asosiy tadbir ko'rsatkichlarini bir joyda saqlang.",
+                })}
+              </p>
+              <div className="mt-5 space-y-3">
+                <button 
+                  onClick={openCreateModal}
+                  className="flex w-full items-center justify-center gap-3 rounded-[22px] bg-[#10b981] px-6 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-xl shadow-green-100/50 transition-colors hover:bg-[#0da975]"
+                >
+                  <PlusCircle size={18} /> {pick({ ru: "Создать пост", en: "Create Post", uz: "Post yaratish" })}
+                </button>
+                <Link
+                  href="/premium"
+                  className="flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-200 bg-white px-6 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-[#10b981] hover:text-[#10b981]"
+                >
+                  {isPremium
+                    ? pick({ ru: "Управлять Premium", en: "Manage Premium", uz: "Premiumni boshqarish" })
+                    : pick({ ru: "Открыть Premium", en: "Open Premium", uz: "Premiumni ochish" })}
+                </Link>
+                {canReviewManualPayments ? (
+                  <Link
+                    href="/admin"
+                    className="flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-200 bg-slate-900 px-6 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-slate-800"
+                  >
+                    <BarChart3 size={18} />
+                    {pick({ ru: "Открыть Admin Center", en: "Open Admin Center", uz: "Admin markazini ochish" })}
+                  </Link>
+                ) : null}
+              </div>
+            </div>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button 
-              onClick={openCreateModal}
-              className="flex items-center justify-center gap-3 px-8 py-4 bg-[#10b981] text-white rounded-[22px] font-black italic uppercase text-[10px] tracking-widest shadow-xl shadow-green-100/50 hover:bg-[#0da975] hover:scale-105 transition-all"
-            >
-              <PlusCircle size={18} /> {pick({ ru: "Создать пост", en: "Create Post", uz: "Post yaratish" })}
-            </button>
-          </div>
-        </header>
+        </section>
+
+        {canReviewManualPayments ? (
+          <section className="mb-14 rounded-[30px] border border-slate-100 bg-white p-6 md:p-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                  <Clock3 className="h-4 w-4 text-[#10b981]" />
+                  {pick({ ru: "Ручные платежи", en: "Manual payments", uz: "Qo'lda to'lovlar" })}
+                </p>
+                <h3 className="mt-2 text-2xl font-black text-gray-900">
+                  {pick({
+                    ru: "Проверка донатов и Premium",
+                    en: "Donation and Premium review",
+                    uz: "Xayriya va Premium tekshiruvi",
+                  })}
+                </h3>
+                <p className="mt-2 text-sm font-semibold leading-7 text-gray-500">
+                  {pick({
+                    ru: "Сюда попадают заявки после перевода на карту. Подтверждённый Premium включается сервером сразу после approve.",
+                    en: "Requests appear here after the card transfer. Approved Premium is enabled by the server right after approval.",
+                    uz: "Kartaga o'tkazmadan keyin so'rovlar shu yerga tushadi. Tasdiqlangan Premium approve dan keyin server tomonidan darhol yoqiladi.",
+                  })}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">
+                {pick({ ru: "Ожидают", en: "Pending", uz: "Kutilmoqda" })}: {manualPaymentRequests.length}
+              </div>
+            </div>
+
+            {manualPaymentsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
+              </div>
+            ) : manualPaymentRequests.length === 0 ? (
+              <div className="mt-6 rounded-2xl border-2 border-dashed border-gray-100 px-6 py-10 text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  {pick({
+                    ru: "Нет новых заявок на проверку",
+                    en: "No manual payments waiting",
+                    uz: "Tekshiruvni kutayotgan so'rov yo'q",
+                  })}
+                </p>
+              </div>
+            ) : (
+              <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                {manualPaymentRequests.map((paymentRequest) => (
+                  <article
+                    key={paymentRequest.id}
+                    className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${getManualPaymentKindClassName(paymentRequest.kind)}`}
+                          >
+                            {getManualPaymentKindLabel(paymentRequest.kind)}
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-300">
+                            {new Date(paymentRequest.created_at).toLocaleString(dateLocale)}
+                          </span>
+                        </div>
+                        <p className="text-2xl font-black text-gray-900">
+                          {formatCurrency(paymentRequest.amount_uzs)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl bg-white px-4 py-3">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                          {pick({ ru: "Плательщик", en: "Payer", uz: "To'lovchi" })}
+                        </p>
+                        <p className="mt-2 text-sm font-bold text-gray-900">
+                          {paymentRequest.payer_name ||
+                            pick({ ru: "Не указано", en: "Not provided", uz: "Ko'rsatilmagan" })}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-white px-4 py-3">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                          {pick({ ru: "Контакт", en: "Contact", uz: "Kontakt" })}
+                        </p>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-sm font-bold text-gray-900">
+                            {paymentRequest.payer_email ||
+                              pick({ ru: "Email не указан", en: "No email", uz: "Email yo'q" })}
+                          </p>
+                          <p className="text-sm font-semibold text-gray-500">
+                            {paymentRequest.contact_phone ||
+                              pick({ ru: "Телефон не указан", en: "No phone", uz: "Telefon yo'q" })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 rounded-xl bg-white px-4 py-3">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                        {pick({ ru: "Как найти перевод", en: "How to find the transfer", uz: "O'tkazmani qanday topish" })}
+                      </p>
+                      <p className="mt-2 text-sm font-semibold leading-7 text-gray-700">
+                        {paymentRequest.transfer_reference ||
+                          pick({ ru: "Не указан", en: "Not provided", uz: "Ko'rsatilmagan" })}
+                      </p>
+                    </div>
+
+                    {paymentRequest.attachment_url ? (
+                      <div className="mt-3 rounded-xl bg-white px-4 py-3">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                          {pick({ ru: "Вложение", en: "Attachment", uz: "Biriktirma" })}
+                        </p>
+                        <a
+                          href={paymentRequest.attachment_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-2 text-sm font-black text-[#10b981] hover:underline"
+                        >
+                          <FileText className="h-4 w-4" />
+                          {paymentRequest.attachment_name ||
+                            pick({ ru: "Открыть файл", en: "Open file", uz: "Faylni ochish" })}
+                        </a>
+                      </div>
+                    ) : null}
+
+                    {paymentRequest.note ? (
+                      <div className="mt-3 rounded-xl bg-white px-4 py-3">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                          {pick({ ru: "Комментарий", en: "Comment", uz: "Izoh" })}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold leading-7 text-gray-700">
+                          {paymentRequest.note}
+                        </p>
+                      </div>
+                    ) : null}
+
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => handleManualPaymentReview(paymentRequest, "approve")}
+                        disabled={manualPaymentActionId === paymentRequest.id}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
+                      >
+                        {manualPaymentActionId === paymentRequest.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                        {pick({ ru: "Подтвердить", en: "Approve", uz: "Tasdiqlash" })}
+                      </button>
+                      <button
+                        onClick={() => handleManualPaymentReview(paymentRequest, "reject")}
+                        disabled={manualPaymentActionId === paymentRequest.id}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
+                      >
+                        {manualPaymentActionId === paymentRequest.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        {pick({ ru: "Отклонить", en: "Reject", uz: "Rad etish" })}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : null}
 
         {isPremium ? (
           <section className="mb-14 rounded-[34px] border border-amber-200 bg-[linear-gradient(135deg,_#fff7ed_0%,_#ffffff_55%,_#fffbeb_100%)] p-6 md:p-8">
@@ -1306,16 +1885,16 @@ export default function Dashboard() {
                 </p>
                 <p className="text-gray-700 font-bold mt-1">
                   {pick({
-                    ru: `Лимит объявлений: ${FREE_POST_LIMIT}. Сейчас доступно: ${postsLeftForFree}.`,
-                    en: `Post limit: ${FREE_POST_LIMIT}. Remaining: ${postsLeftForFree}.`,
-                    uz: `E'lon limiti: ${FREE_POST_LIMIT}. Qolgan: ${postsLeftForFree}.`,
+                    ru: `Использовано слотов: ${freePostCreditsUsed} из ${FREE_POST_LIMIT}. Осталось: ${postsLeftForFree}.`,
+                    en: `Slots used: ${freePostCreditsUsed} of ${FREE_POST_LIMIT}. Remaining: ${postsLeftForFree}.`,
+                    uz: `Ishlatilgan slotlar: ${freePostCreditsUsed} / ${FREE_POST_LIMIT}. Qolgani: ${postsLeftForFree}.`,
                   })}
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
                   {pick({
-                    ru: "В premium доступны расширенная аналитика: топ-категория, ближайшая дата, средний размер команды и экспорт событий.",
-                    en: "Premium unlocks advanced analytics: top category, nearest date, average team size, and event export.",
-                    uz: "Premium kengaytirilgan tahlilni ochadi: top kategoriya, eng yaqin sana, o'rtacha jamoa hajmi va eksport.",
+                    ru: "Удаление не возвращает слот, а изменение ключевых полей объявления засчитывается как новая публикация. Premium снимает это ограничение и открывает аналитику.",
+                    en: "Deleting does not return a slot, and changing key event fields counts as a new publication. Premium removes the limit and unlocks analytics.",
+                    uz: "O'chirish slotni qaytarmaydi, e'lonning asosiy maydonlarini o'zgartirish esa yangi nashr sifatida hisoblanadi. Premium bu cheklovni olib tashlaydi va analitikani ochadi.",
                   })}
                 </p>
                 <Link
@@ -1419,6 +1998,100 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+        </section>
+
+        <section className="mb-14 rounded-[30px] border border-gray-100 bg-white p-6 md:p-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-[#10b981]" />
+                {pick({ ru: "Отзывы и рейтинг", en: "Reviews and rating", uz: "Sharhlar va reyting" })}
+              </p>
+              <h3 className="text-2xl font-black text-gray-900 mt-2">
+                {pick({
+                  ru: "Как волонтёры оценивают организацию",
+                  en: "How volunteers rate your organization",
+                  uz: "Volontyorlar tashkilotingizni qanday baholaydi",
+                })}
+              </h3>
+            </div>
+          </div>
+
+          {reviewsMissingSetup ? (
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4">
+              <p className="text-sm font-black text-amber-700">{missingReviewsHint}</p>
+            </div>
+          ) : reviewStats.totalReviews === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-gray-100 py-10 px-6 text-center">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                {pick({
+                  ru: "Пока нет отзывов от волонтёров",
+                  en: "No volunteer reviews yet",
+                  uz: "Hozircha volontyorlardan sharh yo'q",
+                })}
+              </p>
+              <p className="mt-3 text-sm font-semibold text-gray-500">
+                {pick({
+                  ru: "После завершённых событий и отметки участия волонтёры смогут оценить организацию.",
+                  en: "After completed events and attendance confirmation, volunteers will be able to rate your organization.",
+                  uz: "Tadbir yakunlanib, qatnashuv belgilangandan so'ng volontyorlar sizni baholay oladi.",
+                })}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    {pick({ ru: "Средний рейтинг", en: "Average rating", uz: "O'rtacha reyting" })}
+                  </p>
+                  <p className="text-3xl font-black text-gray-900 mt-1">{reviewStats.averageRating.toFixed(1)}</p>
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    {pick({ ru: "Всего отзывов", en: "Total reviews", uz: "Jami sharhlar" })}
+                  </p>
+                  <p className="text-3xl font-black text-gray-900 mt-1">{reviewStats.totalReviews}</p>
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    {pick({ ru: "Оценок 5/5", en: "Rated 5/5", uz: "5/5 baholar" })}
+                  </p>
+                  <p className="text-3xl font-black text-amber-600 mt-1">{reviewStats.fiveStarCount}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {reviewStats.recentReviews.map((review) => (
+                  <article key={review.id} className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      {eventTitleMap.get(review.event_id) ??
+                        pick({ ru: "Событие", en: "Event", uz: "Tadbir" })}
+                    </p>
+                    <div className="mt-3 flex items-center gap-1 text-amber-500">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                          key={index}
+                          className={`w-4 h-4 ${index < review.rating ? "fill-current" : "text-gray-200"}`}
+                        />
+                      ))}
+                    </div>
+                    <p className="mt-4 text-sm font-semibold leading-7 text-gray-700">
+                      {review.comment ||
+                        pick({
+                          ru: "Пользователь поставил оценку без комментария.",
+                          en: "The volunteer left a rating without a comment.",
+                          uz: "Foydalanuvchi izohsiz baho qoldirdi.",
+                        })}
+                    </p>
+                    <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-gray-300">
+                      {new Date(review.created_at).toLocaleDateString(dateLocale)}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
         </section>
 
         <section className="mb-14 rounded-[30px] border border-gray-100 bg-white p-6 md:p-8">
@@ -1577,13 +2250,13 @@ export default function Dashboard() {
                 return (
                 <div key={event.id} className="bg-white rounded-[40px] border border-gray-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col group">
                   <div className="w-full h-52 relative overflow-hidden">
-                    <Image
-                      src={event.image_url || "/api/placeholder/400/400"}
+                    <EventVisual
+                      title={event.title}
+                      category={event.category}
+                      categoryLabel={getEventCategoryLabel(event.category, pick)}
+                      imageUrl={event.image_url}
                       className="object-cover group-hover:scale-110 transition-all duration-700"
-                      alt={event.title}
-                      fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                      unoptimized
                     />
                   </div>
                   <div className="p-8 flex flex-col justify-between flex-1">

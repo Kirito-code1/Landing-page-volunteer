@@ -4,13 +4,14 @@ import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
-import { User, LogOut, ShieldCheck, Crown, Camera, Loader2, Mail, Phone, Trash2, AlertTriangle, Trophy, CalendarCheck2, Users } from "lucide-react";
+import { User, ShieldCheck, Crown, Camera, Loader2, Mail, Phone, AlertTriangle, Trophy, CalendarCheck2, Users } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
 import { normalizeVolunteerCount } from "@/components/events/eventMeta";
+import { getPremiumAccessType, getPremiumExpiresAt, hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
 
 export default function ProfilePage() {
-  const { pick } = useLanguage();
+  const { pick, locale } = useLanguage();
   const router = useRouter();
   
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -49,7 +50,20 @@ export default function ProfilePage() {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
-      const currentUser = session?.user || null;
+      let currentUser = session?.user || null;
+
+      if (currentUser && needsPremiumStateSync(currentUser)) {
+        const response = await fetch("/api/premium/status", {
+          cache: "no-store",
+        });
+
+        if (response.ok) {
+          await supabase.auth.refreshSession();
+          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+          currentUser = refreshedSession?.user || currentUser;
+        }
+      }
+
       setUser(currentUser);
       if (currentUser) {
         setNewName(currentUser.user_metadata?.full_name || "");
@@ -176,9 +190,17 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  const isPremium =
-    user.user_metadata?.is_premium === true ||
-    user.user_metadata?.subscription_plan === "premium";
+  const isPremium = hasPremiumAccess(user);
+  const premiumAccessType = getPremiumAccessType(user);
+  const isTrialActive = isPremium && premiumAccessType === "trial";
+  const premiumExpiresAt = getPremiumExpiresAt(user);
+  const premiumEndsLabel =
+    premiumExpiresAt
+      ? new Date(premiumExpiresAt).toLocaleDateString(
+          locale === "ru" ? "ru-RU" : locale === "uz" ? "uz-UZ" : "en-US",
+          { day: "2-digit", month: "short", year: "numeric" },
+        )
+      : null;
 
   const achievements = [
     {
@@ -232,157 +254,308 @@ export default function ProfilePage() {
       unlocked: isPremium,
     },
   ];
+  const unlockedAchievementsCount = achievements.filter((item) => item.unlocked).length;
+  const profileCompletion =
+    [user.user_metadata?.full_name, user.email, user.user_metadata?.phone, user.user_metadata?.avatar_url].filter(Boolean).length * 25;
+  const nextAchievement = achievements.find((item) => !item.unlocked) ?? null;
+  const createdAt = new Date(user.created_at);
+  const memberSince = Number.isNaN(createdAt.getTime())
+    ? "—"
+    : createdAt.toLocaleDateString(
+        locale === "ru" ? "ru-RU" : locale === "uz" ? "uz-UZ" : "en-US",
+        { month: "short", year: "numeric" },
+      );
+  const overviewStats = [
+    {
+      label: pick({ ru: "Заполненность", en: "Profile completeness", uz: "Profil to'liqligi" }),
+      value: `${profileCompletion}%`,
+      icon: ShieldCheck,
+    },
+    {
+      label: pick({ ru: "Достижения", en: "Achievements", uz: "Yutuqlar" }),
+      value: `${unlockedAchievementsCount}/${achievements.length}`,
+      icon: Trophy,
+    },
+    {
+      label: pick({ ru: "Событий создано", en: "Created events", uz: "Yaratilgan tadbirlar" }),
+      value: `${activityStats.createdEvents}`,
+      icon: CalendarCheck2,
+    },
+    {
+      label: pick({ ru: "План мест", en: "Planned spots", uz: "Rejalangan o'rinlar" }),
+      value: `${activityStats.volunteersNeeded}`,
+      icon: Users,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-10 px-4">
-      <div className="max-w-3xl mx-auto py-6 md:py-12 animate-in fade-in duration-500">
-        
-        {/* Карточка профиля */}
-        <div className="bg-white rounded-[30px] md:rounded-[40px] shadow-sm border border-gray-100 overflow-hidden mb-6 md:mb-8">
-          <div className="h-32 md:h-40 bg-gradient-to-br from-[#10b981] to-[#3b82f6]" />
-          <div className="px-6 md:px-10 pb-8 md:pb-10">
-            <div className="relative -mt-16 md:-mt-20 mb-4 md:mb-6 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4">
-              <div className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-[28px] md:rounded-[38px] p-1 shadow-2xl overflow-hidden relative group">
+    <div className="min-h-screen bg-slate-50 px-4 pb-10">
+      <div className="mx-auto max-w-5xl animate-in fade-in py-6 duration-500 md:py-10">
+        <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+              <div className="relative h-28 w-28 overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 md:h-32 md:w-32">
                 {user.user_metadata?.avatar_url ? (
-                  <Image src={user.user_metadata.avatar_url} width={160} height={160} className="w-full h-full object-cover rounded-[24px] md:rounded-[32px]" alt={pick({ ru: "Профиль", en: "Profile", uz: "Profil" })} unoptimized />
+                  <Image
+                    src={user.user_metadata.avatar_url}
+                    width={128}
+                    height={128}
+                    className="h-full w-full object-cover"
+                    alt={pick({ ru: "Профиль", en: "Profile", uz: "Profil" })}
+                    unoptimized
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-[24px] md:rounded-[32px]">
-                    <User className="w-12 h-12 md:w-20 md:h-20 text-gray-200" />
+                  <div className="flex h-full w-full items-center justify-center">
+                    <User className="h-12 w-12 text-slate-300 md:h-16 md:w-16" />
                   </div>
                 )}
-                <label className="absolute bottom-1 right-1 md:bottom-2 md:right-2 p-2.5 md:p-3 bg-[#10b981] text-white rounded-xl md:rounded-2xl cursor-pointer hover:scale-110 transition-transform shadow-lg">
-                  {uploading ? <Loader2 className="animate-spin w-4 h-4 md:w-5 md:h-5" /> : <Camera className="w-4 h-4 md:w-5 md:h-5" />}
+                <label className="absolute bottom-2 right-2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl bg-[#10b981] text-white transition-transform hover:scale-105">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                   <input type="file" className="hidden" onChange={handleAvatarUpload} disabled={uploading} accept="image/*" />
                 </label>
               </div>
-              <button 
-                onClick={() => setIsEditModalOpen(true)} 
-                className="w-full sm:w-auto px-6 md:px-8 py-3.5 md:py-4 bg-gray-900 text-white rounded-[18px] md:rounded-[22px] font-black hover:bg-black transition-all active:scale-95 shadow-lg text-sm md:text-base"
+
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#10b981]" />
+                  {pick({ ru: "Профиль", en: "Profile", uz: "Profil" })}
+                </div>
+                <h1 className="mt-3 text-3xl font-black text-slate-950 md:text-4xl">
+                  {user.user_metadata?.full_name || pick({ ru: "Участник", en: "Member", uz: "Ishtirokchi" })}
+                </h1>
+                <p className="mt-2 text-sm font-medium leading-7 text-slate-500">
+                  {pick({
+                    ru: "Основная информация об аккаунте, статусе и активности.",
+                    en: "Main account details, status, and activity in one place.",
+                    uz: "Akkaunt, status va faollik bo'yicha asosiy ma'lumotlar bir joyda.",
+                  })}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-slate-200 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                    ID: {user.id.slice(0, 8)}
+                  </span>
+                  <span className="rounded-full border border-slate-200 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                    {pick({ ru: "С нами с", en: "With us since", uz: "Biz bilan" })}: {memberSince}
+                  </span>
+                  <span className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${
+                    isPremium ? "border-amber-200 bg-amber-50 text-amber-700" : "border-slate-200 text-slate-500"
+                  }`}>
+                    {isPremium
+                      ? premiumEndsLabel
+                        ? `${isTrialActive ? "Trial" : "Premium"} · ${premiumEndsLabel}`
+                        : isTrialActive ? "Trial" : "Premium"
+                      : "Free"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-black text-white transition-colors hover:bg-black"
               >
-                {pick({ ru: "Настроить", en: "Edit", uz: "Sozlash" })}
+                {pick({ ru: "Настроить профиль", en: "Edit profile", uz: "Profilni sozlash" })}
+              </button>
+              <button
+                onClick={() => router.push("/premium")}
+                className={`inline-flex items-center justify-center rounded-2xl px-5 py-3.5 text-sm font-black transition-colors ${
+                  isPremium ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <Crown className="mr-2 h-4 w-4" />
+                {isPremium
+                  ? pick({ ru: "Premium", en: "Premium", uz: "Premium" })
+                  : pick({ ru: "Подключить Premium", en: "Get Premium", uz: "Premium olish" })}
               </button>
             </div>
-            
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl md:text-4xl font-black text-gray-900 flex items-center justify-center sm:justify-start gap-2 md:gap-3">
-                {user.user_metadata?.full_name || pick({ ru: "Участник", en: "Member", uz: "Ishtirokchi" })}
-                <ShieldCheck className="w-5 h-5 md:w-6 md:h-6 text-[#10b981]" />
-              </h1>
-              <p className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px] tracking-widest mt-1">ID: {user.id.slice(0, 8)}</p>
-            </div>
           </div>
-        </div>
 
-        {/* Инфо и Кнопки */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <div className="bg-white p-6 md:p-8 rounded-[25px] md:rounded-[35px] border border-gray-100 shadow-sm space-y-4 md:space-y-6">
-            <div>
-              <p className="text-gray-400 font-black uppercase text-[9px] md:text-[10px] tracking-widest mb-1 flex items-center gap-2">
-                <Mail className="w-3 h-3" /> {pick({ ru: "Почта", en: "Email", uz: "Email" })}
-              </p>
-              <p className="font-bold text-gray-900 text-sm md:text-base break-all">{user.email}</p>
-            </div>
-            <div>
-              <p className="text-gray-400 font-black uppercase text-[9px] md:text-[10px] tracking-widest mb-1 flex items-center gap-2">
-                <Phone className="w-3 h-3" /> {pick({ ru: "Телефон", en: "Phone", uz: "Telefon" })}
-              </p>
-              <p className="font-bold text-gray-900 text-sm md:text-base">
-                {user.user_metadata?.phone || pick({ ru: "Не указан", en: "Not set", uz: "Kiritilmagan" })}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-400 font-black uppercase text-[9px] md:text-[10px] tracking-widest mb-1 flex items-center gap-2">
-                <Crown className="w-3 h-3" /> {pick({ ru: "Тариф", en: "Plan", uz: "Tarif" })}
-              </p>
-              <p className={`font-black text-sm md:text-base ${isPremium ? "text-amber-600" : "text-gray-900"}`}>
-                {isPremium
-                  ? pick({ ru: "PREMIUM", en: "PREMIUM", uz: "PREMIUM" })
-                  : pick({ ru: "FREE", en: "FREE", uz: "FREE" })}
-              </p>
-            </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {overviewStats.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article key={item.label} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                  <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    <Icon className="h-3.5 w-3.5" />
+                    {item.label}
+                  </p>
+                  <p className="mt-3 text-3xl font-black text-slate-950">{item.value}</p>
+                </article>
+              );
+            })}
           </div>
-          
-          <div className="flex flex-col gap-3 md:gap-4">
-             <button
-               onClick={() => router.push("/premium")}
-               className={`w-full py-4 md:py-5 rounded-[20px] md:rounded-[22px] font-black transition-all flex items-center justify-center gap-2 text-sm md:text-base ${
-                 isPremium
-                   ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
-                   : "bg-gray-900 text-white hover:bg-black"
-               }`}
-             >
-               <Crown className="w-4 h-4 md:w-5 md:h-5" />
-               {isPremium
-                 ? pick({ ru: "Управлять Premium", en: "Manage Premium", uz: "Premiumni boshqarish" })
-                 : pick({ ru: "Оформить Premium", en: "Get Premium", uz: "Premium olish" })}
-             </button>
-             <button onClick={handleLogout} className="w-full py-4 md:py-5 bg-white text-gray-900 border border-gray-100 rounded-[20px] md:rounded-[22px] font-black hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm md:text-base">
-               <LogOut className="w-4 h-4 md:w-5 md:h-5" /> {pick({ ru: "Выйти", en: "Logout", uz: "Chiqish" })}
-             </button>
-             <button onClick={() => setConfirmDeleteOpen(true)} className="w-full py-4 md:py-5 bg-red-50 text-red-500 rounded-[20px] md:rounded-[22px] font-black hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 text-sm md:text-base">
-               <Trash2 className="w-4 h-4 md:w-5 md:h-5" /> {pick({ ru: "Удалить аккаунт", en: "Delete account", uz: "Akkountni o'chirish" })}
-             </button>
-          </div>
-        </div>
+        </section>
 
-        <div className="mt-6 md:mt-8 bg-white rounded-[25px] md:rounded-[35px] border border-gray-100 shadow-sm p-6 md:p-8">
+        <section className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid gap-6 md:grid-cols-2">
+            <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-black text-slate-950">
+                {pick({ ru: "Контакты и статус", en: "Contacts and status", uz: "Kontaktlar va status" })}
+              </h2>
+              <div className="mt-5 space-y-3">
+                <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    <Mail className="h-3.5 w-3.5" />
+                    {pick({ ru: "Почта", en: "Email", uz: "Email" })}
+                  </p>
+                  <p className="break-all text-sm font-bold text-slate-950">{user.email}</p>
+                </div>
+                <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    <Phone className="h-3.5 w-3.5" />
+                    {pick({ ru: "Телефон", en: "Phone", uz: "Telefon" })}
+                  </p>
+                  <p className="text-sm font-bold text-slate-950">
+                    {user.user_metadata?.phone || pick({ ru: "Не указан", en: "Not set", uz: "Kiritilmagan" })}
+                  </p>
+                </div>
+                <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    <Crown className="h-3.5 w-3.5" />
+                    {pick({ ru: "Тариф", en: "Plan", uz: "Tarif" })}
+                  </p>
+                  <p className={`text-sm font-bold ${isPremium ? "text-amber-700" : "text-slate-950"}`}>
+                    {isPremium
+                      ? premiumEndsLabel
+                        ? pick({
+                            ru: isTrialActive
+                              ? `Пробная версия активна до ${premiumEndsLabel}`
+                              : `Premium активен до ${premiumEndsLabel}`,
+                            en: isTrialActive
+                              ? `Trial is active until ${premiumEndsLabel}`
+                              : `Premium active until ${premiumEndsLabel}`,
+                            uz: isTrialActive
+                              ? `Sinov ${premiumEndsLabel} gacha faol`
+                              : `Premium ${premiumEndsLabel} gacha faol`,
+                          })
+                        : pick({
+                            ru: isTrialActive ? "Пробная версия активна" : "Premium активен",
+                            en: isTrialActive ? "Trial is active" : "Premium active",
+                            uz: isTrialActive ? "Sinov faol" : "Premium faol",
+                          })
+                      : pick({ ru: "Free план", en: "Free plan", uz: "Free tarif" })}
+                  </p>
+                </div>
+              </div>
+            </article>
+
+            <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-black text-slate-950">
+                {pick({ ru: "Активность", en: "Activity", uz: "Faollik" })}
+              </h2>
+              <div className="mt-5 space-y-3">
+                <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    <CalendarCheck2 className="h-3.5 w-3.5" />
+                    {pick({ ru: "Создано событий", en: "Created events", uz: "Yaratilgan tadbirlar" })}
+                  </p>
+                  <p className="text-3xl font-black text-slate-950">{activityStats.createdEvents}</p>
+                </div>
+                <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    <Users className="h-3.5 w-3.5" />
+                    {pick({ ru: "План мест", en: "Planned spots", uz: "Rejalangan o'rinlar" })}
+                  </p>
+                  <p className="text-3xl font-black text-slate-950">{activityStats.volunteersNeeded}</p>
+                </div>
+                <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    <Trophy className="h-3.5 w-3.5" />
+                    {pick({ ru: "Открыто достижений", en: "Unlocked achievements", uz: "Ochilgan yutuqlar" })}
+                  </p>
+                  <p className="text-3xl font-black text-slate-950">{unlockedAchievementsCount}</p>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div className="space-y-6">
+            <aside className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-black text-slate-950">
+                {pick({ ru: "Действия", en: "Actions", uz: "Amallar" })}
+              </h2>
+              <div className="mt-5 flex flex-col gap-3">
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="rounded-2xl bg-slate-950 px-4 py-3.5 text-sm font-black text-white transition-colors hover:bg-black"
+                >
+                  {pick({ ru: "Редактировать профиль", en: "Edit profile", uz: "Profilni tahrirlash" })}
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-2xl border border-slate-200 px-4 py-3.5 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  {pick({ ru: "Выйти", en: "Logout", uz: "Chiqish" })}
+                </button>
+                <button
+                  onClick={() => setConfirmDeleteOpen(true)}
+                  className="rounded-2xl bg-red-50 px-4 py-3.5 text-sm font-black text-red-600 transition-colors hover:bg-red-100"
+                >
+                  {pick({ ru: "Удалить аккаунт", en: "Delete account", uz: "Akkountni o'chirish" })}
+                </button>
+              </div>
+            </aside>
+
+            <aside className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                {pick({ ru: "Следующий шаг", en: "Next step", uz: "Keyingi qadam" })}
+              </p>
+              <h2 className="mt-3 text-xl font-black text-slate-950">
+                {nextAchievement?.title || pick({ ru: "Все ключевые этапы открыты", en: "All key milestones unlocked", uz: "Barcha asosiy bosqichlar ochilgan" })}
+              </h2>
+              <p className="mt-2 text-sm font-medium leading-7 text-slate-500">
+                {nextAchievement?.description ||
+                  pick({
+                    ru: "Можно двигаться дальше: публиковать больше событий и усиливать видимость через Premium.",
+                    en: "You can move further by publishing more events and improving visibility through Premium.",
+                    uz: "Keyingi qadam sifatida ko'proq tadbir joylab, Premium orqali ko'rinishni kuchaytirishingiz mumkin.",
+                  })}
+              </p>
+              <div className="mt-4 h-2 rounded-full bg-slate-100">
+                <div
+                  className="h-2 rounded-full bg-[#10b981]"
+                  style={{ width: `${Math.max((unlockedAchievementsCount / achievements.length) * 100, 8)}%` }}
+                />
+              </div>
+              <p className="mt-3 text-sm font-medium text-slate-500">
+                {pick({ ru: "Открыто", en: "Unlocked", uz: "Ochildi" })}: {unlockedAchievementsCount}/{achievements.length}
+              </p>
+            </aside>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2">
-              <Trophy className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
-              {pick({ ru: "Достижения и прогресс", en: "Achievements & progress", uz: "Yutuqlar va progress" })}
+            <h2 className="text-lg font-black text-slate-950">
+              {pick({ ru: "Достижения", en: "Achievements", uz: "Yutuqlar" })}
             </h2>
-            <p className="text-[10px] md:text-[11px] uppercase tracking-widest font-black text-gray-400">
-              {pick({ ru: "Открыто", en: "Unlocked", uz: "Ochildi" })}: {achievements.filter((item) => item.unlocked).length}/{achievements.length}
+            <p className="text-sm font-medium text-slate-500">
+              {pick({ ru: "Открыто", en: "Unlocked", uz: "Ochildi" })}: {unlockedAchievementsCount}/{achievements.length}
             </p>
           </div>
 
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-[10px] uppercase tracking-widest font-black text-gray-400 flex items-center gap-1.5">
-                <Trophy className="w-3.5 h-3.5" />
-                {pick({ ru: "Событий создано", en: "Created events", uz: "Yaratilgan tadbirlar" })}
-              </p>
-              <p className="text-2xl font-black text-gray-900 mt-1">{activityStats.createdEvents}</p>
-            </div>
-            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-[10px] uppercase tracking-widest font-black text-gray-400 flex items-center gap-1.5">
-                <CalendarCheck2 className="w-3.5 h-3.5" />
-                {pick({ ru: "Предстоящие", en: "Upcoming", uz: "Kutilayotgan" })}
-              </p>
-              <p className="text-2xl font-black text-gray-900 mt-1">{activityStats.upcomingEvents}</p>
-            </div>
-            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-[10px] uppercase tracking-widest font-black text-gray-400 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5" />
-                {pick({ ru: "План мест", en: "Planned spots", uz: "Rejalangan o'rinlar" })}
-              </p>
-              <p className="text-2xl font-black text-gray-900 mt-1">{activityStats.volunteersNeeded}</p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {achievements.map((achievement) => (
               <article
                 key={achievement.id}
-                className={`rounded-2xl border px-4 py-4 ${
-                  achievement.unlocked
-                    ? "border-emerald-200 bg-emerald-50"
-                    : "border-gray-100 bg-white"
+                className={`rounded-[22px] border px-4 py-4 ${
+                  achievement.unlocked ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50"
                 }`}
               >
-                <p className={`text-[10px] uppercase tracking-widest font-black ${
-                  achievement.unlocked ? "text-emerald-600" : "text-gray-400"
+                <p className={`text-[10px] font-black uppercase tracking-[0.18em] ${
+                  achievement.unlocked ? "text-emerald-700" : "text-slate-400"
                 }`}>
                   {achievement.unlocked
                     ? pick({ ru: "Открыто", en: "Unlocked", uz: "Ochildi" })
                     : pick({ ru: "В процессе", en: "In progress", uz: "Jarayonda" })}
                 </p>
-                <h3 className="mt-2 text-base font-black text-gray-900">{achievement.title}</h3>
-                <p className="mt-1 text-sm font-semibold text-gray-500">{achievement.description}</p>
+                <h3 className="mt-2 text-base font-black text-slate-950">{achievement.title}</h3>
+                <p className="mt-1 text-sm font-medium leading-7 text-slate-500">{achievement.description}</p>
               </article>
             ))}
           </div>
-        </div>
+        </section>
       </div>
 
       {/* Модалка редактирования */}
