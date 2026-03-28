@@ -199,7 +199,12 @@ export default function PremiumPage() {
         ? "Premium"
         : "Free";
   const isSubmitting = submitMode !== null;
-  const cardReady = Boolean(CARD_NUMBER && CARD_HOLDER);
+  const cardReady = Boolean(CARD_NUMBER.trim() && CARD_HOLDER.trim());
+  const paidPremiumUnavailableMessage = pick({
+    ru: "Платный Premium временно недоступен, потому что реквизиты для перевода ещё не настроены.",
+    en: "The paid Premium is temporarily unavailable because the transfer details are not configured yet.",
+    uz: "Pullik Premium hozircha mavjud emas, chunki o'tkazma rekvizitlari hali sozlanmagan.",
+  });
 
   useEffect(() => {
     if (isPremium) {
@@ -908,11 +913,7 @@ export default function PremiumPage() {
                     <>
                       {!cardReady ? (
                         <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm font-semibold leading-7 text-amber-800">
-                          {pick({
-                            ru: "Подключение платного Premium временно недоступно. Попробуйте позже.",
-                            en: "The paid Premium is temporarily unavailable. Please try again later.",
-                            uz: "Pullik Premium hozircha mavjud emas. Keyinroq urinib ko'ring.",
-                          })}
+                          {paidPremiumUnavailableMessage}
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -961,8 +962,9 @@ export default function PremiumPage() {
                         </div>
                       )}
 
-                      <div>
-                        {user ? (
+                      {cardReady ? (
+                        <div>
+                          {user ? (
                           <div className="space-y-4">
                             <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
@@ -1137,7 +1139,8 @@ export default function PremiumPage() {
                             {pick({ ru: "Войти, чтобы оформить", en: "Sign in to continue", uz: "Davom etish uchun kiring" })}
                           </Link>
                         )}
-                      </div>
+                        </div>
+                      ) : null}
                     </>
                   )}
                 </div>

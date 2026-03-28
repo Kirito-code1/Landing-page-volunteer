@@ -174,7 +174,7 @@ export default function DonatePage() {
     return cleaned ? Number(cleaned) : amount;
   }, [amount, customAmount]);
 
-  const cardReady = Boolean(CARD_NUMBER && CARD_HOLDER);
+  const cardReady = Boolean(CARD_NUMBER.trim() && CARD_HOLDER.trim());
   const transferUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
     return fillTransferTemplate(TRANSFER_URL_TEMPLATE, {
@@ -187,6 +187,11 @@ export default function DonatePage() {
   }, [email, selectedAmount]);
   const summaryLocale = locale === "uz" ? "uz-UZ" : locale === "en" ? "en-US" : "ru-RU";
   const campaign = DONATION_CAMPAIGN[locale];
+  const paymentUnavailableMessage = pick({
+    ru: "Пожертвования временно недоступны. Для перевода ещё не настроены реквизиты карты.",
+    en: "Donations are temporarily unavailable because the transfer card details are not configured yet.",
+    uz: "Xayriyalar hozircha mavjud emas, chunki karta rekvizitlari hali sozlanmagan.",
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -605,14 +610,16 @@ export default function DonatePage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (validateBeforeDetails()) {
+                    if (cardReady && validateBeforeDetails()) {
                       setStep("confirm");
                     }
                   }}
-                  disabled={!selectedAmount || selectedAmount < 1000}
+                  disabled={!cardReady || !selectedAmount || selectedAmount < 1000}
                   className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 text-sm font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {pick({ ru: "Далее", en: "Next", uz: "Keyingi" })}
+                  {cardReady
+                    ? pick({ ru: "Далее", en: "Next", uz: "Keyingi" })
+                    : pick({ ru: "Недоступно", en: "Unavailable", uz: "Mavjud emas" })}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -633,233 +640,241 @@ export default function DonatePage() {
                   </h2>
                 </div>
 
-                <div className="rounded-3xl bg-[linear-gradient(145deg,_#111827_0%,_#1f2937_46%,_#0f766e_100%)] p-7 text-white">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
-                    {pick({ ru: "Сумма пожертвования", en: "Donation amount", uz: "Xayriya summasi" })}
-                  </p>
-                  <p className="mt-2 text-4xl font-black">{formatAmount(selectedAmount)} UZS</p>
-
-                  <div className="mt-5 grid gap-4 border-t border-white/15 pt-5 md:grid-cols-3">
-                    <div className="md:col-span-2">
-                      <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
-                        {pick({ ru: "Номер карты", en: "Card number", uz: "Karta raqami" })}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-3">
-                        <p className="text-lg font-black">{formatCardNumber(CARD_NUMBER)}</p>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(CARD_NUMBER, "card")}
-                          className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white"
-                        >
-                          {copyField === "card" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                          {copyField === "card"
-                            ? pick({ ru: "Скопировано", en: "Copied", uz: "Nusxalandi" })
-                            : pick({ ru: "Копировать", en: "Copy", uz: "Nusxa" })}
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
-                        {pick({ ru: "Банк", en: "Bank", uz: "Bank" })}
-                      </p>
-                      <p className="mt-2 text-lg font-black">{CARD_BANK || "—"}</p>
-                    </div>
-                    <div className="md:col-span-3">
-                      <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
-                        {pick({ ru: "Владелец", en: "Card holder", uz: "Karta egasi" })}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-3">
-                        <p className="text-lg font-black">{CARD_HOLDER}</p>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(CARD_HOLDER, "holder")}
-                          className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white"
-                        >
-                          {copyField === "holder" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                          {copyField === "holder"
-                            ? pick({ ru: "Скопировано", en: "Copied", uz: "Nusxalandi" })
-                            : pick({ ru: "Копировать", en: "Copy", uz: "Nusxa" })}
-                        </button>
-                      </div>
-                    </div>
+                {!cardReady ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm font-semibold leading-7 text-amber-800">
+                    {paymentUnavailableMessage}
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="rounded-3xl bg-[linear-gradient(145deg,_#111827_0%,_#1f2937_46%,_#0f766e_100%)] p-7 text-white">
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
+                        {pick({ ru: "Сумма пожертвования", en: "Donation amount", uz: "Xayriya summasi" })}
+                      </p>
+                      <p className="mt-2 text-4xl font-black">{formatAmount(selectedAmount)} UZS</p>
 
-                <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-semibold leading-7 text-emerald-800">
-                  {pick({
-                    ru: "Скопируйте карту, переведите сумму, укажите данные перевода и отправьте заявку. После проверки статус обновится на странице результата.",
-                    en: "Copy the card, send the transfer, add the transfer details, and submit the request. The result page will update after review.",
-                    uz: "Kartani nusxalang, summani o'tkazing, o'tkazma ma'lumotini kiriting va so'rov yuboring. Tekshiruvdan keyin natija sahifada yangilanadi.",
-                  })}
-                </div>
+                      <div className="mt-5 grid gap-4 border-t border-white/15 pt-5 md:grid-cols-3">
+                        <div className="md:col-span-2">
+                          <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
+                            {pick({ ru: "Номер карты", en: "Card number", uz: "Karta raqami" })}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-3">
+                            <p className="text-lg font-black">{formatCardNumber(CARD_NUMBER)}</p>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(CARD_NUMBER, "card")}
+                              className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white"
+                            >
+                              {copyField === "card" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              {copyField === "card"
+                                ? pick({ ru: "Скопировано", en: "Copied", uz: "Nusxalandi" })
+                                : pick({ ru: "Копировать", en: "Copy", uz: "Nusxa" })}
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
+                            {pick({ ru: "Банк", en: "Bank", uz: "Bank" })}
+                          </p>
+                          <p className="mt-2 text-lg font-black">{CARD_BANK || "—"}</p>
+                        </div>
+                        <div className="md:col-span-3">
+                          <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
+                            {pick({ ru: "Владелец", en: "Card holder", uz: "Karta egasi" })}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-3">
+                            <p className="text-lg font-black">{CARD_HOLDER}</p>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(CARD_HOLDER, "holder")}
+                              className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white"
+                            >
+                              {copyField === "holder" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              {copyField === "holder"
+                                ? pick({ ru: "Скопировано", en: "Copied", uz: "Nusxalandi" })
+                                : pick({ ru: "Копировать", en: "Copy", uz: "Nusxa" })}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="mt-5">
-                  <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                    {pick({ ru: "Как найти ваш перевод", en: "How to find your transfer", uz: "O'tkazmani qanday topish" })}
-                  </label>
-                  <div className="relative mt-2">
-                    <ShieldCheck className="absolute left-4 top-5 h-4 w-4 text-slate-400" />
-                    <textarea
-                      rows={3}
-                      value={transferReference}
-                      onChange={(event) => setTransferReference(event.target.value)}
-                      placeholder={pick({
-                        ru: "Например: ID 17492 или 14:42, карта ****9081",
-                        en: "For example: ID 17492 or 14:42, card ****9081",
-                        uz: "Masalan: ID 17492 yoki 14:42, karta ****9081",
+                    <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-semibold leading-7 text-emerald-800">
+                      {pick({
+                        ru: "Скопируйте карту, переведите сумму, укажите данные перевода и отправьте заявку. После проверки статус обновится на странице результата.",
+                        en: "Copy the card, send the transfer, add the transfer details, and submit the request. The result page will update after review.",
+                        uz: "Kartani nusxalang, summani o'tkazing, o'tkazma ma'lumotini kiriting va so'rov yuboring. Tekshiruvdan keyin natija sahifada yangilanadi.",
                       })}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                    {pick({ ru: "Фото чека или файл", en: "Receipt photo or file", uz: "Chek rasmi yoki fayl" })}
-                  </label>
-                  <label className="mt-2 flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition-colors hover:border-emerald-400 hover:bg-white">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm">
-                        <Paperclip className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-slate-900">
-                          {attachmentFile
-                            ? attachmentFile.name
-                            : pick({
-                                ru: "Прикрепить скрин или PDF",
-                                en: "Attach a screenshot or PDF",
-                                uz: "Skrin yoki PDF biriktirish",
-                              })}
-                        </p>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">
-                          {pick({
-                            ru: "Необязательно, но помогает быстрее подтвердить перевод.",
-                            en: "Optional, but helps confirm the transfer faster.",
-                            uz: "Majburiy emas, lekin o'tkazmani tezroq tasdiqlashga yordam beradi.",
-                          })}
-                        </p>
-                      </div>
                     </div>
-                    <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700">
-                      <FileText className="h-4 w-4" />
-                      {pick({ ru: "Выбрать", en: "Choose", uz: "Tanlash" })}
-                    </span>
-                    <input
-                      type="file"
-                      accept=".jpg,.jpeg,.png,.webp,.pdf"
-                      className="hidden"
-                      onChange={(event) => setAttachmentFile(event.target.files?.[0] ?? null)}
-                    />
-                  </label>
-                </div>
 
-                <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  <summary className="cursor-pointer list-none text-sm font-black text-slate-900">
-                    {pick({
-                      ru: "Опционально: оставить контакт",
-                      en: "Optional: leave contact details",
-                      uz: "Ixtiyoriy: kontakt qoldirish",
-                    })}
-                  </summary>
-                  <p className="mt-2 text-sm font-semibold leading-7 text-slate-500">
-                    {pick({
-                      ru: "Если хочешь, можешь оставить имя, email, телефон или комментарий. Но это уже не обязательно.",
-                      en: "If you want, you can leave your name, email, phone, or a comment. It is no longer required.",
-                      uz: "Istasangiz ism, email, telefon yoki izoh qoldirishingiz mumkin. Bu endi majburiy emas.",
-                    })}
-                  </p>
-                  <div className="mt-4 space-y-4">
-                    <div>
+                    <div className="mt-5">
                       <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                        {pick({ ru: "Имя", en: "Name", uz: "Ism" })}
+                        {pick({ ru: "Как найти ваш перевод", en: "How to find your transfer", uz: "O'tkazmani qanday topish" })}
                       </label>
                       <div className="relative mt-2">
-                        <UserRound className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                          value={donorName}
-                          onChange={(event) => setDonorName(event.target.value)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                          Email
-                        </label>
-                        <div className="relative mt-2">
-                          <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                          <input
-                            type="email"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                          {pick({ ru: "Телефон", en: "Phone", uz: "Telefon" })}
-                        </label>
-                        <div className="relative mt-2">
-                          <Phone className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                          <input
-                            value={contactPhone}
-                            onChange={(event) => setContactPhone(event.target.value)}
-                            className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                        {pick({ ru: "Комментарий", en: "Comment", uz: "Izoh" })}
-                      </label>
-                      <div className="relative mt-2">
-                        <MessageSquare className="absolute left-4 top-5 h-4 w-4 text-slate-400" />
+                        <ShieldCheck className="absolute left-4 top-5 h-4 w-4 text-slate-400" />
                         <textarea
                           rows={3}
-                          value={note}
-                          onChange={(event) => setNote(event.target.value)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500"
+                          value={transferReference}
+                          onChange={(event) => setTransferReference(event.target.value)}
+                          placeholder={pick({
+                            ru: "Например: ID 17492 или 14:42, карта ****9081",
+                            en: "For example: ID 17492 or 14:42, card ****9081",
+                            uz: "Masalan: ID 17492 yoki 14:42, karta ****9081",
+                          })}
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
                         />
                       </div>
                     </div>
-                  </div>
-                </details>
 
-                {error ? <p className="mt-4 text-sm font-bold text-red-500">{error}</p> : null}
+                    <div className="mt-4">
+                      <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                        {pick({ ru: "Фото чека или файл", en: "Receipt photo or file", uz: "Chek rasmi yoki fayl" })}
+                      </label>
+                      <label className="mt-2 flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition-colors hover:border-emerald-400 hover:bg-white">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm">
+                            <Paperclip className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-slate-900">
+                              {attachmentFile
+                                ? attachmentFile.name
+                                : pick({
+                                    ru: "Прикрепить скрин или PDF",
+                                    en: "Attach a screenshot or PDF",
+                                    uz: "Skrin yoki PDF biriktirish",
+                                  })}
+                            </p>
+                            <p className="mt-1 text-xs font-semibold text-slate-500">
+                              {pick({
+                                ru: "Необязательно, но помогает быстрее подтвердить перевод.",
+                                en: "Optional, but helps confirm the transfer faster.",
+                                uz: "Majburiy emas, lekin o'tkazmani tezroq tasdiqlashga yordam beradi.",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700">
+                          <FileText className="h-4 w-4" />
+                          {pick({ ru: "Выбрать", en: "Choose", uz: "Tanlash" })}
+                        </span>
+                        <input
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp,.pdf"
+                          className="hidden"
+                          onChange={(event) => setAttachmentFile(event.target.files?.[0] ?? null)}
+                        />
+                      </label>
+                    </div>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {transferUrl ? (
-                    <a
-                      href={transferUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-800 transition-colors hover:border-emerald-300 hover:text-emerald-600"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      {pick({
-                        ru: "Открыть банк",
-                        en: "Open bank app",
-                        uz: "Bank ilovasini ochish",
-                      })}
-                    </a>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={submitManualRequest}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-4 text-sm font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-emerald-700 sm:col-span-1"
-                  >
-                    <ShieldCheck className="h-4 w-4" />
-                    {pick({
-                      ru: "Я перевёл, отправить на проверку",
-                      en: "I transferred it, send for review",
-                      uz: "O'tkazdim, tekshiruvga yuborish",
-                    })}
-                  </button>
-                </div>
+                    <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                      <summary className="cursor-pointer list-none text-sm font-black text-slate-900">
+                        {pick({
+                          ru: "Опционально: оставить контакт",
+                          en: "Optional: leave contact details",
+                          uz: "Ixtiyoriy: kontakt qoldirish",
+                        })}
+                      </summary>
+                      <p className="mt-2 text-sm font-semibold leading-7 text-slate-500">
+                        {pick({
+                          ru: "Если хочешь, можешь оставить имя, email, телефон или комментарий. Но это уже не обязательно.",
+                          en: "If you want, you can leave your name, email, phone, or a comment. It is no longer required.",
+                          uz: "Istasangiz ism, email, telefon yoki izoh qoldirishingiz mumkin. Bu endi majburiy emas.",
+                        })}
+                      </p>
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                            {pick({ ru: "Имя", en: "Name", uz: "Ism" })}
+                          </label>
+                          <div className="relative mt-2">
+                            <UserRound className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                              value={donorName}
+                              onChange={(event) => setDonorName(event.target.value)}
+                              className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                              Email
+                            </label>
+                            <div className="relative mt-2">
+                              <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                              <input
+                                type="email"
+                                value={email}
+                                onChange={(event) => setEmail(event.target.value)}
+                                className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                              {pick({ ru: "Телефон", en: "Phone", uz: "Telefon" })}
+                            </label>
+                            <div className="relative mt-2">
+                              <Phone className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                              <input
+                                value={contactPhone}
+                                onChange={(event) => setContactPhone(event.target.value)}
+                                className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                            {pick({ ru: "Комментарий", en: "Comment", uz: "Izoh" })}
+                          </label>
+                          <div className="relative mt-2">
+                            <MessageSquare className="absolute left-4 top-5 h-4 w-4 text-slate-400" />
+                            <textarea
+                              rows={3}
+                              value={note}
+                              onChange={(event) => setNote(event.target.value)}
+                              className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-11 pr-4 font-bold text-slate-900 outline-none transition-colors focus:border-emerald-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+
+                    {error ? <p className="mt-4 text-sm font-bold text-red-500">{error}</p> : null}
+
+                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                      {transferUrl ? (
+                        <a
+                          href={transferUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-800 transition-colors hover:border-emerald-300 hover:text-emerald-600"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          {pick({
+                            ru: "Открыть банк",
+                            en: "Open bank app",
+                            uz: "Bank ilovasini ochish",
+                          })}
+                        </a>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={submitManualRequest}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-4 text-sm font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-emerald-700 sm:col-span-1"
+                      >
+                        <ShieldCheck className="h-4 w-4" />
+                        {pick({
+                          ru: "Я перевёл, отправить на проверку",
+                          en: "I transferred it, send for review",
+                          uz: "O'tkazdim, tekshiruvga yuborish",
+                        })}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : null}
 

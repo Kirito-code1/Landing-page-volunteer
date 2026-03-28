@@ -130,6 +130,7 @@ export default function Dashboard() {
   const [eventReports, setEventReports] = useState<EventReport[]>([]);
   const [eventReviews, setEventReviews] = useState<EventReview[]>([]);
   const [manualPaymentRequests, setManualPaymentRequests] = useState<ManualPaymentRequest[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [canReviewManualPayments, setCanReviewManualPayments] = useState(false);
   const [manualPaymentsLoading, setManualPaymentsLoading] = useState(false);
   const [applicationsMissingSetup, setApplicationsMissingSetup] = useState(false);
@@ -655,6 +656,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user?.email) {
+      setIsAdmin(false);
       setCanReviewManualPayments(false);
       setManualPaymentRequests([]);
       setManualPaymentsLoading(false);
@@ -665,6 +667,12 @@ export default function Dashboard() {
 
     const loadManualPaymentRequests = async () => {
       try {
+        const adminStatusResponse = await fetch("/api/admin/status", {
+          cache: "no-store",
+        });
+        const adminStatusPayload = (await adminStatusResponse.json().catch(() => null)) as { isAdmin?: boolean } | null;
+        setIsAdmin(adminStatusPayload?.isAdmin === true);
+
         setManualPaymentsLoading(true);
         const response = await fetch("/api/manual-payments/review", {
           method: "GET",
@@ -687,11 +695,13 @@ export default function Dashboard() {
           throw new Error(payload?.error || "Could not load manual payment requests.");
         }
 
+        setIsAdmin(true);
         setCanReviewManualPayments(true);
         setManualPaymentRequests(payload?.requests ?? []);
       } catch (error) {
         if (cancelled) return;
         console.error("Error loading manual payment requests:", error);
+        setIsAdmin(false);
         setCanReviewManualPayments(false);
         setManualPaymentRequests([]);
       } finally {
@@ -1668,7 +1678,7 @@ export default function Dashboard() {
                     ? pick({ ru: "Управлять Premium", en: "Manage Premium", uz: "Premiumni boshqarish" })
                     : pick({ ru: "Открыть Premium", en: "Open Premium", uz: "Premiumni ochish" })}
                 </Link>
-                {canReviewManualPayments ? (
+                {isAdmin ? (
                   <Link
                     href="/admin"
                     className="flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-200 bg-slate-900 px-6 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-slate-800"
