@@ -633,7 +633,7 @@ export default function PremiumPage() {
                 <Crown className="h-3.5 w-3.5" />
                 {pick({ ru: "Premium для организаторов", en: "Premium for organizers", uz: "Tashkilotchilar uchun Premium" })}
               </div>
-              <h1 className="mt-5 max-w-4xl text-[clamp(2.5rem,8vw,4.75rem)] font-black uppercase italic tracking-[-0.05em] text-slate-950">
+              <h1 className="mt-5 max-w-3xl text-[clamp(2rem,5.2vw,3.9rem)] font-black uppercase italic leading-[0.95] tracking-[-0.04em] text-slate-950">
                 {pick({
                   ru: "Выберите: попробовать Premium бесплатно или подключить полный месяц",
                   en: "Choose: try Premium for free or activate the full month",
