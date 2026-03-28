@@ -117,7 +117,7 @@ function PremiumSuccessContent() {
         bodyByStatus: {
           loading: pick({ ru: "Проверяем статус вашей заявки на Premium.", en: "We are checking the status of your Premium request.", uz: "Premium so'rovingiz holatini tekshirmoqdamiz." }),
           paid: pick({ ru: "Оплата подтверждена. Premium уже активирован для вашего аккаунта.", en: "Your payment has been confirmed. Premium is already active for your account.", uz: "To'lov tasdiqlandi. Premium akkauntingiz uchun allaqachon faollashgan." }),
-          pending: pick({ ru: "Заявка сохранена. Обычно подтверждение занимает немного времени.", en: "Your request has been saved. Confirmation usually takes a little time.", uz: "So'rov saqlandi. Tasdiqlash odatda biroz vaqt oladi." }),
+          pending: pick({ ru: "Заявка сохранена. Обычно подтверждение Premium занимает около 5-10 минут.", en: "Your request has been saved. Premium confirmation usually takes about 5-10 minutes.", uz: "So'rov saqlandi. Premium tasdig'i odatda 5-10 daqiqa atrofida bo'ladi." }),
           failed: pick({ ru: "Оплата пока не подтверждена. Проверьте данные перевода или попробуйте позже.", en: "Your payment has not been confirmed yet. Check the transfer details or try again later.", uz: "To'lov hozircha tasdiqlanmadi. O'tkazma ma'lumotini tekshiring yoki keyinroq urinib ko'ring." }),
           cancelled: pick({ ru: "Вы можете вернуться и создать новую заявку, когда будете готовы.", en: "You can return and create a new request whenever you are ready.", uz: "Tayyor bo'lganda qaytib, yangi so'rov yaratishingiz mumkin." }),
           missing: pick({ ru: "Эта страница открыта без идентификатора заявки, поэтому статус проверить нельзя.", en: "This page was opened without a request identifier, so the status cannot be verified.", uz: "Bu sahifa so'rov identifikatorisiz ochilgan, shuning uchun statusni tekshirib bo'lmaydi." }),
@@ -137,7 +137,7 @@ function PremiumSuccessContent() {
       bodyByStatus: {
         loading: pick({ ru: "Проверяем ваш платёж.", en: "We are checking your payment.", uz: "To'lovingizni tekshirmoqdamiz." }),
         paid: pick({ ru: "Оплата подтверждена. Premium уже активирован для вашего аккаунта.", en: "Payment confirmed. Premium is already active for your account.", uz: "To'lov tasdiqlandi. Premium akkauntingiz uchun allaqachon faollashgan." }),
-        pending: pick({ ru: "Вы уже вернулись с платёжной страницы, но финальное подтверждение ещё может занять немного времени.", en: "You have already returned from the payment page, but final confirmation can still take a bit more time.", uz: "Siz to'lov sahifasidan qaytdingiz, lekin yakuniy tasdiq yana biroz vaqt olishi mumkin." }),
+        pending: pick({ ru: "Вы уже вернулись с платёжной страницы. Финальное подтверждение Premium обычно занимает около 5-10 минут.", en: "You have already returned from the payment page. Final Premium confirmation usually takes about 5-10 minutes.", uz: "Siz to'lov sahifasidan qaytdingiz. Premium yakuniy tasdig'i odatda 5-10 daqiqa atrofida bo'ladi." }),
         failed: pick({ ru: "Платёж не был подтверждён. Если списание всё же произошло, проверьте заказ позже или обратитесь в поддержку.", en: "The payment was not confirmed. If a charge did happen, check the order again later or contact support.", uz: "To'lov tasdiqlanmadi. Agar pul yechilgan bo'lsa, buyurtmani keyinroq tekshiring yoki yordamga murojaat qiling." }),
         cancelled: pick({ ru: "Вы можете вернуться и повторить оплату Premium позже.", en: "You can return and pay for Premium later.", uz: "Keyinroq qaytib, Premium uchun yana to'lashingiz mumkin." }),
         missing: pick({ ru: "Эта страница открыта без идентификатора платежа, поэтому статус проверить нельзя.", en: "This page was opened without a payment identifier, so the status cannot be verified.", uz: "Bu sahifa to'lov identifikatorisiz ochilgan, shu sabab statusni tekshirib bo'lmaydi." }),
@@ -154,6 +154,15 @@ function PremiumSuccessContent() {
       <TriangleAlert className="h-16 w-16 text-amber-500" />
     );
 
+  const waitingNote =
+    status === "loading" || status === "pending"
+      ? pick({
+          ru: "Обычно мы подтверждаем Premium в течение 5-10 минут. После активации вы увидите уведомление и доступ откроется автоматически.",
+          en: "We usually confirm Premium within 5-10 minutes. After activation, you will see a notification and access will open automatically.",
+          uz: "Odatda Premium 5-10 daqiqa ichida tasdiqlanadi. Faollashgach, siz bildirishnoma olasiz va kirish avtomatik ochiladi.",
+        })
+      : "";
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,_#fffaf1_0%,_#ffffff_50%,_#eff6ff_100%)] px-4">
       <div className="w-full max-w-xl rounded-[34px] border border-gray-100 bg-white p-10 text-center shadow-xl">
@@ -162,6 +171,11 @@ function PremiumSuccessContent() {
           {content.titleByStatus[status]}
         </h1>
         <p className="mt-4 text-sm font-semibold leading-7 text-gray-500">{content.bodyByStatus[status]}</p>
+        {waitingNote ? (
+          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-left text-sm font-semibold leading-7 text-emerald-900">
+            {waitingNote}
+          </div>
+        ) : null}
         {message ? <p className="mt-4 text-sm font-bold text-amber-600">{message}</p> : null}
         {trackingId ? (
           <div className="mt-6 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600">

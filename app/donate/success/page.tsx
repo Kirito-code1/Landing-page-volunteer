@@ -124,8 +124,8 @@ function DonationSuccessContent() {
         } satisfies Record<StatusState, string>,
         bodyByStatus: {
           loading: pick({ ru: "Проверяем статус вашего пожертвования.", en: "We are checking the status of your donation.", uz: "Xayriyangiz holatini tekshirmoqdamiz." }),
-          paid: pick({ ru: "Пожертвование подтверждено и уже учтено в поддержке инициатив проекта.", en: "The donation has been confirmed and is already counted toward supporting the project's initiatives.", uz: "Xayriya tasdiqlandi va loyiha tashabbuslarini qo'llab-quvvatlashga qo'shildi." }),
-          pending: pick({ ru: "Заявка сохранена. Обычно подтверждение занимает немного времени.", en: "Your request has been saved. Confirmation usually takes a little time.", uz: "So'rov saqlandi. Tasdiqlash odatda biroz vaqt oladi." }),
+          paid: pick({ ru: "Спасибо за поддержку. Пожертвование подтверждено и уже учтено в текущем сборе.", en: "Thank you for your support. The donation has been confirmed and is already included in the current fundraiser.", uz: "Qo'llab-quvvatlaganingiz uchun rahmat. Xayriya tasdiqlandi va joriy yig'imga qo'shildi." }),
+          pending: pick({ ru: "Спасибо за поддержку. Заявка сохранена и скоро будет проверена.", en: "Thank you for your support. Your request has been saved and will be reviewed soon.", uz: "Qo'llab-quvvatlaganingiz uchun rahmat. So'rovingiz saqlandi va tez orada tekshiriladi." }),
           failed: pick({ ru: "Перевод пока не удалось подтвердить. Проверьте данные перевода или попробуйте позже.", en: "The transfer could not be confirmed yet. Check the transfer details or try again later.", uz: "O'tkazma hozircha tasdiqlanmadi. O'tkazma ma'lumotini tekshiring yoki keyinroq urinib ko'ring." }),
           cancelled: pick({ ru: "Вы можете вернуться и отправить новую заявку, когда будете готовы.", en: "You can return and send a new request whenever you are ready.", uz: "Tayyor bo'lganda qaytib, yangi so'rov yuborishingiz mumkin." }),
           missing: pick({ ru: "Эта страница открыта без идентификатора заявки, поэтому статус проверить нельзя.", en: "This page was opened without a request identifier, so the status cannot be verified.", uz: "Bu sahifa so'rov identifikatorisiz ochilgan, shuning uchun statusni tekshirib bo'lmaydi." }),
@@ -144,8 +144,8 @@ function DonationSuccessContent() {
       } satisfies Record<StatusState, string>,
       bodyByStatus: {
         loading: pick({ ru: "Проверяем ваш платёж.", en: "We are checking your payment.", uz: "To'lovingizni tekshirmoqdamiz." }),
-        paid: pick({ ru: "Пожертвование подтверждено и будет учтено в поддержке инициатив проекта.", en: "The donation has been confirmed and will be counted toward supporting the project's initiatives.", uz: "Xayriya tasdiqlandi va loyiha tashabbuslarini qo'llab-quvvatlashga yo'naltiriladi." }),
-        pending: pick({ ru: "Мы уже получили возврат со страницы оплаты, но финальное подтверждение ещё может занимать немного времени.", en: "We have already received the return from the payment page, but the final confirmation can still take a bit more time.", uz: "To'lov sahifasidan qaytish qabul qilindi, lekin yakuniy tasdiq yana biroz vaqt olishi mumkin." }),
+        paid: pick({ ru: "Спасибо за поддержку. Пожертвование подтверждено и будет учтено в текущем сборе.", en: "Thank you for your support. The donation has been confirmed and will be included in the current fundraiser.", uz: "Qo'llab-quvvatlaganingiz uchun rahmat. Xayriya tasdiqlandi va joriy yig'imga qo'shiladi." }),
+        pending: pick({ ru: "Спасибо за поддержку. Мы получили данные перевода и скоро завершим проверку.", en: "Thank you for your support. We received the transfer details and will complete the review soon.", uz: "Qo'llab-quvvatlaganingiz uchun rahmat. O'tkazma ma'lumotlari qabul qilindi va tekshiruv tez orada yakunlanadi." }),
         failed: pick({ ru: "Если деньги не списались, попробуйте ещё раз. Если списание было, но статус не обновился, проверьте заказ позже.", en: "If the charge did not go through, try again. If you were charged but the status did not update, check the order again later.", uz: "Agar pul yechilmagan bo'lsa, yana urinib ko'ring. Agar pul yechilgan bo'lsa-yu status yangilanmagan bo'lsa, buyurtmani keyinroq yana tekshiring." }),
         cancelled: pick({ ru: "Вы можете вернуться и повторить оплату, когда будете готовы.", en: "You can return and try again whenever you are ready.", uz: "Tayyor bo'lganingizda qaytib, to'lovni yana urinib ko'rishingiz mumkin." }),
         missing: pick({ ru: "Эта страница открыта без идентификатора платежа, поэтому статус проверить нельзя.", en: "This page was opened without a payment identifier, so the status cannot be verified.", uz: "Bu sahifa to'lov identifikatorisiz ochilgan, shu sabab statusni tekshirib bo'lmaydi." }),
@@ -162,6 +162,15 @@ function DonationSuccessContent() {
       <TriangleAlert className="h-16 w-16 text-amber-500" />
     );
 
+  const donorNote =
+    status === "paid" || status === "pending" || status === "loading"
+      ? pick({
+          ru: "Спасибо за поддержку. Когда сбор будет завершён и средства пойдут в работу, мы опубликуем отчёт с результатом и фотографиями на странице пожертвований.",
+          en: "Thank you for your support. Once the fundraiser is completed and the money is used, we will publish a report with the results and photos on the donation page.",
+          uz: "Qo'llab-quvvatlaganingiz uchun rahmat. Yig'im tugab, mablag' ishlatilgach, xayriya sahifasida natija va suratlar bilan hisobot e'lon qilamiz.",
+        })
+      : "";
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,_#f0fdf4_0%,_#ffffff_50%,_#eff6ff_100%)] px-4">
       <div className="w-full max-w-xl rounded-[34px] border border-gray-100 bg-white p-10 text-center shadow-xl">
@@ -170,6 +179,11 @@ function DonationSuccessContent() {
           {content.titleByStatus[status]}
         </h1>
         <p className="mt-4 text-sm font-semibold leading-7 text-gray-500">{content.bodyByStatus[status]}</p>
+        {donorNote ? (
+          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-left text-sm font-semibold leading-7 text-emerald-900">
+            {donorNote}
+          </div>
+        ) : null}
         {message ? <p className="mt-4 text-sm font-bold text-amber-600">{message}</p> : null}
         {trackingId ? (
           <div className="mt-6 rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600">
