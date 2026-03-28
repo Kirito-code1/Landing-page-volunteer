@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faCircleUser } from "@fortawesome/free-regular-svg-icons";
@@ -18,6 +17,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { LogOut, Heart, Bell, Clock3, CheckCircle2, XCircle, Loader2, Crown } from "lucide-react";
 import { getPremiumAccessType, hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
+import { getBrowserSupabaseClient, hasBrowserSupabaseEnv } from "@/lib/supabase/browser";
 import { useLanguage, type Locale } from "@/components/providers/LanguageProvider";
 
 // 1. Определяем интерфейс для пунктов меню, чтобы TS не ругался на отсутствие icon
@@ -72,9 +72,7 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<NavbarNotification[]>([]);
   const [lastSeenMs, setLastSeenMs] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [notificationsSupported, setNotificationsSupported] = useState(() =>
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-  );
+  const [notificationsSupported, setNotificationsSupported] = useState(() => hasBrowserSupabaseEnv());
   const userRef = useRef<SupabaseUser | null>(null);
   const notificationsRef = useRef<NavbarNotification[]>([]);
   const langAreaRef = useRef<HTMLDivElement | null>(null);
@@ -86,19 +84,7 @@ export default function Navbar() {
   const hasNotificationDetailsRef = useRef(false);
   const { locale, setLocale, pick } = useLanguage();
 
-  const supabase = useMemo(
-    () => {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!url || !anonKey) {
-        return null;
-      }
-
-      return createBrowserClient(url, anonKey);
-    },
-    [],
-  );
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
 
   const fetchNotifications = useCallback(
     async (

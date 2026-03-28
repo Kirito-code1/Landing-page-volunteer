@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 const STORAGE_KEY = "volohero-chunk-reload";
 const RETRY_WINDOW_MS = 15000;
+const ASSET_PATTERN = /\/_next\/static\/(chunks|css)\//i;
 
 function isChunkLoadErrorMessage(message: string) {
   return /ChunkLoadError|Loading chunk [^ ]+ failed|Failed to fetch dynamically imported module/i.test(message);
@@ -35,6 +36,12 @@ function markReload() {
   }
 }
 
+function replaceWithFreshUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("__chunk_reload", String(Date.now()));
+  window.location.replace(url.toString());
+}
+
 export default function ChunkLoadRecovery() {
   useEffect(() => {
     const reloadOnce = () => {
@@ -43,7 +50,7 @@ export default function ChunkLoadRecovery() {
       }
 
       markReload();
-      window.location.reload();
+      replaceWithFreshUrl();
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
@@ -66,7 +73,24 @@ export default function ChunkLoadRecovery() {
 
     const handleError = (event: ErrorEvent) => {
       const message = event.message || (event.error instanceof Error ? event.error.message : "");
-      if (!message || !isChunkLoadErrorMessage(message)) {
+      if (message && isChunkLoadErrorMessage(message)) {
+        reloadOnce();
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const resourceUrl =
+        target instanceof HTMLScriptElement
+          ? target.src
+          : target instanceof HTMLLinkElement
+            ? target.href
+            : "";
+
+      if (!resourceUrl || !ASSET_PATTERN.test(resourceUrl)) {
         return;
       }
 
@@ -74,11 +98,11 @@ export default function ChunkLoadRecovery() {
     };
 
     window.addEventListener("unhandledrejection", handleUnhandledRejection);
-    window.addEventListener("error", handleError);
+    window.addEventListener("error", handleError, true);
 
     return () => {
       window.removeEventListener("unhandledrejection", handleUnhandledRejection);
-      window.removeEventListener("error", handleError);
+      window.removeEventListener("error", handleError, true);
     };
   }, []);
 

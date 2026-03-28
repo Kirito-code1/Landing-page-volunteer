@@ -21,6 +21,7 @@ const chunkRecoveryScript = `
   const STORAGE_KEY = "volohero-chunk-reload";
   const RETRY_WINDOW_MS = 15000;
   const pattern = /ChunkLoadError|Loading chunk [^ ]+ failed|Failed to fetch dynamically imported module/i;
+  const assetPattern = /\\/\\_next\\/static\\/(chunks|css)\\//i;
 
   const shouldReload = () => {
     try {
@@ -39,15 +40,34 @@ const chunkRecoveryScript = `
     try {
       window.sessionStorage.setItem(STORAGE_KEY, String(Date.now()));
     } catch {}
-    window.location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.set("__chunk_reload", String(Date.now()));
+    window.location.replace(url.toString());
   };
 
   window.addEventListener("error", (event) => {
     const message = event.message || (event.error && event.error.message) || "";
     if (message && pattern.test(message)) {
       reloadOnce();
+      return;
     }
-  });
+
+    const target = event.target;
+    if (!target || !(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const resourceUrl =
+      target instanceof HTMLScriptElement
+        ? target.src
+        : target instanceof HTMLLinkElement
+          ? target.href
+          : "";
+
+    if (resourceUrl && assetPattern.test(resourceUrl)) {
+      reloadOnce();
+    }
+  }, true);
 
   window.addEventListener("unhandledrejection", (event) => {
     const reason = event.reason;
