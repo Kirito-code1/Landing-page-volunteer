@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -28,6 +27,7 @@ import {
   normalizeVolunteerCount,
 } from "@/components/events/eventMeta";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 interface EventDetails {
   id: string;
@@ -100,14 +100,12 @@ export default function EventPage() {
 
   const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
 
-  const supabase = useMemo(
-    () =>
-      createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      ),
-    [],
-  );
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabaseUnavailableMessage = pick({
+    ru: "Сервис временно недоступен. Попробуйте позже.",
+    en: "The service is temporarily unavailable. Please try again later.",
+    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+  });
 
   const missingApplicationsHint = pick({
     ru: "Функция заявок не настроена. Выполните SQL из файла database/event_applications.sql.",
@@ -195,6 +193,10 @@ export default function EventPage() {
       try {
         setLoading(true);
         setError(null);
+        if (!supabase) {
+          setError(supabaseUnavailableMessage);
+          return;
+        }
 
         const [{ data: sessionData }, { data, error: supabaseError }] = await Promise.all([
           supabase.auth.getSession(),
@@ -247,7 +249,7 @@ export default function EventPage() {
     }
 
     fetchEvent();
-  }, [id, supabase, pick, loadParticipationData, loadOrganizerReviews]);
+  }, [id, supabase, pick, loadParticipationData, loadOrganizerReviews, supabaseUnavailableMessage]);
 
   const handleShare = () => {
     if (typeof window !== "undefined") {

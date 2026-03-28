@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 import {
   Loader2,
   Search,
@@ -23,6 +22,7 @@ import {
   normalizeEventCategory,
   normalizeVolunteerCount,
 } from "@/components/events/eventMeta";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 interface EventListItem {
   id: string;
@@ -78,17 +78,22 @@ export default function AllEvents() {
   const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
   const categoryOptions = getEventCategoryOptions(pick);
 
-  const supabase = useMemo(
-    () =>
-      createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      ),
-    [],
-  );
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabaseUnavailableMessage = pick({
+    ru: "Сервис временно недоступен. Попробуйте позже.",
+    en: "The service is temporarily unavailable. Please try again later.",
+    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+  });
 
   useEffect(() => {
     async function getEvents() {
+      if (!supabase) {
+        setEvents([]);
+        setError(supabaseUnavailableMessage);
+        setLoading(false);
+        return;
+      }
+
       const { data, error: supabaseError } = await supabase
         .from("events")
         .select("id, title, location, date, created_at, category, volunteers_needed, premium_priority, image_url")
@@ -112,7 +117,7 @@ export default function AllEvents() {
       setLoading(false);
     }
     getEvents();
-  }, [supabase, pick]);
+  }, [supabase, pick, supabaseUnavailableMessage]);
 
   const visibleEvents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();

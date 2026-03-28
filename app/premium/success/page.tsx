@@ -2,10 +2,10 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { createBrowserClient } from "@supabase/ssr";
 import { CheckCircle2, Crown, Loader2, TriangleAlert } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 type StatusState = "loading" | "paid" | "pending" | "failed" | "cancelled" | "missing";
 type TrackingMode = "manual" | "order" | "missing";
@@ -27,14 +27,7 @@ function PremiumSuccessContent() {
   const [message, setMessage] = useState("");
   const [reviewedAt, setReviewedAt] = useState<string | null>(null);
 
-  const supabase = useMemo(
-    () =>
-      createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-      ),
-    [],
-  );
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
 
   useEffect(() => {
     if (!trackingId || trackingMode === "missing") return;
@@ -72,7 +65,9 @@ function PremiumSuccessContent() {
         if (cancelled) return;
 
         if (nextStatus === "paid") {
-          await supabase.auth.refreshSession();
+          if (supabase) {
+            await supabase.auth.refreshSession();
+          }
           setReviewedAt(payload?.reviewedAt ?? null);
           setStatus("paid");
           return;

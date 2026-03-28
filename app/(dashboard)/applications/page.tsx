@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 import { Loader2, Clock3, CheckCircle2, XCircle, Calendar, MapPin, ArrowRight, MessageSquare, Star, X } from "lucide-react";
 import EventVisual from "@/components/events/EventVisual";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getEventCategoryLabel } from "@/components/events/eventMeta";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 type ApplicationStatus = "pending" | "approved" | "rejected";
 
@@ -93,14 +93,12 @@ export default function ApplicationsPage() {
     tone: "info",
   });
 
-  const supabase = useMemo(
-    () =>
-      createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-      ),
-    [],
-  );
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabaseUnavailableMessage = pick({
+    ru: "Сервис временно недоступен. Попробуйте позже.",
+    en: "The service is temporarily unavailable. Please try again later.",
+    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+  });
 
   const missingApplicationsHint = pick({
     ru: "Таблица заявок не найдена. Выполните SQL из файла database/event_applications.sql.",
@@ -133,6 +131,13 @@ export default function ApplicationsPage() {
     try {
       setLoading(true);
       setError(null);
+      if (!supabase) {
+        setApplications([]);
+        setEventsMap({});
+        setMyReviews([]);
+        setError(supabaseUnavailableMessage);
+        return;
+      }
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -221,7 +226,7 @@ export default function ApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, router, pick]);
+  }, [supabase, router, pick, supabaseUnavailableMessage]);
 
   useEffect(() => {
     fetchData();

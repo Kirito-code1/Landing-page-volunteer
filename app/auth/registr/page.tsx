@@ -1,19 +1,21 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Eye, EyeOff, Mail, User, Heart, ArrowRight, AlertCircle, Phone, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 export default function RegisterPage() {
   const { pick } = useLanguage();
   const router = useRouter();
   
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabaseUnavailableMessage = pick({
+    ru: "Регистрация временно недоступна. Попробуйте позже.",
+    en: "Registration is temporarily unavailable. Please try again later.",
+    uz: "Ro'yxatdan o'tish vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+  });
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,6 +35,14 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!supabase) {
+      setErrorModal({
+        isOpen: true,
+        title: pick({ ru: "Ошибка регистрации", en: "Registration Error", uz: "Ro'yxatdan o'tish xatosi" }),
+        message: supabaseUnavailableMessage,
+      });
+      return;
+    }
     
     if (password !== confirmPassword) {
       return setErrorModal({
@@ -205,7 +215,7 @@ export default function RegisterPage() {
           </div>
 
           <button 
-            disabled={loading} 
+            disabled={loading || !supabase} 
             className="w-full bg-[#10b981] hover:bg-[#0da975] text-white py-5 rounded-[26px] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-green-100/50 transition-all active:scale-[0.98] mt-6 disabled:bg-gray-300 uppercase tracking-wider"
           >
             {loading ? <Loader2 className="animate-spin" /> : (

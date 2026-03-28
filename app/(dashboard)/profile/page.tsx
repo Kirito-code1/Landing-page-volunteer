@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -9,6 +8,7 @@ import { useLanguage } from "@/components/providers/LanguageProvider";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
 import { normalizeVolunteerCount } from "@/components/events/eventMeta";
 import { getPremiumAccessType, getPremiumExpiresAt, hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 export default function ProfilePage() {
   const { pick, locale } = useLanguage();
@@ -16,6 +16,7 @@ export default function ProfilePage() {
   
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false); 
   const [newName, setNewName] = useState("");
@@ -39,15 +40,20 @@ export default function ProfilePage() {
     tone: "info",
   });
 
-  const supabase = useMemo(() => 
-    createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-    ), 
-  []);
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabaseUnavailableMessage = pick({
+    ru: "Сервис временно недоступен. Попробуйте позже.",
+    en: "The service is temporarily unavailable. Please try again later.",
+    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+  });
 
   const fetchUser = useCallback(async () => {
     try {
+      if (!supabase) {
+        setError(supabaseUnavailableMessage);
+        return false;
+      }
+
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
       let currentUser = session?.user || null;
@@ -93,9 +99,14 @@ export default function ProfilePage() {
       return false;
     } catch (error) {
       console.error("Error fetching user:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : pick({ ru: "Не удалось загрузить профиль.", en: "Could not load the profile.", uz: "Profilni yuklab bo'lmadi." }),
+      );
       return false;
     }
-  }, [supabase]);
+  }, [supabase, supabaseUnavailableMessage, pick]);
 
   const showAlertModal = (title: string, message: string, tone: AlertTone = "info") => {
     setAlertModal({ isOpen: true, title, message, tone });
@@ -106,6 +117,10 @@ export default function ProfilePage() {
     const init = async () => {
       const hasUser = await fetchUser();
       if (!isMounted) return;
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
       if (!hasUser) {
         router.push("/auth/login");
         return;
@@ -114,7 +129,7 @@ export default function ProfilePage() {
     };
     init();
     return () => { isMounted = false; };
-  }, [fetchUser, router]);
+  }, [fetchUser, router, supabase]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -184,6 +199,22 @@ export default function ProfilePage() {
         <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest text-center">
           {pick({ ru: "Загрузка профиля...", en: "Loading profile...", uz: "Profil yuklanmoqda..." })}
         </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] px-6 text-center gap-4">
+        <AlertTriangle className="h-12 w-12 text-amber-500" />
+        <h1 className="text-2xl font-black uppercase italic tracking-tight text-slate-950">
+          {pick({
+            ru: "Профиль временно недоступен",
+            en: "Profile is temporarily unavailable",
+            uz: "Profil vaqtincha mavjud emas",
+          })}
+        </h1>
+        <p className="max-w-lg text-sm font-semibold leading-7 text-slate-500">{error}</p>
       </div>
     );
   }

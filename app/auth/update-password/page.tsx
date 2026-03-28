@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 import { 
   Lock, 
   Eye, 
@@ -12,6 +11,7 @@ import {
   ShieldCheck 
 } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 export default function UpdatePasswordPage() {
   const { pick } = useLanguage();
@@ -26,14 +26,12 @@ export default function UpdatePasswordPage() {
     message: ""
   });
 
-  const supabase = useMemo(
-    () =>
-      createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-      ),
-    [],
-  );
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabaseUnavailableMessage = pick({
+    ru: "Сервис смены пароля временно недоступен. Попробуйте позже.",
+    en: "Password update is temporarily unavailable. Please try again later.",
+    uz: "Parolni yangilash xizmati vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+  });
 
   // Проверяем, есть ли права на смену пароля (пришел ли юзер по ссылке)
   useEffect(() => {
@@ -41,6 +39,15 @@ export default function UpdatePasswordPage() {
     let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
 
     const checkSession = async () => {
+      if (!supabase) {
+        setStatus({
+          type: "error",
+          message: supabaseUnavailableMessage,
+        });
+        setCheckingSession(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
 
@@ -62,17 +69,17 @@ export default function UpdatePasswordPage() {
       }, 1500);
     };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
-      if (session) {
-        if (fallbackTimer) {
-          clearTimeout(fallbackTimer);
-        }
-        setCheckingSession(false);
-      }
-    });
+    const subscription = supabase
+      ? supabase.auth.onAuthStateChange((_event, session) => {
+          if (!mounted) return;
+          if (session) {
+            if (fallbackTimer) {
+              clearTimeout(fallbackTimer);
+            }
+            setCheckingSession(false);
+          }
+        }).data.subscription
+      : { unsubscribe: () => undefined };
 
     checkSession();
 
@@ -83,10 +90,17 @@ export default function UpdatePasswordPage() {
       }
       subscription.unsubscribe();
     };
-  }, [supabase, router]);
+  }, [supabase, router, supabaseUnavailableMessage]);
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!supabase) {
+      setStatus({
+        type: "error",
+        message: supabaseUnavailableMessage,
+      });
+      return;
+    }
     setLoading(true);
     setStatus({ type: "", message: "" });
 

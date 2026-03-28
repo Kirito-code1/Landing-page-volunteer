@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import Link from "next/link";
 import Image from "next/image";
@@ -47,6 +46,7 @@ import {
 } from "@/lib/events/dates";
 import EventVisual from "@/components/events/EventVisual";
 import { FREE_POST_LIMIT, getFreePostCreditsUsed } from "@/lib/events/limits";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 interface DashboardEvent {
   id: string;
@@ -124,6 +124,7 @@ export default function Dashboard() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [freePostCreditsUsed, setFreePostCreditsUsed] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [myEvents, setMyEvents] = useState<DashboardEvent[]>([]);
   const [eventApplications, setEventApplications] = useState<EventApplication[]>([]);
   const [eventReports, setEventReports] = useState<EventReport[]>([]);
@@ -194,13 +195,28 @@ export default function Dashboard() {
     description: ""
   });
 
-  const supabase = useMemo(() => createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-  ), []);
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabaseUnavailableMessage = pick({
+    ru: "Сервис временно недоступен. Попробуйте позже.",
+    en: "The service is temporarily unavailable. Please try again later.",
+    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+  });
 
   const fetchData = useCallback(async () => {
     try {
+      setError(null);
+      if (!supabase) {
+        setUser(null);
+        setMyEvents([]);
+        setEventApplications([]);
+        setEventReports([]);
+        setEventReviews([]);
+        setManualPaymentRequests([]);
+        setCanReviewManualPayments(false);
+        setError(supabaseUnavailableMessage);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push("/auth/login");
@@ -317,10 +333,19 @@ export default function Dashboard() {
       }
     } catch (err: unknown) {
       console.error("Error loading dashboard:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : pick({
+              ru: "Не удалось загрузить кабинет.",
+              en: "Could not load the dashboard.",
+              uz: "Kabinetni yuklab bo'lmadi.",
+            }),
+      );
     } finally {
       setLoading(false);
     }
-  }, [supabase, router]);
+  }, [supabase, router, pick, supabaseUnavailableMessage]);
 
   const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
   const categoryOptions = getEventCategoryOptions(pick);
@@ -1241,6 +1266,22 @@ export default function Dashboard() {
         <p className="text-gray-400 font-black uppercase text-[10px] tracking-widest italic">
           {pick({ ru: "Загрузка...", en: "Loading...", uz: "Yuklanmoqda..." })}
         </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 text-center gap-4">
+        <XCircle className="h-12 w-12 text-rose-400" />
+        <h1 className="text-2xl font-black uppercase italic tracking-tight text-slate-950">
+          {pick({
+            ru: "Кабинет временно недоступен",
+            en: "Dashboard is temporarily unavailable",
+            uz: "Kabinet vaqtincha mavjud emas",
+          })}
+        </h1>
+        <p className="max-w-lg text-sm font-semibold leading-7 text-slate-500">{error}</p>
       </div>
     );
   }

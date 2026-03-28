@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import {
   Check,
@@ -32,6 +31,7 @@ import {
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
 import { FREE_POST_LIMIT } from "@/lib/events/limits";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 const PREMIUM_PRICE_UZS = Number(process.env.NEXT_PUBLIC_PREMIUM_PRICE_UZS ?? 50000);
 const CARD_NUMBER = process.env.NEXT_PUBLIC_DONATION_CARD_NUMBER ?? "";
@@ -114,20 +114,22 @@ export default function PremiumPage() {
     tone: "info",
   });
 
-  const supabase = useMemo(
-    () =>
-      createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-      ),
-    [],
-  );
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabaseUnavailableMessage = pick({
+    ru: "Сервис временно недоступен. Попробуйте позже.",
+    en: "The service is temporarily unavailable. Please try again later.",
+    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+  });
 
   const showAlert = (title: string, message: string, tone: AlertTone = "info") => {
     setAlertModal({ isOpen: true, title, message, tone });
   };
 
   const loadSessionUser = useCallback(async () => {
+    if (!supabase) {
+      return null;
+    }
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -155,6 +157,11 @@ export default function PremiumPage() {
     let mounted = true;
 
     const load = async () => {
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
+
       const nextUser = await loadSessionUser();
       if (!mounted) return;
 
@@ -169,7 +176,7 @@ export default function PremiumPage() {
     return () => {
       mounted = false;
     };
-  }, [loadSessionUser]);
+  }, [loadSessionUser, supabase]);
 
   const isPremium = hasPremiumAccess(user);
   const premiumAccessType = getPremiumAccessType(user);
@@ -384,7 +391,9 @@ export default function PremiumPage() {
         );
       }
 
-      await supabase.auth.refreshSession();
+      if (supabase) {
+        await supabase.auth.refreshSession();
+      }
       await loadSessionUser();
 
       showAlert(
@@ -410,6 +419,15 @@ export default function PremiumPage() {
   const handleStartTrial = async () => {
     if (!user) {
       router.push("/auth/login?next=/premium");
+      return;
+    }
+
+    if (!supabase) {
+      showAlert(
+        pick({ ru: "Premium временно недоступен", en: "Premium is temporarily unavailable", uz: "Premium vaqtincha mavjud emas" }),
+        supabaseUnavailableMessage,
+        "error",
+      );
       return;
     }
 

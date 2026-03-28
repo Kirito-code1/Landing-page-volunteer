@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Eye,
@@ -11,9 +11,9 @@ import {
   Loader2,
   CheckCircle2,
 } from "lucide-react";
-import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
   const { pick } = useLanguage();
@@ -36,13 +36,23 @@ export default function LoginPage() {
   });
 
   // Инициализация клиента Supabase
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
+  const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const supabaseUnavailableMessage = pick({
+    ru: "Сервис входа временно недоступен. Попробуйте позже.",
+    en: "Sign-in is temporarily unavailable. Please try again later.",
+    uz: "Kirish xizmati vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+  });
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!supabase) {
+      setErrorModal({
+        isOpen: true,
+        title: pick({ ru: "Ошибка входа", en: "Login Error", uz: "Kirish xatosi" }),
+        message: supabaseUnavailableMessage,
+      });
+      return;
+    }
     setLoading(true);
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -76,6 +86,15 @@ export default function LoginPage() {
   };
 
   const handleResetPassword = async () => {
+    if (!supabase) {
+      setErrorModal({
+        isOpen: true,
+        title: pick({ ru: "Ошибка", en: "Error", uz: "Xatolik" }),
+        message: supabaseUnavailableMessage,
+      });
+      return;
+    }
+
     if (!email) {
       setErrorModal({
         isOpen: true,
@@ -232,7 +251,7 @@ export default function LoginPage() {
           </div>
 
           <button
-            disabled={loading}
+            disabled={loading || !supabase}
             className="w-full bg-[#10b981] hover:bg-[#0da975] disabled:bg-gray-200 text-white py-5 rounded-[22px] font-black text-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xl shadow-green-100/50"
           >
             {loading
