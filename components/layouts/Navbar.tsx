@@ -72,7 +72,9 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<NavbarNotification[]>([]);
   const [lastSeenMs, setLastSeenMs] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [notificationsSupported, setNotificationsSupported] = useState(true);
+  const [notificationsSupported, setNotificationsSupported] = useState(() =>
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+  );
   const userRef = useRef<SupabaseUser | null>(null);
   const notificationsRef = useRef<NavbarNotification[]>([]);
   const langAreaRef = useRef<HTMLDivElement | null>(null);
@@ -85,11 +87,16 @@ export default function Navbar() {
   const { locale, setLocale, pick } = useLanguage();
 
   const supabase = useMemo(
-    () =>
-      createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      ),
+    () => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!url || !anonKey) {
+        return null;
+      }
+
+      return createBrowserClient(url, anonKey);
+    },
     [],
   );
 
@@ -98,7 +105,7 @@ export default function Navbar() {
       sessionUser: SupabaseUser | null,
       options?: { includeTitles?: boolean; showLoader?: boolean },
     ) => {
-      if (!sessionUser) {
+      if (!supabase || !sessionUser) {
         setNotifications([]);
         notificationsRef.current = [];
         setLastSeenMs(0);
@@ -246,7 +253,7 @@ export default function Navbar() {
 
   const syncPremiumSession = useCallback(
     async (sessionUser: SupabaseUser | null) => {
-      if (!sessionUser || !needsPremiumStateSync(sessionUser)) {
+      if (!supabase || !sessionUser || !needsPremiumStateSync(sessionUser)) {
         return sessionUser;
       }
 
@@ -276,6 +283,12 @@ export default function Navbar() {
   useEffect(() => {
     let mounted = true;
     let lazyFetchTimer: NodeJS.Timeout | null = null;
+
+    if (!supabase) {
+      return () => {
+        mounted = false;
+      };
+    }
 
     const checkUser = async () => {
       const {
@@ -359,7 +372,7 @@ export default function Navbar() {
   }, [isNotificationsOpen, isLangOpen, isMoreOpen, isMenuOpen]);
 
   const markNotificationsAsSeen = async () => {
-    if (!user || notifications.length === 0) return;
+    if (!supabase || !user || notifications.length === 0) return;
 
     const now = new Date();
     const nowIso = now.toISOString();
@@ -377,7 +390,9 @@ export default function Navbar() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     setIsMenuOpen(false);
     setIsNotificationsOpen(false);
     setIsMoreOpen(false);
