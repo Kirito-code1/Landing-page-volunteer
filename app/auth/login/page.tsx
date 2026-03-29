@@ -12,6 +12,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import SocialAuthButtons from "@/components/auth/SocialAuthButtons";
+import { sanitizeNextPath } from "@/lib/auth/redirect";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
@@ -37,6 +39,14 @@ export default function LoginPage() {
 
   // Инициализация клиента Supabase
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
+  const nextPath = useMemo(() => {
+    if (typeof window === "undefined") {
+      return "/dashboard";
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    return sanitizeNextPath(params.get("next"));
+  }, []);
   const supabaseUnavailableMessage = pick({
     ru: "Сервис входа временно недоступен. Попробуйте позже.",
     en: "Sign-in is temporarily unavailable. Please try again later.",
@@ -76,8 +86,7 @@ export default function LoginPage() {
       });
     } else {
       if (data?.session) {
-        // Успешный вход — летим в Dashboard
-        router.push("/dashboard");
+        router.push(nextPath);
         router.refresh();
       } else {
         setLoading(false);
@@ -196,6 +205,18 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-[440px] bg-white rounded-[40px] shadow-[0_24px_60px_rgba(15,23,42,0.16),0_6px_24px_rgba(16,185,129,0.12)] border border-gray-100 p-8 md:p-10">
+        <SocialAuthButtons
+          mode="login"
+          nextPath={nextPath}
+          onError={(title, message) => {
+            setErrorModal({
+              isOpen: true,
+              title,
+              message,
+            });
+          }}
+        />
+
         <form className="space-y-6" onSubmit={handleLogin}>
           <div className="space-y-2">
             <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">

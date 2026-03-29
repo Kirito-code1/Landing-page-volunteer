@@ -1,11 +1,12 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { sanitizeNextPath } from '@/lib/auth/redirect'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+  const next = sanitizeNextPath(searchParams.get('next'))
 
   if (code) {
     // В Next.js 15 вызов cookies() нужно ожидать (await)
@@ -32,9 +33,7 @@ export async function GET(request: Request) {
     
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // Проверяем, является ли путь относительным, чтобы избежать Open Redirect уязвимости
-      const isInternalRedirect = next.startsWith('/')
-      return NextResponse.redirect(`${origin}${isInternalRedirect ? next : '/dashboard'}`)
+      return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
