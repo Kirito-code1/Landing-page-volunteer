@@ -528,11 +528,11 @@ export default function EventPage() {
       return (
         <button
           onClick={handleApply}
-          className="w-full rounded-[24px] bg-[#10b981] px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[0_18px_40px_rgba(16,185,129,0.28)] transition-colors hover:bg-[#0da975]"
+          className="w-full rounded-[24px] bg-[#10b981] px-4 py-4 text-sm font-black uppercase tracking-[0.08em] text-white shadow-[0_18px_40px_rgba(16,185,129,0.28)] transition-colors hover:bg-[#0da975] sm:px-6 sm:text-[11px] sm:tracking-[0.18em]"
         >
-          <span className="flex items-center justify-center gap-3">
+          <span className="flex items-center justify-center gap-2 sm:gap-3">
             {pick({ ru: "Войти и участвовать", en: "Sign in to join", uz: "Qatnashish uchun kiring" })}
-            <UserPlus size={18} />
+            <UserPlus size={18} className="hidden shrink-0 sm:block" />
           </span>
         </button>
       );
@@ -553,11 +553,11 @@ export default function EventPage() {
       return (
         <button
           disabled
-          className="w-full cursor-not-allowed rounded-[24px] bg-emerald-500 px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-white"
+          className="w-full cursor-not-allowed rounded-[24px] bg-emerald-500 px-4 py-4 text-sm font-black uppercase tracking-[0.08em] text-white sm:px-6 sm:text-[11px] sm:tracking-[0.18em]"
         >
-          <span className="flex items-center justify-center gap-3">
+          <span className="flex items-center justify-center gap-2 sm:gap-3">
             {pick({ ru: "Заявка принята", en: "Request approved", uz: "Ariza tasdiqlandi" })}
-            <CheckCircle2 size={18} />
+            <CheckCircle2 size={18} className="hidden shrink-0 sm:block" />
           </span>
         </button>
       );
@@ -575,7 +575,7 @@ export default function EventPage() {
           <button
             onClick={handleCancelPendingRequest}
             disabled={isApplying}
-            className="w-full rounded-[22px] border border-slate-200 bg-white px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-[#10b981] hover:text-[#10b981] disabled:opacity-60"
+            className="w-full rounded-[22px] border border-slate-200 bg-white px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.08em] text-slate-700 transition-colors hover:border-[#10b981] hover:text-[#10b981] disabled:opacity-60 sm:px-6 sm:text-[10px] sm:tracking-[0.18em]"
           >
             {pick({ ru: "Отменить заявку", en: "Cancel request", uz: "Arizani bekor qilish" })}
           </button>
@@ -609,15 +609,15 @@ export default function EventPage() {
       <button
         onClick={handleApply}
         disabled={isApplying}
-        className="w-full rounded-[24px] bg-[#10b981] px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[0_18px_40px_rgba(16,185,129,0.28)] transition-colors hover:bg-[#0da975] disabled:opacity-60"
+        className="w-full rounded-[24px] bg-[#10b981] px-4 py-4 text-sm font-black uppercase tracking-[0.08em] text-white shadow-[0_18px_40px_rgba(16,185,129,0.28)] transition-colors hover:bg-[#0da975] disabled:opacity-60 sm:px-6 sm:text-[11px] sm:tracking-[0.18em]"
       >
-        <span className="flex items-center justify-center gap-3">
+        <span className="flex items-center justify-center gap-2 sm:gap-3">
           {isApplying
             ? pick({ ru: "Отправка...", en: "Sending...", uz: "Yuborilmoqda..." })
             : myApplicationStatus === "rejected"
               ? pick({ ru: "Подать повторно", en: "Apply again", uz: "Qayta ariza" })
               : pick({ ru: "Участвовать", en: "Join", uz: "Qatnashish" })}
-          {myApplicationStatus === "rejected" ? <XCircle size={18} /> : <UserPlus size={18} />}
+          {myApplicationStatus === "rejected" ? <XCircle size={18} className="hidden shrink-0 sm:block" /> : <UserPlus size={18} className="hidden shrink-0 sm:block" />}
         </span>
       </button>
     );
@@ -1064,15 +1064,15 @@ export default function EventPage() {
                     en: "Response",
                     uz: "Murojaat",
                   })}: ${event.title}`}
-                  className="flex w-full items-center justify-center gap-3 rounded-[22px] border border-slate-200 bg-slate-50 px-5 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-[#10b981] hover:text-[#10b981]"
+                  className="flex w-full items-center justify-center gap-2 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-slate-700 transition-colors hover:border-[#10b981] hover:text-[#10b981] sm:px-5 sm:text-[10px] sm:tracking-[0.18em]"
                 >
                   {pick({ ru: "Связаться", en: "Contact", uz: "Bog'lanish" })}
-                  <Mail size={16} />
+                  <Mail size={16} className="hidden shrink-0 sm:block" />
                 </a>
 
                 <button
                   onClick={handleShare}
-                  className={`flex w-full items-center justify-center gap-3 rounded-[22px] border px-5 py-4 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${
+                  className={`flex w-full items-center justify-center gap-2 rounded-[22px] border px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] transition-colors sm:px-5 sm:text-[10px] sm:tracking-[0.18em] ${
                     copied
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                       : "border-slate-200 bg-white text-slate-700 hover:border-[#10b981] hover:text-[#10b981]"
@@ -1081,7 +1081,7 @@ export default function EventPage() {
                   {copied
                     ? pick({ ru: "Ссылка скопирована", en: "Link copied", uz: "Havola nusxalandi" })
                     : pick({ ru: "Поделиться", en: "Share", uz: "Ulashish" })}
-                  <Share2 size={16} />
+                  <Share2 size={16} className="hidden shrink-0 sm:block" />
                 </button>
               </div>
 

@@ -629,11 +629,11 @@ export default function PremiumPage() {
         <section className="overflow-hidden rounded-[40px] border border-amber-200/70 bg-[linear-gradient(135deg,_#fff7ed_0%,_#ffffff_54%,_#fffbeb_100%)] shadow-[0_30px_90px_rgba(17,24,39,0.08)]">
           <div className="grid gap-8 p-7 md:p-10 2xl:grid-cols-[minmax(0,1.1fr)_380px]">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-100/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">
-                <Crown className="h-3.5 w-3.5" />
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-100/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-amber-700 sm:tracking-[0.2em]">
+                <Crown className="h-3.5 w-3.5 shrink-0" />
                 {pick({ ru: "Premium для организаторов", en: "Premium for organizers", uz: "Tashkilotchilar uchun Premium" })}
               </div>
-              <h1 className="mt-5 max-w-3xl text-[clamp(2rem,5.2vw,3.9rem)] font-black uppercase italic leading-[0.95] tracking-[-0.04em] text-slate-950">
+              <h1 className="mt-5 max-w-3xl text-[clamp(1.75rem,5vw,3.4rem)] font-black uppercase italic leading-[0.95] tracking-[-0.04em] text-slate-950">
                 {pick({
                   ru: "Выберите: попробовать Premium бесплатно или подключить полный месяц",
                   en: "Choose: try Premium for free or activate the full month",
@@ -754,7 +754,7 @@ export default function PremiumPage() {
                             : "border-slate-200 bg-white hover:border-emerald-200"
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600">
                               {pick({ ru: "Пробная версия", en: "Trial", uz: "Sinov" })}
@@ -770,7 +770,7 @@ export default function PremiumPage() {
                               })}
                             </p>
                           </div>
-                          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                          <span className="self-start rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-700 sm:tracking-[0.14em]">
                             {trialUsed
                               ? pick({ ru: "Уже использован", en: "Used already", uz: "Ishlatilgan" })
                               : pick({ ru: "Один раз", en: "One-time", uz: "Bir marta" })}
@@ -787,7 +787,7 @@ export default function PremiumPage() {
                             : "border-slate-200 bg-white hover:border-amber-200"
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600">
                               {pick({ ru: "Платная версия", en: "Paid version", uz: "Pullik versiya" })}
@@ -803,7 +803,7 @@ export default function PremiumPage() {
                               })}
                             </p>
                           </div>
-                          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                          <span className="self-start rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-amber-700 sm:tracking-[0.14em]">
                             {pick({ ru: "1 месяц", en: "1 month", uz: "1 oy" })}
                           </span>
                         </div>
@@ -813,7 +813,7 @@ export default function PremiumPage() {
 
                   {selectedOffer === "trial" ? (
                     <div className="rounded-[28px] border border-emerald-200 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_100%)] p-5">
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600">
                             {pick({ ru: "Что получите", en: "What you get", uz: "Nima olasiz" })}
@@ -879,16 +879,16 @@ export default function PremiumPage() {
                           <button
                             onClick={handleStartTrial}
                             disabled={isSubmitting || !canStartTrial}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-emerald-500 px-8 py-4 text-[11px] font-black uppercase tracking-widest text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-emerald-200 disabled:text-emerald-700"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-emerald-500 px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-emerald-200 disabled:text-emerald-700 sm:px-8 sm:tracking-[0.16em]"
                           >
                             {submitMode === "trial" ? (
                               <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <Loader2 className="hidden h-4 w-4 animate-spin shrink-0 sm:block" />
                                 {pick({ ru: "Запускаем...", en: "Starting...", uz: "Ishga tushmoqda..." })}
                               </>
                             ) : canStartTrial ? (
                               <>
-                                <Sparkles className="h-4 w-4" />
+                                <Sparkles className="hidden h-4 w-4 shrink-0 sm:block" />
                                 {pick({ ru: "Запустить пробную версию", en: "Start trial", uz: "Sinovni yoqish" })}
                               </>
                             ) : (
@@ -902,7 +902,7 @@ export default function PremiumPage() {
                         ) : (
                           <Link
                             href="/auth/login?next=/premium"
-                            className="inline-flex w-full items-center justify-center rounded-[22px] bg-slate-900 px-8 py-4 text-[11px] font-black uppercase tracking-widest text-white transition-colors hover:bg-black"
+                            className="inline-flex w-full items-center justify-center rounded-[22px] bg-slate-900 px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-black sm:px-8 sm:tracking-[0.16em]"
                           >
                             {pick({ ru: "Войти и попробовать", en: "Sign in to try", uz: "Sinash uchun kiring" })}
                           </Link>
@@ -926,9 +926,9 @@ export default function PremiumPage() {
                               <button
                                 type="button"
                                 onClick={() => handleCopy(CARD_NUMBER, "card")}
-                                className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700"
+                                className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.08em] text-slate-700 sm:tracking-[0.14em]"
                               >
-                                {copyField === "card" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                {copyField === "card" ? <Check className="hidden h-4 w-4 shrink-0 sm:block" /> : <Copy className="hidden h-4 w-4 shrink-0 sm:block" />}
                                 {copyField === "card"
                                   ? pick({ ru: "Скопировано", en: "Copied", uz: "Nusxalandi" })
                                   : pick({ ru: "Копировать", en: "Copy", uz: "Nusxa" })}
@@ -944,9 +944,9 @@ export default function PremiumPage() {
                               <button
                                 type="button"
                                 onClick={() => handleCopy(CARD_HOLDER, "holder")}
-                                className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700"
+                                className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[10px] font-black uppercase tracking-[0.08em] text-slate-700 sm:tracking-[0.14em]"
                               >
-                                {copyField === "holder" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                {copyField === "holder" ? <Check className="hidden h-4 w-4 shrink-0 sm:block" /> : <Copy className="hidden h-4 w-4 shrink-0 sm:block" />}
                                 {copyField === "holder"
                                   ? pick({ ru: "Скопировано", en: "Copied", uz: "Nusxalandi" })
                                   : pick({ ru: "Копировать", en: "Copy", uz: "Nusxa" })}
@@ -1018,8 +1018,8 @@ export default function PremiumPage() {
                                     </p>
                                   </div>
                                 </div>
-                                <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700">
-                                  <FileText className="h-4 w-4" />
+                                <span className="inline-flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-slate-700 sm:self-auto sm:tracking-[0.14em]">
+                                  <FileText className="hidden h-4 w-4 shrink-0 sm:block" />
                                   {pick({ ru: "Выбрать", en: "Choose", uz: "Tanlash" })}
                                 </span>
                                 <input
@@ -1106,25 +1106,25 @@ export default function PremiumPage() {
                                   href={transferUrl}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] border border-slate-200 bg-white px-8 py-4 text-[11px] font-black uppercase tracking-widest text-slate-800 transition-colors hover:border-amber-300 hover:text-amber-600"
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] border border-slate-200 bg-white px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-slate-800 transition-colors hover:border-amber-300 hover:text-amber-600 sm:px-8 sm:tracking-[0.16em]"
                                 >
-                                  <ExternalLink className="h-4 w-4" />
+                                  <ExternalLink className="hidden h-4 w-4 shrink-0 sm:block" />
                                   {pick({ ru: "Открыть банк", en: "Open bank app", uz: "Bank ilovasini ochish" })}
                                 </a>
                               ) : null}
                               <button
                                 onClick={handleManualRequest}
                                 disabled={isSubmitting || !cardReady}
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-amber-500 px-8 py-4 text-[11px] font-black uppercase tracking-widest text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-amber-200 disabled:text-amber-700"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-amber-500 px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-amber-200 disabled:text-amber-700 sm:px-8 sm:tracking-[0.16em]"
                               >
                                 {submitMode === "paid" ? (
                                   <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <Loader2 className="hidden h-4 w-4 animate-spin shrink-0 sm:block" />
                                     {pick({ ru: "Отправляем...", en: "Submitting...", uz: "Yuborilmoqda..." })}
                                   </>
                                 ) : (
                                   <>
-                                    <ShieldCheck className="h-4 w-4" />
+                                    <ShieldCheck className="hidden h-4 w-4 shrink-0 sm:block" />
                                     {pick({ ru: "Отправить платный Premium на проверку", en: "Submit paid Premium", uz: "Pullik Premium ni yuborish" })}
                                   </>
                                 )}
@@ -1134,7 +1134,7 @@ export default function PremiumPage() {
                         ) : (
                           <Link
                             href="/auth/login?next=/premium"
-                            className="inline-flex w-full items-center justify-center rounded-[22px] bg-slate-900 px-8 py-4 text-[11px] font-black uppercase tracking-widest text-white transition-colors hover:bg-black"
+                            className="inline-flex w-full items-center justify-center rounded-[22px] bg-slate-900 px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-black sm:px-8 sm:tracking-[0.16em]"
                           >
                             {pick({ ru: "Войти, чтобы оформить", en: "Sign in to continue", uz: "Davom etish uchun kiring" })}
                           </Link>
@@ -1162,11 +1162,11 @@ export default function PremiumPage() {
                   <button
                     onClick={handleDowngrade}
                     disabled={isSubmitting}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-slate-900 px-8 py-4 text-[11px] font-black uppercase tracking-widest text-white transition-colors hover:bg-black disabled:opacity-60"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-slate-900 px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-black disabled:opacity-60 sm:px-8 sm:tracking-[0.16em]"
                   >
                     {submitMode === "downgrade" ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="hidden h-4 w-4 animate-spin shrink-0 sm:block" />
                         {pick({ ru: "Обработка...", en: "Processing...", uz: "Qayta ishlanmoqda..." })}
                       </>
                     ) : (

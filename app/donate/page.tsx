@@ -496,11 +496,11 @@ export default function DonatePage() {
       <div className="mx-auto grid max-w-6xl gap-6 xl:grid-cols-[1.2fr_0.8fr] xl:gap-8">
         <section className="overflow-hidden rounded-[34px] border border-white bg-white/90 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="border-b border-white/10 bg-[linear-gradient(135deg,_#052e2b_0%,_#0f766e_48%,_#1d4ed8_100%)] px-6 py-7 text-white md:px-10 md:py-9">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.28em]">
-              <HeartHandshake className="h-3.5 w-3.5" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] sm:text-[11px] sm:tracking-[0.22em]">
+              <HeartHandshake className="h-3.5 w-3.5 shrink-0" />
               {pick({ ru: "Пожертвование", en: "Donation", uz: "Xayriya" })}
             </div>
-            <h1 className="mt-5 text-[clamp(2.35rem,8vw,4.7rem)] font-black uppercase italic leading-[0.95] tracking-tight">
+            <h1 className="mt-5 text-[clamp(2rem,8vw,4.4rem)] font-black uppercase italic leading-[0.95] tracking-tight">
               {pick({
                 ru: "Поддержите проект переводом на карту",
                 en: "Support the project with a card transfer",
@@ -544,7 +544,7 @@ export default function DonatePage() {
                       {index + 1}
                     </div>
                     <span
-                      className={`text-xs font-black uppercase tracking-[0.22em] ${
+                      className={`text-[11px] font-black uppercase tracking-[0.12em] sm:text-xs sm:tracking-[0.18em] ${
                         active ? "text-slate-900" : "text-slate-400"
                       }`}
                     >
@@ -615,12 +615,12 @@ export default function DonatePage() {
                     }
                   }}
                   disabled={!cardReady || !selectedAmount || selectedAmount < 1000}
-                  className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 py-4 text-sm font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm sm:tracking-[0.18em]"
                 >
                   {cardReady
                     ? pick({ ru: "Далее", en: "Next", uz: "Keyingi" })
                     : pick({ ru: "Недоступно", en: "Unavailable", uz: "Mavjud emas" })}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="hidden h-4 w-4 shrink-0 sm:block" />
                 </button>
               </div>
             ) : null}
@@ -662,9 +662,9 @@ export default function DonatePage() {
                             <button
                               type="button"
                               onClick={() => handleCopy(CARD_NUMBER, "card")}
-                              className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white"
+                              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white sm:tracking-[0.14em]"
                             >
-                              {copyField === "card" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              {copyField === "card" ? <Check className="hidden h-4 w-4 shrink-0 sm:block" /> : <Copy className="hidden h-4 w-4 shrink-0 sm:block" />}
                               {copyField === "card"
                                 ? pick({ ru: "Скопировано", en: "Copied", uz: "Nusxalandi" })
                                 : pick({ ru: "Копировать", en: "Copy", uz: "Nusxa" })}
@@ -686,9 +686,9 @@ export default function DonatePage() {
                             <button
                               type="button"
                               onClick={() => handleCopy(CARD_HOLDER, "holder")}
-                              className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white"
+                              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white sm:tracking-[0.14em]"
                             >
-                              {copyField === "holder" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              {copyField === "holder" ? <Check className="hidden h-4 w-4 shrink-0 sm:block" /> : <Copy className="hidden h-4 w-4 shrink-0 sm:block" />}
                               {copyField === "holder"
                                 ? pick({ ru: "Скопировано", en: "Copied", uz: "Nusxalandi" })
                                 : pick({ ru: "Копировать", en: "Copy", uz: "Nusxa" })}
@@ -730,7 +730,7 @@ export default function DonatePage() {
                       <label className="ml-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
                         {pick({ ru: "Фото чека или файл", en: "Receipt photo or file", uz: "Chek rasmi yoki fayl" })}
                       </label>
-                      <label className="mt-2 flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition-colors hover:border-emerald-400 hover:bg-white">
+                      <label className="mt-2 flex cursor-pointer flex-col items-start gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition-colors hover:border-emerald-400 hover:bg-white sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm">
                             <Paperclip className="h-5 w-5" />
@@ -754,8 +754,8 @@ export default function DonatePage() {
                             </p>
                           </div>
                         </div>
-                        <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700">
-                          <FileText className="h-4 w-4" />
+                        <span className="inline-flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-slate-700 sm:self-auto sm:tracking-[0.14em]">
+                          <FileText className="hidden h-4 w-4 shrink-0 sm:block" />
                           {pick({ ru: "Выбрать", en: "Choose", uz: "Tanlash" })}
                         </span>
                         <input
@@ -850,9 +850,9 @@ export default function DonatePage() {
                           href={transferUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white py-4 text-sm font-black uppercase tracking-[0.22em] text-slate-800 transition-colors hover:border-emerald-300 hover:text-emerald-600"
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-slate-800 transition-colors hover:border-emerald-300 hover:text-emerald-600 sm:text-sm sm:tracking-[0.18em]"
                         >
-                          <ExternalLink className="h-4 w-4" />
+                          <ExternalLink className="hidden h-4 w-4 shrink-0 sm:block" />
                           {pick({
                             ru: "Открыть банк",
                             en: "Open bank app",
@@ -863,9 +863,9 @@ export default function DonatePage() {
                       <button
                         type="button"
                         onClick={submitManualRequest}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-4 text-sm font-black uppercase tracking-[0.22em] text-white transition-colors hover:bg-emerald-700 sm:col-span-1"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-emerald-700 sm:col-span-1 sm:text-sm sm:tracking-[0.18em]"
                       >
-                        <ShieldCheck className="h-4 w-4" />
+                        <ShieldCheck className="hidden h-4 w-4 shrink-0 sm:block" />
                         {pick({
                           ru: "Я перевёл, отправить на проверку",
                           en: "I transferred it, send for review",

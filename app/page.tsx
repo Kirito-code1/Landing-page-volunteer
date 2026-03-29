@@ -395,18 +395,18 @@ export default function Home() {
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <Link
                 href="/auth/registr"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-[18px] bg-gray-900 text-white font-black uppercase tracking-wider text-sm hover:bg-[#10b981] transition-all shadow-xl shadow-gray-900/10"
+                className="inline-flex items-center justify-center gap-2 px-5 py-4 rounded-[18px] bg-gray-900 text-white font-black uppercase tracking-[0.08em] text-[11px] hover:bg-[#10b981] transition-all shadow-xl shadow-gray-900/10 sm:px-8 sm:text-sm sm:tracking-[0.14em]"
               >
                 {pick({
                   ru: "Начать сейчас",
                   en: "Start Now",
                   uz: "Hozir boshlash",
                 })}
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="hidden h-4 w-4 shrink-0 sm:block" />
               </Link>
               <Link
                 href="/events"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-[18px] border border-gray-200 bg-white text-gray-800 font-black uppercase tracking-wider text-sm hover:border-[#10b981] hover:text-[#10b981] transition-all"
+                className="inline-flex items-center justify-center px-5 py-4 rounded-[18px] border border-gray-200 bg-white text-gray-800 font-black uppercase tracking-[0.08em] text-[11px] hover:border-[#10b981] hover:text-[#10b981] transition-all sm:px-8 sm:text-sm sm:tracking-[0.14em]"
               >
                 {pick({
                   ru: "Смотреть события",
@@ -674,14 +674,14 @@ export default function Home() {
           <div className="mt-12 text-center">
             <Link
               href="/events"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-[18px] bg-gray-900 text-white font-black uppercase tracking-widest text-sm hover:bg-[#10b981] transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-4 rounded-[18px] bg-gray-900 text-white font-black uppercase tracking-[0.08em] text-[11px] hover:bg-[#10b981] transition-colors sm:px-8 sm:text-sm sm:tracking-[0.18em]"
             >
               {pick({
                 ru: "Открыть все события",
                 en: "Open All Events",
                 uz: "Barcha tadbirlarni ochish",
               })}
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="hidden h-4 w-4 shrink-0 sm:block" />
             </Link>
           </div>
         </div>

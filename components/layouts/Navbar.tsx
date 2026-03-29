@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faCircleUser } from "@fortawesome/free-regular-svg-icons";
+import { faCircleUser } from "@fortawesome/free-regular-svg-icons";
 import { 
   faChevronDown, 
   faTableColumns, 
@@ -15,7 +15,7 @@ import {
   faCrown,
   IconDefinition 
 } from "@fortawesome/free-solid-svg-icons";
-import { LogOut, Heart, Bell, Clock3, CheckCircle2, XCircle, Loader2, Crown, ShieldCheck } from "lucide-react";
+import { Heart, Bell, Clock3, CheckCircle2, XCircle, Loader2, Crown, ShieldCheck } from "lucide-react";
 import { getPremiumAccessType, hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
 import { getBrowserSupabaseClient, hasBrowserSupabaseEnv } from "@/lib/supabase/browser";
 import { useLanguage, type Locale } from "@/components/providers/LanguageProvider";
@@ -614,7 +614,7 @@ export default function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`whitespace-nowrap rounded-full px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] transition-all ${
+                    className={`whitespace-nowrap rounded-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-[0.1em] transition-all 2xl:px-4 2xl:text-[11px] 2xl:tracking-[0.12em] ${
                       isActive
                         ? "bg-emerald-50 text-[#10b981] shadow-sm"
                         : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
@@ -629,7 +629,7 @@ export default function Navbar() {
                 <div ref={moreAreaRef} className="relative">
                   <button
                     onClick={() => setIsMoreOpen((prev) => !prev)}
-                    className={`inline-flex items-center rounded-full px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] transition-all ${
+                    className={`inline-flex items-center rounded-full px-3.5 py-2.5 text-[10px] font-black uppercase tracking-[0.1em] transition-all 2xl:px-4 2xl:text-[11px] 2xl:tracking-[0.12em] ${
                       hasActiveSecondaryItem || isMoreOpen
                         ? "bg-slate-100 text-slate-950"
                         : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
@@ -638,7 +638,7 @@ export default function Navbar() {
                     {pick({ ru: "Ещё", en: "More", uz: "Yana" })}
                     <FontAwesomeIcon
                       icon={faChevronDown}
-                      className={`ms-2 h-2 w-2 transition-transform ${isMoreOpen ? "rotate-180" : ""}`}
+                      className={`ms-2 h-2 w-2 shrink-0 transition-transform ${isMoreOpen ? "rotate-180" : ""}`}
                     />
                   </button>
 
@@ -651,11 +651,11 @@ export default function Navbar() {
                             key={item.href}
                             href={item.href}
                             onClick={() => setIsMoreOpen(false)}
-                            className={`mb-1 flex items-center rounded-[18px] px-3 py-3 text-[11px] font-black uppercase tracking-[0.12em] transition-colors last:mb-0 ${
+                            className={`mb-1 flex items-center rounded-[18px] px-3 py-3 text-[11px] font-black uppercase tracking-[0.08em] transition-colors last:mb-0 ${
                               isActive ? "bg-emerald-50 text-[#10b981]" : "text-slate-700 hover:bg-slate-50"
                             }`}
                           >
-                            {item.icon ? <FontAwesomeIcon icon={item.icon} className="me-3 h-3 w-3" /> : null}
+                            {item.icon ? <FontAwesomeIcon icon={item.icon} className="me-3 h-3 w-3 shrink-0" /> : null}
                             {item.label}
                           </Link>
                         );
@@ -691,7 +691,7 @@ export default function Navbar() {
             <div ref={langAreaRef} className="relative">
               <button
                 onClick={() => setIsLangOpen(!isLangOpen)}
-                className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-slate-600 transition-colors hover:bg-slate-50"
+                className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-600 transition-colors hover:bg-slate-50 sm:text-[11px]"
               >
                 <Image
                   src={selectedLanguage.flag}
@@ -702,7 +702,7 @@ export default function Navbar() {
                   unoptimized
                 />
                 {selectedLanguage.code}
-                <FontAwesomeIcon icon={faChevronDown} className={`ms-2 h-2 w-2 transition-transform ${isLangOpen ? "rotate-180" : ""}`} />
+                <FontAwesomeIcon icon={faChevronDown} className={`ms-2 h-2 w-2 shrink-0 transition-transform ${isLangOpen ? "rotate-180" : ""}`} />
               </button>
 
               {isLangOpen && (
@@ -830,17 +830,15 @@ export default function Navbar() {
             {isLoggedIn ? (
               <button
                 onClick={handleLogout}
-                className="hidden items-center rounded-full bg-slate-950 px-5 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-red-500 md:inline-flex"
+                className="hidden items-center whitespace-nowrap rounded-full bg-slate-950 px-5 py-3 text-[10px] font-black uppercase tracking-[0.1em] text-white transition-colors hover:bg-red-500 md:inline-flex xl:text-[11px]"
               >
-                <LogOut className="me-2 h-4 w-4" />
                 {pick({ ru: "Выйти", en: "Logout", uz: "Chiqish" })}
               </button>
             ) : (
               <Link
                 href="/auth/login"
-                className="hidden items-center rounded-full bg-[#10b981] px-6 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-all hover:bg-[#0da975] hover:shadow-lg hover:shadow-green-100 md:inline-flex"
+                className="hidden items-center whitespace-nowrap rounded-full bg-[#10b981] px-6 py-3 text-[10px] font-black uppercase tracking-[0.1em] text-white transition-all hover:bg-[#0da975] hover:shadow-lg hover:shadow-green-100 md:inline-flex xl:text-[11px]"
               >
-                <FontAwesomeIcon icon={faUser} className="me-2" />
                 {pick({ ru: "Войти", en: "Login", uz: "Kirish" })}
               </Link>
             )}
@@ -918,11 +916,11 @@ export default function Navbar() {
                     <Link
                       href={item.href}
                       onClick={() => setIsMenuOpen(false)}
-                      className={`flex items-center rounded-[20px] px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] transition-colors ${
+                      className={`flex items-center rounded-[20px] px-4 py-3 text-[11px] font-black uppercase tracking-[0.08em] transition-colors ${
                         isActive ? "bg-emerald-50 text-[#10b981]" : "text-slate-800 hover:bg-slate-50"
                       }`}
                     >
-                      {item.icon ? <FontAwesomeIcon icon={item.icon} className="me-3 h-3 w-3" /> : null}
+                      {item.icon ? <FontAwesomeIcon icon={item.icon} className="me-3 h-3 w-3 shrink-0" /> : null}
                       {item.label}
                     </Link>
                   </li>
@@ -934,18 +932,16 @@ export default function Navbar() {
               {isLoggedIn ? (
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center justify-center rounded-[20px] bg-slate-950 px-5 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-red-500"
+                  className="flex w-full items-center justify-center rounded-[20px] bg-slate-950 px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-red-500"
                 >
-                  <LogOut className="me-2 h-4 w-4" />
                   {pick({ ru: "Выйти", en: "Logout", uz: "Chiqish" })}
                 </button>
               ) : (
                 <Link
                   href="/auth/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex w-full items-center justify-center rounded-[20px] bg-[#10b981] px-5 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#0da975]"
+                  className="flex w-full items-center justify-center rounded-[20px] bg-[#10b981] px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-[#0da975]"
                 >
-                  <FontAwesomeIcon icon={faUser} className="me-2" />
                   {pick({ ru: "Войти", en: "Login", uz: "Kirish" })}
                 </Link>
               )}

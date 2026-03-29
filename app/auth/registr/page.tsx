@@ -216,12 +216,12 @@ export default function RegisterPage() {
 
           <button 
             disabled={loading || !supabase} 
-            className="w-full bg-[#10b981] hover:bg-[#0da975] text-white py-5 rounded-[26px] font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-green-100/50 transition-all active:scale-[0.98] mt-6 disabled:bg-gray-300 uppercase tracking-wider"
+            className="w-full bg-[#10b981] hover:bg-[#0da975] text-white py-5 rounded-[26px] font-black text-base sm:text-lg flex items-center justify-center gap-2 shadow-xl shadow-green-100/50 transition-all active:scale-[0.98] mt-6 disabled:bg-gray-300 uppercase tracking-[0.08em] sm:tracking-[0.14em]"
           >
             {loading ? <Loader2 className="animate-spin" /> : (
               <>
                 {pick({ ru: "Начать помогать", en: "Start Helping", uz: "Yordam berishni boshlash" })}
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="hidden h-5 w-5 shrink-0 sm:block" />
               </>
             )}
           </button>

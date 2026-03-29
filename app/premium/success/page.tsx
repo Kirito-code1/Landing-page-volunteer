@@ -173,11 +173,11 @@ function PremiumSuccessContent() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,_#fffaf1_0%,_#ffffff_50%,_#eff6ff_100%)] px-4">
-      <div className="w-full max-w-xl rounded-[34px] border border-gray-100 bg-white p-10 text-center shadow-xl">
+      <div className="w-full max-w-xl rounded-[34px] border border-gray-100 bg-white p-6 text-center shadow-xl sm:p-8 md:p-10">
         <div className="mb-5 flex justify-center">
           <AnimatedStatusIndicator status={status} tone="amber" />
         </div>
-        <h1 className="text-3xl font-black uppercase italic tracking-tighter text-gray-900">
+        <h1 className="text-2xl font-black uppercase italic tracking-tighter text-gray-900 sm:text-3xl">
           {content.titleByStatus[status]}
         </h1>
         <p className="mt-4 text-sm font-semibold leading-7 text-gray-500">{content.bodyByStatus[status]}</p>
@@ -274,15 +274,15 @@ function PremiumSuccessContent() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/premium"
-              className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-8 py-4 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-black"
+              className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-black sm:px-8 sm:text-sm sm:tracking-[0.18em]"
             >
               {pick({ ru: "Вернуться к Premium", en: "Back to Premium", uz: "Premium ga qaytish" })}
             </Link>
             <Link
               href="/events"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-8 py-4 text-sm font-black uppercase tracking-widest text-amber-700 transition-colors hover:border-amber-300 hover:bg-amber-100"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-amber-700 transition-colors hover:border-amber-300 hover:bg-amber-100 sm:px-8 sm:text-sm sm:tracking-[0.18em]"
             >
-              <Compass className="h-4 w-4" />
+              <Compass className="hidden h-4 w-4 shrink-0 sm:block" />
               {pick({ ru: "Каталог событий", en: "Events catalog", uz: "Tadbirlar katalogi" })}
             </Link>
           </div>
