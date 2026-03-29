@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import AnimatedStatusIndicator from "@/components/system/AnimatedStatusIndicator";
 
-type StatusState = "loading" | "paid" | "pending" | "failed" | "cancelled" | "missing";
+type StatusState = "loading" | "submitted" | "paid" | "pending" | "failed" | "cancelled" | "missing";
 type TrackingMode = "manual" | "order" | "missing";
 type DonationSummary = {
   goalAmountUzs: number;
@@ -88,6 +88,11 @@ function DonationSuccessContent() {
           return;
         }
 
+        if (trackingMode === "manual") {
+          setStatus("submitted");
+          return;
+        }
+
         setStatus("pending");
         if (attempt < 4) {
           window.setTimeout(() => {
@@ -96,7 +101,7 @@ function DonationSuccessContent() {
         }
       } catch (error) {
         if (cancelled) return;
-        setStatus("pending");
+        setStatus(trackingMode === "manual" ? "submitted" : "pending");
         setMessage(
           error instanceof Error
             ? error.message
@@ -117,6 +122,7 @@ function DonationSuccessContent() {
       return {
         titleByStatus: {
           loading: pick({ ru: "Проверяем заявку", en: "Checking request", uz: "So'rov tekshirilmoqda" }),
+          submitted: pick({ ru: "Заявка отправлена", en: "Request sent", uz: "So'rov yuborildi" }),
           paid: pick({ ru: "Спасибо за поддержку", en: "Thanks for your support", uz: "Qo'llab-quvvatlaganingiz uchun rahmat" }),
           pending: pick({ ru: "Перевод ждёт проверки", en: "Transfer is waiting for review", uz: "O'tkazma tekshiruvni kutmoqda" }),
           failed: pick({ ru: "Перевод не подтверждён", en: "Transfer was not confirmed", uz: "O'tkazma tasdiqlanmadi" }),
@@ -125,6 +131,7 @@ function DonationSuccessContent() {
         } satisfies Record<StatusState, string>,
         bodyByStatus: {
           loading: pick({ ru: "Проверяем статус вашего пожертвования.", en: "We are checking the status of your donation.", uz: "Xayriyangiz holatini tekshirmoqdamiz." }),
+          submitted: pick({ ru: "Мы получили вашу заявку. Вы можете спокойно закрыть страницу, а мы проверим перевод позже.", en: "We received your request. You can safely leave this page and we will review the transfer later.", uz: "So'rovingiz qabul qilindi. Sahifani bemalol yopishingiz mumkin, o'tkazmani keyinroq tekshiramiz." }),
           paid: pick({ ru: "Спасибо за поддержку. Пожертвование подтверждено и уже учтено в текущем сборе.", en: "Thank you for your support. The donation has been confirmed and is already included in the current fundraiser.", uz: "Qo'llab-quvvatlaganingiz uchun rahmat. Xayriya tasdiqlandi va joriy yig'imga qo'shildi." }),
           pending: pick({ ru: "Спасибо за поддержку. Заявка сохранена и скоро будет проверена.", en: "Thank you for your support. Your request has been saved and will be reviewed soon.", uz: "Qo'llab-quvvatlaganingiz uchun rahmat. So'rovingiz saqlandi va tez orada tekshiriladi." }),
           failed: pick({ ru: "Перевод пока не удалось подтвердить. Проверьте данные перевода или попробуйте позже.", en: "The transfer could not be confirmed yet. Check the transfer details or try again later.", uz: "O'tkazma hozircha tasdiqlanmadi. O'tkazma ma'lumotini tekshiring yoki keyinroq urinib ko'ring." }),
@@ -137,6 +144,7 @@ function DonationSuccessContent() {
     return {
       titleByStatus: {
         loading: pick({ ru: "Проверяем оплату", en: "Checking payment", uz: "To'lov tekshirilmoqda" }),
+        submitted: pick({ ru: "Заявка отправлена", en: "Request sent", uz: "So'rov yuborildi" }),
         paid: pick({ ru: "Спасибо за поддержку", en: "Thanks for your support", uz: "Qo'llab-quvvatlaganingiz uchun rahmat" }),
         pending: pick({ ru: "Платёж ещё обрабатывается", en: "Payment is still processing", uz: "To'lov hali qayta ishlanmoqda" }),
         failed: pick({ ru: "Платёж не подтверждён", en: "Payment was not confirmed", uz: "To'lov tasdiqlanmadi" }),
@@ -145,6 +153,7 @@ function DonationSuccessContent() {
       } satisfies Record<StatusState, string>,
       bodyByStatus: {
         loading: pick({ ru: "Проверяем ваш платёж.", en: "We are checking your payment.", uz: "To'lovingizni tekshirmoqdamiz." }),
+        submitted: pick({ ru: "Мы получили данные перевода. Вы можете закрыть страницу, а мы проверим заявку позже.", en: "We received the transfer details. You can leave this page and we will review the request later.", uz: "O'tkazma ma'lumotlari qabul qilindi. Sahifani yopishingiz mumkin, so'rovni keyinroq tekshiramiz." }),
         paid: pick({ ru: "Спасибо за поддержку. Пожертвование подтверждено и будет учтено в текущем сборе.", en: "Thank you for your support. The donation has been confirmed and will be included in the current fundraiser.", uz: "Qo'llab-quvvatlaganingiz uchun rahmat. Xayriya tasdiqlandi va joriy yig'imga qo'shiladi." }),
         pending: pick({ ru: "Спасибо за поддержку. Мы получили данные перевода и скоро завершим проверку.", en: "Thank you for your support. We received the transfer details and will complete the review soon.", uz: "Qo'llab-quvvatlaganingiz uchun rahmat. O'tkazma ma'lumotlari qabul qilindi va tekshiruv tez orada yakunlanadi." }),
         failed: pick({ ru: "Если деньги не списались, попробуйте ещё раз. Если списание было, но статус не обновился, проверьте заказ позже.", en: "If the charge did not go through, try again. If you were charged but the status did not update, check the order again later.", uz: "Agar pul yechilmagan bo'lsa, yana urinib ko'ring. Agar pul yechilgan bo'lsa-yu status yangilanmagan bo'lsa, buyurtmani keyinroq yana tekshiring." }),
@@ -155,14 +164,15 @@ function DonationSuccessContent() {
   }, [pick, trackingMode]);
 
   const donorNote =
-    status === "paid" || status === "pending" || status === "loading"
+    status === "paid" || status === "submitted" || status === "pending" || status === "loading"
       ? pick({
           ru: "Спасибо за поддержку. Когда сбор будет завершён и средства пойдут в работу, мы опубликуем отчёт с результатом и фотографиями на странице пожертвований.",
           en: "Thank you for your support. Once the fundraiser is completed and the money is used, we will publish a report with the results and photos on the donation page.",
           uz: "Qo'llab-quvvatlaganingiz uchun rahmat. Yig'im tugab, mablag' ishlatilgach, xayriya sahifasida natija va suratlar bilan hisobot e'lon qilamiz.",
         })
       : "";
-  const showContinueActions = status === "paid" || status === "pending" || status === "loading";
+  const showContinueActions =
+    status === "paid" || status === "submitted" || status === "pending" || status === "loading";
   const continueTitle = pick({
     ru: "Пока мы завершаем проверку, вы можете продолжить пользоваться платформой",
     en: "While we finish the review, you can keep using the platform",

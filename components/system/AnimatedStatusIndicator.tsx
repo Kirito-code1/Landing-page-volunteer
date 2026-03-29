@@ -4,6 +4,7 @@ import { TriangleAlert } from "lucide-react";
 
 export type AnimatedStatusState =
   | "loading"
+  | "submitted"
   | "paid"
   | "pending"
   | "failed"
@@ -64,7 +65,7 @@ export default function AnimatedStatusIndicator({
     );
   }
 
-  if (status === "paid") {
+  if (status === "paid" || status === "submitted") {
     return (
       <div className="relative flex h-24 w-24 items-center justify-center">
         <div className={`absolute inset-0 rounded-full ${palette.glow} animate-pulse`} />

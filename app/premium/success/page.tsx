@@ -8,7 +8,7 @@ import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 import AnimatedStatusIndicator from "@/components/system/AnimatedStatusIndicator";
 
-type StatusState = "loading" | "paid" | "pending" | "failed" | "cancelled" | "missing";
+type StatusState = "loading" | "submitted" | "paid" | "pending" | "failed" | "cancelled" | "missing";
 type TrackingMode = "manual" | "order" | "missing";
 
 function mapManualStatus(status: string | undefined): StatusState {
@@ -80,6 +80,11 @@ function PremiumSuccessContent() {
           return;
         }
 
+        if (trackingMode === "manual") {
+          setStatus("submitted");
+          return;
+        }
+
         setStatus("pending");
         if (attempt < 5) {
           window.setTimeout(() => {
@@ -88,7 +93,7 @@ function PremiumSuccessContent() {
         }
       } catch (error) {
         if (cancelled) return;
-        setStatus("pending");
+        setStatus(trackingMode === "manual" ? "submitted" : "pending");
         setMessage(
           error instanceof Error
             ? error.message
@@ -109,6 +114,7 @@ function PremiumSuccessContent() {
       return {
         titleByStatus: {
           loading: pick({ ru: "Проверяем заявку Premium", en: "Checking Premium request", uz: "Premium so'rovi tekshirilmoqda" }),
+          submitted: pick({ ru: "Заявка отправлена", en: "Request sent", uz: "So'rov yuborildi" }),
           paid: pick({ ru: "Premium активирован", en: "Premium activated", uz: "Premium yoqildi" }),
           pending: pick({ ru: "Premium ждёт проверки", en: "Premium is waiting for review", uz: "Premium tekshiruvni kutmoqda" }),
           failed: pick({ ru: "Premium не подтверждён", en: "Premium was not confirmed", uz: "Premium tasdiqlanmadi" }),
@@ -117,6 +123,7 @@ function PremiumSuccessContent() {
         } satisfies Record<StatusState, string>,
         bodyByStatus: {
           loading: pick({ ru: "Проверяем статус вашей заявки на Premium.", en: "We are checking the status of your Premium request.", uz: "Premium so'rovingiz holatini tekshirmoqdamiz." }),
+          submitted: pick({ ru: "Мы получили заявку на Premium. Вы можете закрыть страницу, а мы проверим перевод, когда дойдём до него.", en: "We received your Premium request. You can leave this page and we will review the transfer when we get to it.", uz: "Premium so'rovingiz qabul qilindi. Sahifani yopishingiz mumkin, o'tkazmani navbat bilan tekshiramiz." }),
           paid: pick({ ru: "Оплата подтверждена. Premium уже активирован для вашего аккаунта.", en: "Your payment has been confirmed. Premium is already active for your account.", uz: "To'lov tasdiqlandi. Premium akkauntingiz uchun allaqachon faollashgan." }),
           pending: pick({ ru: "Заявка сохранена. Обычно подтверждение Premium занимает около 5-10 минут.", en: "Your request has been saved. Premium confirmation usually takes about 5-10 minutes.", uz: "So'rov saqlandi. Premium tasdig'i odatda 5-10 daqiqa atrofida bo'ladi." }),
           failed: pick({ ru: "Оплата пока не подтверждена. Проверьте данные перевода или попробуйте позже.", en: "Your payment has not been confirmed yet. Check the transfer details or try again later.", uz: "To'lov hozircha tasdiqlanmadi. O'tkazma ma'lumotini tekshiring yoki keyinroq urinib ko'ring." }),
@@ -129,6 +136,7 @@ function PremiumSuccessContent() {
     return {
       titleByStatus: {
         loading: pick({ ru: "Проверяем Premium", en: "Checking Premium", uz: "Premium tekshirilmoqda" }),
+        submitted: pick({ ru: "Заявка отправлена", en: "Request sent", uz: "So'rov yuborildi" }),
         paid: pick({ ru: "Premium активирован", en: "Premium activated", uz: "Premium yoqildi" }),
         pending: pick({ ru: "Платёж ещё обрабатывается", en: "Payment is still processing", uz: "To'lov hali qayta ishlanmoqda" }),
         failed: pick({ ru: "Premium не подтверждён", en: "Premium was not confirmed", uz: "Premium tasdiqlanmadi" }),
@@ -137,6 +145,7 @@ function PremiumSuccessContent() {
       } satisfies Record<StatusState, string>,
       bodyByStatus: {
         loading: pick({ ru: "Проверяем ваш платёж.", en: "We are checking your payment.", uz: "To'lovingizni tekshirmoqdamiz." }),
+        submitted: pick({ ru: "Мы получили данные перевода. Вы можете спокойно выйти, а мы подтвердим Premium позже.", en: "We received the transfer details. You can safely leave now, and we will confirm Premium later.", uz: "O'tkazma ma'lumotlari qabul qilindi. Bemalol chiqishingiz mumkin, Premium ni keyinroq tasdiqlaymiz." }),
         paid: pick({ ru: "Оплата подтверждена. Premium уже активирован для вашего аккаунта.", en: "Payment confirmed. Premium is already active for your account.", uz: "To'lov tasdiqlandi. Premium akkauntingiz uchun allaqachon faollashgan." }),
         pending: pick({ ru: "Вы уже вернулись с платёжной страницы. Финальное подтверждение Premium обычно занимает около 5-10 минут.", en: "You have already returned from the payment page. Final Premium confirmation usually takes about 5-10 minutes.", uz: "Siz to'lov sahifasidan qaytdingiz. Premium yakuniy tasdig'i odatda 5-10 daqiqa atrofida bo'ladi." }),
         failed: pick({ ru: "Платёж не был подтверждён. Если списание всё же произошло, проверьте заказ позже или обратитесь в поддержку.", en: "The payment was not confirmed. If a charge did happen, check the order again later or contact support.", uz: "To'lov tasdiqlanmadi. Agar pul yechilgan bo'lsa, buyurtmani keyinroq tekshiring yoki yordamga murojaat qiling." }),
@@ -147,14 +156,15 @@ function PremiumSuccessContent() {
   }, [pick, trackingMode]);
 
   const waitingNote =
-    status === "loading" || status === "pending"
+    status === "loading" || status === "pending" || status === "submitted"
       ? pick({
-          ru: "Обычно мы подтверждаем Premium в течение 5-10 минут. После активации вы увидите уведомление и доступ откроется автоматически.",
-          en: "We usually confirm Premium within 5-10 minutes. After activation, you will see a notification and access will open automatically.",
-          uz: "Odatda Premium 5-10 daqiqa ichida tasdiqlanadi. Faollashgach, siz bildirishnoma olasiz va kirish avtomatik ochiladi.",
+          ru: "Заявка уже сохранена. Обычно мы подтверждаем Premium в течение 5-10 минут. После активации придёт уведомление, и доступ откроется автоматически.",
+          en: "Your request has already been saved. We usually confirm Premium within 5-10 minutes. After activation, you will get a notification and access will open automatically.",
+          uz: "So'rovingiz allaqachon saqlandi. Odatda Premium 5-10 daqiqa ichida tasdiqlanadi. Faollashgach, bildirishnoma keladi va kirish avtomatik ochiladi.",
         })
       : "";
-  const showContinueActions = status === "paid" || status === "pending" || status === "loading";
+  const showContinueActions =
+    status === "paid" || status === "submitted" || status === "pending" || status === "loading";
   const continueTitle = pick({
     ru: "Пока статус обновляется, вы можете продолжить работу на платформе",
     en: "While the status is updating, you can keep working on the platform",
