@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hasRequiredPhone } from "@/lib/auth/phone";
 import { hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
 import { isPastEventDateTime } from "@/lib/events/dates";
 import { FREE_POST_LIMIT } from "@/lib/events/limits";
@@ -103,6 +104,13 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Требуется авторизация." }, { status: 401 });
+  }
+
+  if (!body.eventId && !hasRequiredPhone(user)) {
+    return NextResponse.json(
+      { error: "Добавьте номер телефона в профиле, чтобы публиковать объявления." },
+      { status: 403 },
+    );
   }
 
   let effectiveUser = user;

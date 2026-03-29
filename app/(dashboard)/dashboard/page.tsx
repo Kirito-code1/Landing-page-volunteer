@@ -38,6 +38,8 @@ import {
   normalizeVolunteerCount,
 } from "@/components/events/eventMeta";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
+import { hasRequiredPhone } from "@/lib/auth/phone";
+import { buildCompleteProfilePath } from "@/lib/auth/redirect";
 import { hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
 import {
   getCurrentEventTimeInputMin,
@@ -557,6 +559,11 @@ export default function Dashboard() {
   };
 
   const openCreateModal = () => {
+    if (user && !hasRequiredPhone(user)) {
+      router.push(buildCompleteProfilePath("/dashboard"));
+      return;
+    }
+
     if (reachedFreeLimit) {
       showAlertModal(
         pick({ ru: "Лимит достигнут", en: "Limit reached", uz: "Limitga yetildi" }),
@@ -1165,6 +1172,11 @@ export default function Dashboard() {
             uz: "Foydalanuvchi topilmadi. Qayta kirib ko'ring.",
           }),
         );
+      }
+
+      if (!editingId && !hasRequiredPhone(user)) {
+        router.push(buildCompleteProfilePath("/dashboard"));
+        return;
       }
 
       if (!editingId && reachedFreeLimit) {

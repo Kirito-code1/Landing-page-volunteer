@@ -75,9 +75,9 @@ export default function RegisterPage() {
             </h2>
             <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">
               {pick({
-                ru: "Никаких отдельных паролей и длинных форм. После входа через Google профиль создастся автоматически, и вы сразу попадёте в кабинет.",
-                en: "No extra passwords or long forms. After signing in with Google, your profile is created automatically and you go straight to the dashboard.",
-                uz: "Alohida parol va uzun forma kerak emas. Google orqali kirgandan so'ng profilingiz avtomatik yaratiladi va siz darhol kabinetga o'tasiz.",
+                ru: "Никаких отдельных паролей и длинных форм. После входа через Google профиль создастся автоматически, а затем мы попросим добавить номер телефона для участия в событиях и публикации объявлений.",
+                en: "No extra passwords or long forms. After signing in with Google, your profile is created automatically, then we ask for your phone number before you can join events or publish listings.",
+                uz: "Alohida parol va uzun forma kerak emas. Google orqali kirgandan so'ng profilingiz avtomatik yaratiladi, keyin esa tadbirlarda qatnashish va e'lon berishdan oldin telefon raqamingiz so'raladi.",
               })}
             </p>
           </div>
@@ -109,9 +109,9 @@ export default function RegisterPage() {
               </p>
               <p>
                 {pick({
-                  ru: "2. Вы сразу сможете искать события, отправлять отклики и создавать свои объявления.",
-                  en: "2. You can immediately browse events, send applications, and create your own listings.",
-                  uz: "2. Siz darhol tadbirlarni ko'rishingiz, ariza yuborishingiz va o'z e'lonlaringizni yaratishingiz mumkin.",
+                  ru: "2. После этого вы добавите номер телефона и только затем сможете отправлять отклики и создавать свои объявления.",
+                  en: "2. Then you add your phone number and only after that you can send applications and create your own listings.",
+                  uz: "2. Shundan keyin telefon raqamingizni kiritasiz va faqat undan so'ng ariza yubora hamda o'z e'lonlaringizni yarata olasiz.",
                 })}
               </p>
             </div>

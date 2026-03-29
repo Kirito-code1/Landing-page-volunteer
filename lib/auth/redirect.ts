@@ -21,3 +21,14 @@ export function buildAuthCallbackUrl(origin: string, nextPath: string) {
   url.searchParams.set("next", sanitizeNextPath(nextPath));
   return url.toString();
 }
+
+export function buildCompleteProfilePath(nextPath: string, fallback = "/dashboard") {
+  const sanitizedNextPath = sanitizeNextPath(nextPath, fallback);
+  const safeNextPath = sanitizedNextPath.startsWith("/auth/complete-profile")
+    ? fallback
+    : sanitizedNextPath;
+
+  const url = new URL("/auth/complete-profile", "http://localhost");
+  url.searchParams.set("next", safeNextPath);
+  return `${url.pathname}${url.search}`;
+}

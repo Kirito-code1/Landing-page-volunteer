@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import SocialAuthButtons from "@/components/auth/SocialAuthButtons";
-import { sanitizeNextPath } from "@/lib/auth/redirect";
+import { hasRequiredPhone } from "@/lib/auth/phone";
+import { buildCompleteProfilePath, sanitizeNextPath } from "@/lib/auth/redirect";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
@@ -86,7 +87,10 @@ export default function LoginPage() {
       });
     } else {
       if (data?.session) {
-        router.push(nextPath);
+        const destination = hasRequiredPhone(data.session.user)
+          ? nextPath
+          : buildCompleteProfilePath(nextPath);
+        router.push(destination);
         router.refresh();
       } else {
         setLoading(false);

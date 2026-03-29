@@ -47,22 +47,6 @@ begin
   end if;
 end $$;
 
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'event_applications'
-      and policyname = 'event_applications_delete_policy'
-  ) then
-    create policy event_applications_delete_policy
-      on public.event_applications
-      for delete
-      using (volunteer_id = auth.uid() and status = 'pending');
-  end if;
-end $$;
-
 alter table public.event_applications enable row level security;
 
 do $$
@@ -85,35 +69,12 @@ begin
   end if;
 end $$;
 
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'event_applications'
-      and policyname = 'event_applications_insert_policy'
-  ) then
-    create policy event_applications_insert_policy
-      on public.event_applications
-      for insert
-      with check (volunteer_id = auth.uid());
-  end if;
-end $$;
+drop policy if exists event_applications_delete_policy on public.event_applications;
+drop policy if exists event_applications_insert_policy on public.event_applications;
+drop policy if exists event_applications_update_policy on public.event_applications;
 
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'event_applications'
-      and policyname = 'event_applications_update_policy'
-  ) then
-    create policy event_applications_update_policy
-      on public.event_applications
-      for update
-      using (volunteer_id = auth.uid() or organizer_id = auth.uid())
-      with check (volunteer_id = auth.uid() or organizer_id = auth.uid());
-  end if;
-end $$;
+create policy event_applications_update_policy
+  on public.event_applications
+  for update
+  using (organizer_id = auth.uid())
+  with check (organizer_id = auth.uid());

@@ -26,6 +26,8 @@ import {
   getEventCategoryLabel,
   normalizeVolunteerCount,
 } from "@/components/events/eventMeta";
+import { hasRequiredPhone } from "@/lib/auth/phone";
+import { buildCompleteProfilePath } from "@/lib/auth/redirect";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
 import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
@@ -267,6 +269,11 @@ export default function EventPage() {
       return;
     }
 
+    if (!hasRequiredPhone(currentUser)) {
+      router.push(buildCompleteProfilePath(`/events/${event.id}`));
+      return;
+    }
+
     if (currentUser.id === event.user_id) {
       showAlert(
         pick({ ru: "Вы организатор", en: "You are the organizer", uz: "Siz tashkilotchisiz" }),
@@ -307,69 +314,38 @@ export default function EventPage() {
 
     try {
       setIsApplying(true);
+      const response = await fetch("/api/events/applications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: event.id,
+          action: "submit",
+        }),
+      });
 
-      if (myApplicationId) {
-        const { error: updateError } = await supabase
-          .from("event_applications")
-          .update({ status: "pending", reviewed_at: null })
-          .eq("id", myApplicationId)
-          .eq("volunteer_id", currentUser.id);
+      const result = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) {
+        const message =
+          result?.error ||
+          pick({
+            ru: "Не удалось отправить заявку",
+            en: "Failed to send request",
+            uz: "Arizani yuborib bo'lmadi",
+          });
 
-        if (updateError) {
-          if (isMissingApplicationsTableError(updateError.message)) {
-            setParticipationSetupMissing(true);
-            showAlert(
-              pick({ ru: "Нужна настройка базы", en: "Database setup required", uz: "Baza sozlamasi kerak" }),
-              missingApplicationsHint,
-              "warning",
-            );
-            return;
-          }
-          throw new Error(updateError.message);
+        if (isMissingApplicationsTableError(message)) {
+          setParticipationSetupMissing(true);
+          showAlert(
+            pick({ ru: "Нужна настройка базы", en: "Database setup required", uz: "Baza sozlamasi kerak" }),
+            missingApplicationsHint,
+            "warning",
+          );
+          return;
         }
-      } else {
-        const payload = {
-          event_id: event.id,
-          organizer_id: event.user_id,
-          volunteer_id: currentUser.id,
-          volunteer_name: currentUser.user_metadata?.full_name ?? null,
-          volunteer_email: currentUser.email ?? null,
-          volunteer_phone: currentUser.user_metadata?.phone ?? null,
-          status: "pending" as ApplicationStatus,
-        };
 
-        const { error: insertError } = await supabase.from("event_applications").insert([payload]);
-        if (insertError) {
-          if (isMissingApplicationsTableError(insertError.message)) {
-            setParticipationSetupMissing(true);
-            showAlert(
-              pick({ ru: "Нужна настройка базы", en: "Database setup required", uz: "Baza sozlamasi kerak" }),
-              missingApplicationsHint,
-              "warning",
-            );
-            return;
-          }
-
-          const isDuplicate =
-            insertError.code === "23505" ||
-            /duplicate|already exists|unique/i.test(insertError.message);
-
-          if (isDuplicate) {
-            showAlert(
-              pick({ ru: "Заявка уже есть", en: "Request already exists", uz: "Ariza allaqachon mavjud" }),
-              pick({
-                ru: "Вы уже отправили заявку на это событие.",
-                en: "You already submitted a request for this event.",
-                uz: "Siz bu tadbir uchun allaqachon ariza yuborgansiz.",
-              }),
-              "info",
-            );
-            await loadParticipationData(event.id, currentUser.id);
-            return;
-          }
-
-          throw new Error(insertError.message);
-        }
+        throw new Error(message);
       }
 
       await loadParticipationData(event.id, currentUser.id);
@@ -408,15 +384,28 @@ export default function EventPage() {
 
     try {
       setIsApplying(true);
-      const { error: deleteError } = await supabase
-        .from("event_applications")
-        .delete()
-        .eq("id", myApplicationId)
-        .eq("volunteer_id", currentUser.id)
-        .eq("status", "pending");
+      const response = await fetch("/api/events/applications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: event.id,
+          action: "cancel",
+        }),
+      });
 
-      if (deleteError) {
-        if (isMissingApplicationsTableError(deleteError.message)) {
+      const result = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) {
+        const message =
+          result?.error ||
+          pick({
+            ru: "Не удалось отменить заявку",
+            en: "Failed to cancel request",
+            uz: "Arizani bekor qilib bo'lmadi",
+          });
+
+        if (isMissingApplicationsTableError(message)) {
           setParticipationSetupMissing(true);
           showAlert(
             pick({ ru: "Нужна настройка базы", en: "Database setup required", uz: "Baza sozlamasi kerak" }),
@@ -425,7 +414,7 @@ export default function EventPage() {
           );
           return;
         }
-        throw new Error(deleteError.message);
+        throw new Error(message);
       }
 
       await loadParticipationData(event.id, currentUser.id);
@@ -522,6 +511,7 @@ export default function EventPage() {
       en: "The organizer has not added a detailed description yet, but you can already see the date, location and participation details.",
       uz: "Tashkilotchi hali batafsil tavsif qoldirmagan, ammo sana, joy va ishtirok shartlari allaqachon ko'rinadi.",
     });
+  const requiresPhoneCompletion = Boolean(currentUser && !hasRequiredPhone(currentUser));
 
   const renderParticipationActions = () => {
     if (!currentUser) {
@@ -580,6 +570,21 @@ export default function EventPage() {
             {pick({ ru: "Отменить заявку", en: "Cancel request", uz: "Arizani bekor qilish" })}
           </button>
         </>
+      );
+    }
+
+    if (requiresPhoneCompletion) {
+      return (
+        <button
+          onClick={() => router.push(buildCompleteProfilePath(`/events/${event.id}`))}
+          className="w-full rounded-[24px] border border-[#10b981]/20 bg-emerald-50 px-4 py-4 text-sm font-black uppercase tracking-[0.08em] text-[#10b981] transition-colors hover:bg-emerald-100 sm:px-6 sm:text-[11px] sm:tracking-[0.18em]"
+        >
+          {pick({
+            ru: "Добавить телефон",
+            en: "Add phone number",
+            uz: "Telefon qo'shish",
+          })}
+        </button>
       );
     }
 
@@ -642,12 +647,18 @@ export default function EventPage() {
               en: "Your request has been sent. The organizer will review it in the dashboard.",
               uz: "Ariza yuborildi. Tashkilotchi uni kabinetda ko'rib chiqadi.",
             })
-          : myApplicationStatus === "rejected"
+        : myApplicationStatus === "rejected"
             ? pick({
                 ru: "Ранее заявка была отклонена, но вы можете отправить её повторно.",
                 en: "Your request was previously rejected, but you can send it again.",
                 uz: "Arizangiz avval rad etilgan, ammo uni qayta yuborishingiz mumkin.",
               })
+            : requiresPhoneCompletion
+              ? pick({
+                  ru: "Сначала добавьте номер телефона в профиле. Без него нельзя отправить заявку на участие.",
+                  en: "Add your phone number to the profile first. Without it, you cannot send a participation request.",
+                  uz: "Avval profilingizga telefon raqamini qo'shing. Usiz ishtirok arizasini yuborib bo'lmaydi.",
+                })
             : pick({
                 ru: "Оставьте заявку, и организатор свяжется с вами после проверки.",
                 en: "Send a request and the organizer will get back to you after review.",
