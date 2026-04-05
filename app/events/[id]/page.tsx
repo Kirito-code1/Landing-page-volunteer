@@ -682,8 +682,8 @@ export default function EventPage() {
         </button>
 
         <section className="overflow-hidden rounded-[38px] border border-white/80 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.08)]">
-          <div className="grid 2xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
-            <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_45%),linear-gradient(180deg,_#ffffff_0%,_#f8fcfb_100%)] p-6 sm:p-8 lg:p-10">
+          <div className="grid lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+            <div className="relative min-w-0 overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_45%),linear-gradient(180deg,_#ffffff_0%,_#f8fcfb_100%)] p-6 sm:p-8 lg:p-10">
               <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/60 blur-3xl" />
               <div className="relative">
                 <div className="flex flex-wrap items-center gap-2">
@@ -745,7 +745,7 @@ export default function EventPage() {
               </div>
             </div>
 
-            <div className="relative min-h-[320px] xl:min-h-full">
+            <div className="relative min-h-[320px] min-w-0 lg:min-h-full">
               <EventVisual
                 title={event.title}
                 category={event.category}
@@ -813,15 +813,15 @@ export default function EventPage() {
                 <p className="mt-4 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
                   {item.label}
                 </p>
-                <p className="mt-2 text-lg font-black text-slate-950">{item.value}</p>
+                <p className="mt-2 break-words text-lg font-black text-slate-950">{item.value}</p>
                 <p className="mt-1 text-sm font-semibold text-slate-500">{item.detail}</p>
               </article>
             );
           })}
         </section>
 
-        <div className="mt-8 grid items-start gap-8 2xl:grid-cols-[minmax(0,1.1fr)_360px]">
-          <div className="space-y-6">
+        <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1.1fr)_360px]">
+          <div className="min-w-0 space-y-6">
             <section className="rounded-[34px] border border-gray-100 bg-white p-6 shadow-sm md:p-8">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-[#10b981]">
@@ -975,7 +975,7 @@ export default function EventPage() {
             ) : null}
           </div>
 
-          <aside className="space-y-6 2xl:sticky 2xl:top-24">
+          <aside className="min-w-0 space-y-6 lg:sticky lg:top-24">
             <section className="overflow-hidden rounded-[34px] bg-[linear-gradient(180deg,_#0f172a_0%,_#111827_100%)] p-6 text-white shadow-[0_30px_90px_rgba(15,23,42,0.25)] md:p-7">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300">
                 {pick({ ru: "Участие", en: "Participation", uz: "Ishtirok" })}

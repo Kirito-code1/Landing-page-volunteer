@@ -487,7 +487,7 @@ export default async function AdminPage() {
             </div>
           ) : null}
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-[24px] border border-emerald-100 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_100%)] p-5">
               <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-600">
                 <Users className="h-4 w-4" /> Пользователи
@@ -519,8 +519,8 @@ export default async function AdminPage() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 2xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-6">
+        <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="min-w-0 space-y-6">
             <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
@@ -594,7 +594,7 @@ export default async function AdminPage() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Платежи и покупки</p>
               <h2 className="mt-2 text-2xl font-black text-slate-900">Кто донатил и кто купил Premium</h2>

@@ -303,7 +303,7 @@ export default function AllEvents() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <div className="relative">
                     <select
                       value={categoryFilter}
@@ -411,7 +411,7 @@ export default function AllEvents() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {visibleEvents.map((event) => {
             const urgency = getUrgencyTag(event.date);
             const isPremiumEvent = event.premium_priority === true;

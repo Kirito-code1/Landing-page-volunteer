@@ -108,8 +108,8 @@ export default function DonationReportsPage() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_15%_18%,_#dcfce7_0%,_transparent_32%),radial-gradient(circle_at_85%_10%,_#dbeafe_0%,_transparent_32%),linear-gradient(180deg,_#f8fafc_0%,_#ffffff_52%,_#f1f5f9_100%)] px-4 py-10 md:py-14">
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="overflow-hidden rounded-[38px] border border-white bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.08)]">
-          <div className="grid gap-8 p-7 md:p-10 2xl:grid-cols-[minmax(0,1.15fr)_360px]">
-            <div>
+          <div className="grid gap-8 p-7 md:p-10 xl:grid-cols-[minmax(0,1.15fr)_360px]">
+            <div className="min-w-0">
               <Link
                 href="/donate"
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:bg-slate-50"
@@ -139,7 +139,7 @@ export default function DonationReportsPage() {
               </p>
             </div>
 
-            <aside className="rounded-[30px] border border-emerald-200 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_100%)] p-6 shadow-sm">
+            <aside className="min-w-0 rounded-[30px] border border-emerald-200 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_100%)] p-6 shadow-sm">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
                 {pick({ ru: "Сводка по отчётам", en: "Reports summary", uz: "Hisobotlar yig'indisi" })}
               </p>
@@ -187,7 +187,7 @@ export default function DonationReportsPage() {
                 key={report.id}
                 className="overflow-hidden rounded-[36px] border border-white bg-white/90 shadow-[0_24px_70px_rgba(15,23,42,0.08)]"
               >
-                <div className="grid gap-0 2xl:grid-cols-[1.05fr_0.95fr]">
+                <div className="grid gap-0 xl:grid-cols-[1.05fr_0.95fr]">
                   <div className="grid gap-3 bg-slate-100 p-3 md:grid-cols-[1.1fr_0.9fr]">
                     <div className="relative min-h-[320px] overflow-hidden rounded-[28px]">
                       <Image
@@ -213,7 +213,7 @@ export default function DonationReportsPage() {
                     </div>
                   </div>
 
-                  <div className="p-6 md:p-8">
+                  <div className="min-w-0 p-6 md:p-8">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
                         {formatDate(report.reportDate, locale)}
@@ -225,7 +225,7 @@ export default function DonationReportsPage() {
                       ) : null}
                     </div>
 
-                    <h2 className="mt-4 text-3xl font-black text-slate-950">{report.title}</h2>
+                    <h2 className="mt-4 break-words text-3xl font-black text-slate-950">{report.title}</h2>
                     <p className="mt-4 text-base font-semibold leading-8 text-slate-600">{report.summary}</p>
 
                     <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5">

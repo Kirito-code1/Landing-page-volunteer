@@ -1099,7 +1099,7 @@ export default function DonatePage() {
             {reportsError}
           </div>
         ) : reports.length > 0 ? (
-          <div className="mt-6 grid gap-6 2xl:grid-cols-2">
+          <div className="mt-6 grid gap-6 xl:grid-cols-2">
             {reports.map((report) => (
               <article
                 key={report.id}

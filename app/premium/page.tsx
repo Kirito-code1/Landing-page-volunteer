@@ -627,8 +627,8 @@ export default function PremiumPage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,_#fffaf1_0%,_#ffffff_38%,_#f8fafc_100%)] px-4 py-10 md:py-14">
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="overflow-hidden rounded-[40px] border border-amber-200/70 bg-[linear-gradient(135deg,_#fff7ed_0%,_#ffffff_54%,_#fffbeb_100%)] shadow-[0_30px_90px_rgba(17,24,39,0.08)]">
-          <div className="grid gap-8 p-7 md:p-10 2xl:grid-cols-[minmax(0,1.1fr)_380px]">
-            <div>
+          <div className="grid gap-8 p-7 md:p-10 xl:grid-cols-[minmax(0,1.1fr)_380px]">
+            <div className="min-w-0">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-100/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-amber-700 sm:tracking-[0.2em]">
                 <Crown className="h-3.5 w-3.5 shrink-0" />
                 {pick({ ru: "Premium для организаторов", en: "Premium for organizers", uz: "Tashkilotchilar uchun Premium" })}
@@ -694,7 +694,7 @@ export default function PremiumPage() {
               </div>
             </div>
 
-            <aside className="rounded-[34px] border border-white/80 bg-white/95 p-6 shadow-sm">
+            <aside className="min-w-0 rounded-[34px] border border-white/80 bg-white/95 p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
@@ -1179,8 +1179,8 @@ export default function PremiumPage() {
           </div>
         </section>
 
-        <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="space-y-6">
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0 space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <article className="rounded-[32px] border border-slate-100 bg-white p-7 shadow-sm">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Free</p>
@@ -1210,7 +1210,7 @@ export default function PremiumPage() {
               </article>
 
               <article className="rounded-[32px] border border-amber-200 bg-[linear-gradient(135deg,_#fff7ed_0%,_#ffffff_78%)] p-7 shadow-sm">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500">Premium</p>
                     <h2 className="mt-3 flex items-center gap-2 text-3xl font-black text-slate-950">
@@ -1287,7 +1287,7 @@ export default function PremiumPage() {
             </section>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                 {pick({ ru: "Как это работает", en: "How it works", uz: "Bu qanday ishlaydi" })}
