@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
+import { requireSupabaseUrl } from "@/lib/supabase/config";
+
 let adminClient: ReturnType<typeof createClient> | null = null;
 
 function requireEnv(name: string) {
@@ -16,7 +18,7 @@ export function getSupabaseAdmin() {
   }
 
   adminClient = createClient(
-    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    requireSupabaseUrl(),
     requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
     {
       auth: {

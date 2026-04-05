@@ -1,20 +1,15 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-function requireEnv(name: string) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
+import { requirePublicSupabaseConfig } from "@/lib/supabase/config";
 
 export async function createRouteSupabaseClient() {
   const cookieStore = await cookies();
+  const { url, publishableKey } = requirePublicSupabaseConfig();
 
   return createServerClient(
-    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    url,
+    publishableKey,
     {
       cookies: {
         get(name: string) {
