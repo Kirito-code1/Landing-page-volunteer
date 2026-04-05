@@ -999,7 +999,7 @@ export default function DonatePage() {
 
           <section className="rounded-[30px] border border-white bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
             <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-400">
-              {pick({ ru: "Как это работает", en: "How it works", uz: "Bu qanday ishlaydi" })}
+              {pick({ ru: "Как это работает ", en: "How it works", uz: "Bu qanday ishlaydi" })}
             </p>
             <div className="mt-5 space-y-3">
               {[
