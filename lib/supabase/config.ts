@@ -1,16 +1,11 @@
-const PUBLIC_SUPABASE_KEY_ENV_NAMES = [
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  // Keep legacy behavior so existing deployments don't break if both keys are set.
-  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-] as const;
-
-function readTrimmedEnv(name: string) {
-  const value = process.env[name]?.trim();
-  return value ? value : null;
+function readTrimmedValue(value: string | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }
 
 export function getSupabaseUrl() {
-  const url = readTrimmedEnv("NEXT_PUBLIC_SUPABASE_URL");
+  // Use direct env access so Next.js can inline public variables into the client bundle.
+  const url = readTrimmedValue(process.env.NEXT_PUBLIC_SUPABASE_URL);
 
   if (!url) {
     return null;
@@ -36,12 +31,16 @@ export function requireSupabaseUrl() {
 }
 
 export function getPublicSupabaseKey() {
-  for (const name of PUBLIC_SUPABASE_KEY_ENV_NAMES) {
-    const value = readTrimmedEnv(name);
+  const anonKey = readTrimmedValue(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  if (anonKey) {
+    return anonKey;
+  }
 
-    if (value) {
-      return value;
-    }
+  const publishableKey = readTrimmedValue(
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  );
+  if (publishableKey) {
+    return publishableKey;
   }
 
   return null;
