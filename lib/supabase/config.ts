@@ -1,6 +1,7 @@
 const PUBLIC_SUPABASE_KEY_ENV_NAMES = [
-  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  // Keep legacy behavior so existing deployments don't break if both keys are set.
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
 ] as const;
 
 function readTrimmedEnv(name: string) {
