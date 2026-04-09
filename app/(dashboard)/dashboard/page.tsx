@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User as SupabaseUser } from "@supabase/supabase-js";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -40,7 +40,8 @@ import {
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
 import { hasRequiredPhone } from "@/lib/auth/phone";
 import { buildCompleteProfilePath } from "@/lib/auth/redirect";
-import { hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
+import { hasPremiumAccess } from "@/lib/auth/premium";
+import { syncPremiumSessionUser } from "@/lib/auth/premium-session";
 import {
   getCurrentEventTimeInputMin,
   getTodayEventDateInputMin,
@@ -238,20 +239,10 @@ export default function Dashboard() {
         router.push("/auth/login");
         return;
       }
-      let currentUser = session.user;
-
-      if (needsPremiumStateSync(currentUser)) {
-        const response = await fetch("/api/premium/status", {
-          cache: "no-store",
-        });
-
-        if (response.ok) {
-          await supabase.auth.refreshSession();
-          const {
-            data: { session: refreshedSession },
-          } = await supabase.auth.getSession();
-          currentUser = refreshedSession?.user ?? currentUser;
-        }
+      const currentUser = await syncPremiumSessionUser(supabase, session.user);
+      if (!currentUser) {
+        router.push("/auth/login");
+        return;
       }
 
       setUser(currentUser);
@@ -263,7 +254,7 @@ export default function Dashboard() {
         .eq("user_id", currentUser.id)
         .order('created_at', { ascending: false });
 
-      const preparedEvents = eventsData ?? [];
+      const preparedEvents = (eventsData ?? []) as DashboardEvent[];
       setMyEvents(preparedEvents);
 
       if (preparedEvents.length === 0) {
@@ -673,6 +664,27 @@ export default function Dashboard() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (event === "SIGNED_OUT" || !session?.user) {
+        setUser(null);
+        return;
+      }
+
+      void fetchData();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchData, supabase]);
 
   useEffect(() => {
     if (!user?.email) {

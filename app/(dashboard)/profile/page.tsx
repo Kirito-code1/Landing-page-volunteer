@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { User, ShieldCheck, Crown, Camera, Loader2, Mail, Phone, AlertTriangle, Trophy, CalendarCheck2, Users } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
 import { normalizeVolunteerCount } from "@/components/events/eventMeta";
-import { getPremiumAccessType, getPremiumExpiresAt, hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
+import { getPremiumAccessType, getPremiumExpiresAt, hasPremiumAccess } from "@/lib/auth/premium";
+import { syncPremiumSessionUser } from "@/lib/auth/premium-session";
 import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 export default function ProfilePage() {
@@ -56,19 +57,7 @@ export default function ProfilePage() {
 
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
-      let currentUser = session?.user || null;
-
-      if (currentUser && needsPremiumStateSync(currentUser)) {
-        const response = await fetch("/api/premium/status", {
-          cache: "no-store",
-        });
-
-        if (response.ok) {
-          await supabase.auth.refreshSession();
-          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-          currentUser = refreshedSession?.user || currentUser;
-        }
-      }
+      const currentUser = await syncPremiumSessionUser(supabase, session?.user || null);
 
       setUser(currentUser);
       if (currentUser) {
@@ -79,7 +68,7 @@ export default function ProfilePage() {
           .select("date, volunteers_needed")
           .eq("user_id", currentUser.id);
 
-        const rows = eventRows ?? [];
+        const rows = (eventRows ?? []) as Array<{ date: string; volunteers_needed: number | null }>;
         const now = Date.now();
         const upcomingEvents = rows.filter((row) => {
           const eventDate = new Date(row.date).getTime();
@@ -130,6 +119,27 @@ export default function ProfilePage() {
     init();
     return () => { isMounted = false; };
   }, [fetchUser, router, supabase]);
+
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (event === "SIGNED_OUT" || !session?.user) {
+        setUser(null);
+        return;
+      }
+
+      void fetchUser();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchUser, supabase]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleUser } from "@fortawesome/free-regular-svg-icons";
 import { 
@@ -16,7 +16,8 @@ import {
   IconDefinition 
 } from "@fortawesome/free-solid-svg-icons";
 import { Heart, Bell, Clock3, CheckCircle2, XCircle, Loader2, Crown, ShieldCheck } from "lucide-react";
-import { getPremiumAccessType, hasPremiumAccess, needsPremiumStateSync } from "@/lib/auth/premium";
+import { getPremiumAccessType, hasPremiumAccess } from "@/lib/auth/premium";
+import { syncPremiumSessionUser } from "@/lib/auth/premium-session";
 import { getBrowserSupabaseClient, hasBrowserSupabaseEnv } from "@/lib/supabase/browser";
 import { useLanguage, type Locale } from "@/components/providers/LanguageProvider";
 
@@ -41,6 +42,31 @@ interface NavbarNotification {
   type: NotificationType;
   href: string;
 }
+
+type IncomingNotificationRow = {
+  id: string;
+  event_id: string;
+  created_at: string;
+};
+
+type DecisionNotificationRow = {
+  id: string;
+  event_id: string;
+  status: "approved" | "rejected";
+  reviewed_at: string | null;
+};
+
+type PaymentDecisionRow = {
+  id: string;
+  kind: "donation" | "premium";
+  status: "approved" | "rejected";
+  reviewed_at: string | null;
+};
+
+type NotificationEventRow = {
+  id: string;
+  title: string;
+};
 
 function parseLastSeen(value: unknown) {
   if (typeof value !== "string") return 0;
@@ -155,8 +181,8 @@ export default function Navbar() {
       }
 
       setNotificationsSupported(true);
-      const incomingRows = incomingRes.data ?? [];
-      const decisionRows = decisionRes.data ?? [];
+      const incomingRows = (incomingRes.data ?? []) as IncomingNotificationRow[];
+      const decisionRows = (decisionRes.data ?? []) as DecisionNotificationRow[];
       const paymentDecisionRows = paymentDecisionRes.error
         ? (() => {
             if (!isMissingManualPaymentsTableError(paymentDecisionRes.error.message)) {
@@ -164,7 +190,7 @@ export default function Navbar() {
             }
             return [];
           })()
-        : (paymentDecisionRes.data ?? []);
+        : ((paymentDecisionRes.data ?? []) as PaymentDecisionRow[]);
       const eventIds = Array.from(
         new Set(
           [...incomingRows, ...decisionRows]
@@ -181,7 +207,7 @@ export default function Navbar() {
           .in("id", eventIds);
 
         if (!eventsError) {
-          (eventRows ?? []).forEach((event) => {
+          ((eventRows ?? []) as NotificationEventRow[]).forEach((event) => {
             eventTitleMap[event.id] = event.title;
           });
         }
@@ -240,25 +266,8 @@ export default function Navbar() {
 
   const syncPremiumSession = useCallback(
     async (sessionUser: SupabaseUser | null) => {
-      if (!supabase || !sessionUser || !needsPremiumStateSync(sessionUser)) {
-        return sessionUser;
-      }
-
       try {
-        const response = await fetch("/api/premium/status", {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          return sessionUser;
-        }
-
-        await supabase.auth.refreshSession();
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        return session?.user ?? sessionUser;
+        return await syncPremiumSessionUser(supabase, sessionUser);
       } catch (error) {
         console.error("Premium sync error:", error);
         return sessionUser;
@@ -270,6 +279,7 @@ export default function Navbar() {
   useEffect(() => {
     let mounted = true;
     let lazyFetchTimer: NodeJS.Timeout | null = null;
+    let premiumPollTimer: number | null = null;
 
     if (!supabase) {
       return () => {
@@ -277,16 +287,30 @@ export default function Navbar() {
       };
     }
 
+    const applyUserState = (nextUser: SupabaseUser | null) => {
+      userRef.current = nextUser;
+      setUser(nextUser);
+      setIsLoggedIn(Boolean(nextUser));
+      setLastSeenMs(parseLastSeen(nextUser?.user_metadata?.last_notifications_seen));
+    };
+
+    const refreshPremiumState = async () => {
+      if (!userRef.current) {
+        return;
+      }
+
+      const nextUser = await syncPremiumSession(userRef.current);
+      if (!mounted) return;
+      applyUserState(nextUser);
+    };
+
     const checkUser = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!mounted) return;
       const nextUser = await syncPremiumSession(session?.user ?? null);
-      userRef.current = nextUser;
-      setUser(nextUser);
-      setIsLoggedIn(Boolean(nextUser));
-      setLastSeenMs(parseLastSeen(nextUser?.user_metadata?.last_notifications_seen));
+      applyUserState(nextUser);
       if (nextUser) {
         lazyFetchTimer = setTimeout(() => {
           if (!mounted) return;
@@ -297,12 +321,9 @@ export default function Navbar() {
 
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
       const nextUser = await syncPremiumSession(session?.user ?? null);
-      userRef.current = nextUser;
-      setUser(nextUser);
-      setIsLoggedIn(Boolean(nextUser));
-      setLastSeenMs(parseLastSeen(nextUser?.user_metadata?.last_notifications_seen));
+      applyUserState(nextUser);
       if (event === "USER_UPDATED") {
         return;
       }
@@ -317,9 +338,29 @@ export default function Navbar() {
       }
     });
 
+    premiumPollTimer = window.setInterval(() => {
+      if (!mounted || !userRef.current || hasPremiumAccess(userRef.current)) {
+        return;
+      }
+
+      void refreshPremiumState();
+    }, 15000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void refreshPremiumState();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (premiumPollTimer !== null) window.clearInterval(premiumPollTimer);
       if (lazyFetchTimer) clearTimeout(lazyFetchTimer);
     };
   }, [supabase, fetchNotifications, syncPremiumSession]);

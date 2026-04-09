@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User as SupabaseUser } from "@supabase/supabase-js";
 import {
   Check,
   Copy,
@@ -25,9 +25,9 @@ import {
   getPremiumExpiresAt,
   hasPremiumAccess,
   hasUsedPremiumTrial,
-  needsPremiumStateSync,
   PREMIUM_TRIAL_DAYS,
 } from "@/lib/auth/premium";
+import { syncPremiumSessionUser } from "@/lib/auth/premium-session";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import AlertModal, { type AlertTone } from "@/components/ui/AlertModal";
 import { FREE_POST_LIMIT } from "@/lib/events/limits";
@@ -47,7 +47,7 @@ type UploadedAttachment = {
 };
 
 type PremiumOffer = "trial" | "paid";
-type SubmitMode = "trial" | "paid" | "downgrade" | null;
+type SubmitMode = "trial" | "paid" | null;
 
 function formatAmount(value: number) {
   return value.toLocaleString("ru-RU");
@@ -133,21 +133,7 @@ export default function PremiumPage() {
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    let nextUser = session?.user ?? null;
-
-    if (nextUser && needsPremiumStateSync(nextUser)) {
-      const response = await fetch("/api/premium/status", {
-        cache: "no-store",
-      });
-
-      if (response.ok) {
-        await supabase.auth.refreshSession();
-        const {
-          data: { session: refreshedSession },
-        } = await supabase.auth.getSession();
-        nextUser = refreshedSession?.user ?? nextUser;
-      }
-    }
+    const nextUser = await syncPremiumSessionUser(supabase, session?.user ?? null);
 
     setUser(nextUser);
     return nextUser;
@@ -177,6 +163,26 @@ export default function PremiumPage() {
       mounted = false;
     };
   }, [loadSessionUser, supabase]);
+
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      setPayerName(nextUser?.user_metadata?.full_name?.toString() || "");
+      setPayerEmail(nextUser?.email || "");
+      setContactPhone(nextUser?.user_metadata?.phone?.toString() || "");
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const isPremium = hasPremiumAccess(user);
   const premiumAccessType = getPremiumAccessType(user);
@@ -369,55 +375,6 @@ export default function PremiumPage() {
         }),
         "error",
       );
-    }
-  };
-
-  const handleDowngrade = async () => {
-    try {
-      setSubmitMode("downgrade");
-
-      const response = await fetch("/api/premium/manage", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ action: "downgrade" }),
-      });
-
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-      if (!response.ok) {
-        throw new Error(
-          payload?.error ||
-            pick({
-              ru: "Не удалось отключить Premium.",
-              en: "Could not disable Premium.",
-              uz: "Premium ni o'chirib bo'lmadi.",
-            }),
-        );
-      }
-
-      if (supabase) {
-        await supabase.auth.refreshSession();
-      }
-      await loadSessionUser();
-
-      showAlert(
-        pick({ ru: "Premium отключён", en: "Premium disabled", uz: "Premium o'chirildi" }),
-        pick({
-          ru: "Тариф переключён обратно на Free.",
-          en: "Your plan has been switched back to Free.",
-          uz: "Tarif yana Free ga o'tkazildi.",
-        }),
-        "success",
-      );
-    } catch (error) {
-      showAlert(
-        pick({ ru: "Ошибка тарифа", en: "Plan error", uz: "Tarif xatosi" }),
-        error instanceof Error ? error.message : pick({ ru: "Неизвестная ошибка", en: "Unknown error", uz: "Noma'lum xatolik" }),
-        "error",
-      );
-    } finally {
-      setSubmitMode(null);
     }
   };
 
@@ -1149,30 +1106,16 @@ export default function PremiumPage() {
                   <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm font-semibold leading-7 text-amber-800">
                     {pick({
                       ru: premiumEndsLabel
-                        ? `Платный Premium уже активен до ${premiumEndsLabel}. Ниже можно отключить его вручную, если нужно.`
+                        ? `Платный Premium уже активен до ${premiumEndsLabel}. Все преимущества тарифа уже включены для этого аккаунта.`
                         : "Платный Premium уже активен для этого аккаунта.",
                       en: premiumEndsLabel
-                        ? `Paid Premium is already active until ${premiumEndsLabel}. You can disable it manually below if needed.`
+                        ? `Paid Premium is already active until ${premiumEndsLabel}. All plan benefits are already enabled for this account.`
                         : "Paid Premium is already active for this account.",
                       uz: premiumEndsLabel
-                        ? `Pullik Premium ${premiumEndsLabel} gacha faol. Kerak bo'lsa, quyida qo'lda o'chirishingiz mumkin.`
+                        ? `Pullik Premium ${premiumEndsLabel} gacha faol. Tarifning barcha afzalliklari bu akkaunt uchun allaqachon yoqilgan.`
                         : "Pullik Premium bu akkaunt uchun allaqachon faol.",
                     })}
                   </div>
-                  <button
-                    onClick={handleDowngrade}
-                    disabled={isSubmitting}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-slate-900 px-4 py-4 text-[11px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-black disabled:opacity-60 sm:px-8 sm:tracking-[0.16em]"
-                  >
-                    {submitMode === "downgrade" ? (
-                      <>
-                        <Loader2 className="hidden h-4 w-4 animate-spin shrink-0 sm:block" />
-                        {pick({ ru: "Обработка...", en: "Processing...", uz: "Qayta ishlanmoqda..." })}
-                      </>
-                    ) : (
-                      pick({ ru: "Отключить Premium", en: "Disable Premium", uz: "Premium ni o'chirish" })
-                    )}
-                  </button>
                 </div>
               )}
             </aside>
