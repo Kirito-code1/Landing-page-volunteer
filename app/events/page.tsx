@@ -376,33 +376,16 @@ export default function AllEvents() {
                     <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   </div>
                 </div>
-
-                <div className="flex flex-col gap-3 rounded-[24px] border border-slate-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-semibold text-slate-500">
-                    {pick({
-                      ru: "Каталог автоматически выводит premium выше при сортировке по новым.",
-                      en: "The catalog automatically keeps premium listings higher when sorted by newest.",
-                      uz: "Katalog yangi bo'yicha saralanganda premium e'lonlarni yuqorida ushlab turadi.",
-                    })}
-                  </p>
-                  <p className="text-sm font-semibold text-slate-700">
-                    {pick({
-                      ru: `${visibleEvents.length} событий`,
-                      en: `${visibleEvents.length} events`,
-                      uz: `${visibleEvents.length} ta tadbir`,
-                    })}
-                  </p>
-                </div>
               </div>
             </div>
           </div>
         </header>
 
-        {error && (
+        {/* {error && (
           <div className="mb-8 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold text-red-600">
             {error}
           </div>
-        )}
+        )} */}
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {visibleEvents.map((event) => {
