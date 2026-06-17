@@ -229,13 +229,6 @@ export default function AllEvents() {
                   ),
                 })}
               </h1>
-              <p className="mt-5 max-w-md text-base font-semibold leading-8 text-slate-600">
-                {pick({
-                  ru: "Смотрите активные объявления, быстро фильтруйте их по срочности и команде и открывайте те события, где помощь нужна прямо сейчас.",
-                  en: "Browse active listings, filter them by urgency and team size, and open the events where help is needed right now.",
-                  uz: "Faol e'lonlarni ko'ring, ularni shoshilinchligi va jamoa soni bo'yicha saralang va hozir yordam kerak bo'lgan tadbirlarni oching.",
-                })}
-              </p>
 
               <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1 xl:gap-4">
                 <div className="rounded-[26px] border border-emerald-100 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_100%)] px-5 py-4">
