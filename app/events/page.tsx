@@ -447,7 +447,7 @@ export default function AllEvents() {
 
                 <div className="flex flex-1 flex-col p-6">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="rounded-[22px] bg-slate-50 p-4">
+                    <div className="rounded-[22px] border border-gray-300 bg-slate-50 p-4">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                         {pick({ ru: "Нужно людей", en: "Need people", uz: "Kerakli odamlar" })}
                       </p>

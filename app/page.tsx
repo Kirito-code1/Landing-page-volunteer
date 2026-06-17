@@ -1,17 +1,11 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  BadgeCheck,
-  BarChart3,
-  CheckCircle2,
   Compass,
-  Globe2,
   HandHeart,
-  Rocket,
   Users2,
 } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
@@ -29,24 +23,6 @@ import {
 export default function Home() {
   const { pick } = useLanguage();
 
-  const quickFacts = pick({
-    ru: [
-      { value: "3 шага", label: "чтобы начать помогать" },
-      { value: "4 направления", label: "экология, переработка, животные, лес" },
-      { value: "1 профиль", label: "для участия и отслеживания активности" },
-    ],
-    en: [
-      { value: "3 steps", label: "to start helping" },
-      { value: "4 areas", label: "ecology, recycling, animals, forest" },
-      { value: "1 profile", label: "to join and track your activity" },
-    ],
-    uz: [
-      { value: "3 qadam", label: "yordam berishni boshlash uchun" },
-      { value: "4 yo'nalish", label: "ekologiya, qayta ishlash, hayvonlar, o'rmon" },
-      { value: "1 profil", label: "ishtirok va faollikni kuzatish uchun" },
-    ],
-  });
-
   const steps = pick({
     ru: [
       {
@@ -54,7 +30,7 @@ export default function Home() {
         description: "Откройте список событий и выберите то, что близко вам по теме и локации.",
       },
       {
-        title: "Зарегистрируйтесь за минуту",
+        title: "Зарегистрируйтесь",
         description: "Создайте профиль, чтобы записываться на события и получать обновления.",
       },
       {
@@ -68,7 +44,7 @@ export default function Home() {
         description: "Open the event list and pick what matches your interests and location.",
       },
       {
-        title: "Register in one minute",
+        title: "Register",
         description: "Create a profile to join events and receive important updates.",
       },
       {
@@ -82,7 +58,7 @@ export default function Home() {
         description: "Tadbirlar ro'yxatini oching va sizga mos mavzu hamda joyni tanlang.",
       },
       {
-        title: "1 daqiqada ro'yxatdan o'ting",
+        title: "Ro'yxatdan o'ting",
         description: "Tadbirlarga yozilish va yangilik olish uchun profil yarating.",
       },
       {
@@ -98,19 +74,19 @@ export default function Home() {
     ru: [
       {
         title: "Для волонтеров",
-        description: "Быстро находите ближайшие инициативы и присоединяйтесь к ним без лишней бюрократии.",
+        description: "Находите ближайшие инициативы и присоединяйтесь к ним без бюрократии.",
         cta: "Смотреть события",
         href: "/events",
       },
       {
         title: "Для организаторов",
-        description: "Публикуйте анонсы, приглашайте участников и управляйте активностью через кабинет.",
+        description: "Публикуйте анонсы, приглашайте участников и управляйте активностью.",
         cta: "Открыть кабинет",
         href: "/dashboard",
       },
       {
         title: "Для доноров",
-        description: "Поддерживайте проекты финансово и помогайте инициативам расти быстрее.",
+        description: "Поддерживайте проекты финансово и помогайте инициативам расти.",
         cta: "Сделать донат",
         href: "/donate",
       },
@@ -124,7 +100,7 @@ export default function Home() {
       },
       {
         title: "For organizers",
-        description: "Publish announcements, invite participants, and manage activity from your dashboard.",
+        description: "Publish announcements, invite participants, and manage activity.",
         cta: "Open dashboard",
         href: "/dashboard",
       },
@@ -144,116 +120,18 @@ export default function Home() {
       },
       {
         title: "Tashkilotchilar uchun",
-        description: "E'lon joylang, ishtirokchilarni jalb qiling va faollikni kabinetdan boshqaring.",
+        description: "E'lon joylang, ishtirokchilarni jalb qiling va faollikni boshqaring.",
         cta: "Kabinetni ochish",
         href: "/dashboard",
       },
       {
         title: "Donorlar uchun",
-        description: "Loyihalarni moliyaviy qo'llab-quvvatlang va tashabbuslarning tezroq o'sishiga yordam bering.",
+        description: "Loyihalarni moliyaviy qo'llab-quvvatlang va tashabbuslarning o'sishiga yordam bering.",
         cta: "Xayriya qilish",
         href: "/donate",
       },
     ],
   });
-
-  const trustPoints = pick({
-    ru: [
-      "Понятная главная страница: что это за платформа и как начать за 1 минуту.",
-      "Проверенные направления помощи и прозрачная структура активности.",
-      "Один аккаунт для участия в событиях, донатов и дальнейшего роста.",
-    ],
-    en: [
-      "Clear homepage that explains what the platform does and how to start in one minute.",
-      "Verified support areas and a transparent participation structure.",
-      "One account for events, donations, and long-term volunteering growth.",
-    ],
-    uz: [
-      "Platforma nima uchun kerakligi va 1 daqiqada qanday boshlashni aniq tushuntiradi.",
-      "Yordam yo'nalishlari tekshirilgan va ishtirok jarayoni tushunarli.",
-      "Tadbirlar, xayriya va uzoq muddatli volontyorlik uchun bitta akkaunt.",
-    ],
-  });
-
-  const differentiators = pick({
-    ru: [
-      {
-        title: "Локальные задачи по району",
-        description: "Люди видят инициативы рядом с собой и быстрее включаются в действие.",
-      },
-      {
-        title: "Прозрачность набора волонтёров",
-        description: "На карточке события видно, сколько волонтёров нужно и насколько это срочно.",
-      },
-      {
-        title: "Мультиязычность с первого дня",
-        description: "Один интерфейс для русскоязычных, англоязычных и узбекоязычных пользователей.",
-      },
-      {
-        title: "Рост организаторов через Premium",
-        description: "Безлимит объявлений, расширенная аналитика и экспорт помогают масштабироваться.",
-      },
-    ],
-    en: [
-      {
-        title: "Local opportunities by district",
-        description: "People discover nearby initiatives and join faster.",
-      },
-      {
-        title: "Transparent volunteer demand",
-        description: "Each event card shows needed volunteers and urgency status.",
-      },
-      {
-        title: "Multilingual from day one",
-        description: "One interface for Russian, English, and Uzbek-speaking users.",
-      },
-      {
-        title: "Organizer growth with Premium",
-        description: "Unlimited posts, advanced analytics, and export support scaling.",
-      },
-    ],
-    uz: [
-      {
-        title: "Hudud bo'yicha lokal vazifalar",
-        description: "Foydalanuvchilar yaqin tashabbuslarni ko'rib, tezroq qo'shiladi.",
-      },
-      {
-        title: "Volontyor talabi shaffof",
-        description: "Har bir tadbirda kerakli volontyorlar soni va shoshilinchlik ko'rsatiladi.",
-      },
-      {
-        title: "Birinchi kundan ko'p tilli",
-        description: "Rus, ingliz va o'zbek tillari uchun bitta tushunarli interfeys.",
-      },
-      {
-        title: "Premium bilan tashkilotchi o'sishi",
-        description: "Cheksiz e'lon, kengaytirilgan tahlil va eksport tezroq masshtablashga yordam beradi.",
-      },
-    ],
-  });
-
-  const impactMetrics = pick({
-    ru: [
-      { value: "3 мин", label: "среднее время до публикации события" },
-      { value: "10+", label: "волонтёров можно собрать даже для малого события" },
-      { value: "24/7", label: "доступ к платформе и поиску задач" },
-      { value: "3 языка", label: "чтобы охватить больше людей в городе" },
-    ],
-    en: [
-      { value: "3 min", label: "average time to publish an event" },
-      { value: "10+", label: "volunteers can be gathered even for small events" },
-      { value: "24/7", label: "platform access and task discovery" },
-      { value: "3 languages", label: "to reach more people in the city" },
-    ],
-    uz: [
-      { value: "3 daq", label: "tadbir e'lon qilish uchun o'rtacha vaqt" },
-      { value: "10+", label: "hatto kichik tadbirga ham volontyor jalb qilish mumkin" },
-      { value: "24/7", label: "platforma va vazifalarni qidirish doim ochiq" },
-      { value: "3 til", label: "shahar bo'yicha ko'proq odamni qamrab olish uchun" },
-    ],
-  });
-
-  const differentiatorIcons = [Rocket, BadgeCheck, Globe2, BarChart3];
 
   const events = pick({
     ru: [
@@ -361,134 +239,79 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden scroll-smooth">
-      <section className="relative px-4 pb-12 pt-8 md:pt-14 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_48%,_#eff6ff_100%)]">
-        <div className="pointer-events-none absolute -top-16 -left-20 h-64 w-64 rounded-full bg-emerald-200/60 blur-3xl" />
-        <div className="pointer-events-none absolute top-24 -right-24 h-72 w-72 rounded-full bg-sky-200/50 blur-3xl" />
+    <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden scroll-smooth">
+      
+      {/* --- HERO (Centered, no image) --- */}
+      <section className="px-4 py-24 md:py-36">
+        <div className="max-w-3xl mx-auto flex flex-col items-center text-center">
+          <span className="inline-block mb-6 text-sm font-semibold text-emerald-600 tracking-wide">
+            {pick({
+              ru: "Платформа городского волонтёрства",
+              en: "City Volunteering Platform",
+              uz: "Shahar volontyorlik platformasi",
+            })}
+          </span>
 
-        <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 items-center xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">
-              {pick({
-                ru: "Платформа городского волонтёрства",
-                en: "City Volunteering Platform",
-                uz: "Shahar volontyorlik platformasi",
-              })}
-            </span>
+          <h1 className="text-4xl md:text-6xl font-bold leading-tight tracking-tight text-slate-900">
+            {pick({
+              ru: <>Объединяем людей вокруг <span className="text-emerald-500">реальной помощи</span></>,
+              en: <>Connecting people through <span className="text-emerald-500">real-world impact</span></>,
+              uz: <>Odamlarni <span className="text-emerald-500">haqiqiy yordam</span> atrofida birlashtiramiz</>,
+            })}
+          </h1>
 
-            <h1 className="mt-6 text-[clamp(2.75rem,10vw,4.75rem)] font-black text-gray-900 leading-[0.95] tracking-tighter uppercase italic">
-              {pick({
-                ru: <>Объединяем людей вокруг <span className="text-[#10b981]">реальной помощи</span></>,
-                en: <>Connecting people through <span className="text-[#10b981]">real-world impact</span></>,
-                uz: <>Odamlarni <span className="text-[#10b981]">haqiqiy yordam</span> atrofida birlashtiramiz</>,
-              })}
-            </h1>
+          <p className="mt-6 text-lg text-slate-500 leading-relaxed max-w-xl">
+            {pick({
+              ru: "Выберите направление, запишитесь на событие и начните помогать людям, природе и животным.",
+              en: "Choose an area, join an event, and start making real impact for people, nature, and animals.",
+              uz: "Yo'nalishni tanlang, tadbirga yoziling va odamlar, tabiat hamda hayvonlarga yordam bering.",
+            })}
+          </p>
 
-            <p className="mt-6 max-w-2xl text-gray-600 text-lg font-semibold leading-relaxed">
-              {pick({
-                ru: "VoloHero объясняет всё простыми шагами: выберите направление, запишитесь на событие и начните реальную помощь людям, природе и животным.",
-                en: "VoloHero explains everything in simple steps: choose an area, join an event, and start making real impact for people, nature, and animals.",
-                uz: "VoloHero hammasini sodda ko'rsatadi: yo'nalishni tanlang, tadbirga yoziling va odamlar, tabiat hamda hayvonlarga real yordam bering.",
-              })}
-            </p>
-
-            <div className="mt-8 flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/auth/registr"
-                className="inline-flex items-center justify-center gap-2 px-5 py-4 rounded-[18px] bg-gray-900 text-white font-black uppercase tracking-[0.08em] text-[11px] hover:bg-[#10b981] transition-all shadow-xl shadow-gray-900/10 sm:px-8 sm:text-sm sm:tracking-[0.14em]"
-              >
-                {pick({
-                  ru: "Начать сейчас",
-                  en: "Start Now",
-                  uz: "Hozir boshlash",
-                })}
-                <ArrowRight className="hidden h-4 w-4 shrink-0 sm:block" />
-              </Link>
-              <Link
-                href="/events"
-                className="inline-flex items-center justify-center px-5 py-4 rounded-[18px] border border-gray-200 bg-white text-gray-800 font-black uppercase tracking-[0.08em] text-[11px] hover:border-[#10b981] hover:text-[#10b981] transition-all sm:px-8 sm:text-sm sm:tracking-[0.14em]"
-              >
-                {pick({
-                  ru: "Смотреть события",
-                  en: "View Events",
-                  uz: "Tadbirlarni ko'rish",
-                })}
-              </Link>
-            </div>
-
-            <div className="mt-8 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {quickFacts.map((item, index) => (
-                <div key={index} className="rounded-2xl border border-white/80 bg-white/80 backdrop-blur px-4 py-3 shadow-sm">
-                  <p className="text-sm font-black text-gray-900">{item.value}</p>
-                  <p className="mt-1 text-[12px] font-bold text-gray-500 leading-snug">{item.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative animate-in fade-in slide-in-from-bottom-4 pb-4 duration-500 sm:pb-8 xl:pb-0">
-            <div className="relative w-full max-w-[500px] mx-auto aspect-[4/5] rounded-[44px] overflow-hidden border-[12px] border-white shadow-[0_30px_80px_rgba(15,23,42,0.16)]">
-              <Image
-                src="https://img.freepik.com/free-photo/environmental-conservation-garden-children_1150-15276.jpg"
-                fill
-                className="object-cover"
-                alt="Volunteers planting trees"
-                priority
-              />
-            </div>
-            <div className="relative mx-auto mt-4 w-[92%] rounded-3xl border border-emerald-100 bg-white/95 px-5 py-4 shadow-xl backdrop-blur sm:absolute sm:-bottom-4 sm:left-1/2 sm:mt-0 sm:w-[90%] sm:-translate-x-1/2">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">
-                {pick({
-                  ru: "Следующий шаг",
-                  en: "Next Step",
-                  uz: "Keyingi qadam",
-                })}
-              </p>
-              <p className="mt-2 text-sm font-bold text-gray-700">
-                {pick({
-                  ru: "Выберите событие и подтвердите участие в личном кабинете.",
-                  en: "Pick an event and confirm participation in your dashboard.",
-                  uz: "Tadbirni tanlang va ishtirokni kabinetda tasdiqlang.",
-                })}
-              </p>
-            </div>
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/auth/registr"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors"
+            >
+              {pick({ ru: "Начать сейчас", en: "Start Now", uz: "Hozir boshlash" })}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/events"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-xl border border-slate-200 text-slate-700 font-medium hover:border-slate-300 transition-colors"
+            >
+              {pick({ ru: "Смотреть события", en: "View Events", uz: "Tadbirlarni ko'rish" })}
+            </Link>
           </div>
         </div>
       </section>
 
-      <section id="how" className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#10b981] mb-4">
+      {/* --- HOW IT WORKS --- */}
+      <section id="how" className="py-20 px-4 bg-slate-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-sm font-semibold text-emerald-600 mb-3">
               {pick({ ru: "Как это работает", en: "How It Works", uz: "Qanday ishlaydi" })}
             </p>
-            <h2 className="text-3xl md:text-5xl font-black text-gray-900 uppercase italic tracking-tighter">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
               {pick({
-                ru: <>Три понятных шага до <span className="text-[#10b981]">реальной помощи</span></>,
-                en: <>Three clear steps to <span className="text-[#10b981]">real impact</span></>,
-                uz: <>Real yordamga olib boruvchi <span className="text-[#10b981]">3 aniq qadam</span></>,
+                ru: <>Три шага до <span className="text-emerald-500">реальной помощи</span></>,
+                en: <>Three steps to <span className="text-emerald-500">real impact</span></>,
+                uz: <>Real yordamga olib boruvchi <span className="text-emerald-500">3 qadam</span></>,
               })}
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {steps.map((step, index) => {
               const Icon = stepIcons[index];
               return (
-                <div
-                  key={index}
-                  className="rounded-[30px] border border-gray-100 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
-                >
-                  <div className="flex items-center justify-between mb-5">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <span className="text-2xl font-black text-gray-200">{`0${index + 1}`}</span>
+                <div key={index} className="bg-white p-8 rounded-2xl border border-slate-100">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5">
+                    <Icon className="w-5 h-5" />
                   </div>
-                  <h3 className="text-xl font-black text-gray-900 uppercase italic tracking-tight">
-                    {step.title}
-                  </h3>
-                  <p className="mt-3 text-gray-600 font-medium leading-relaxed">{step.description}</p>
+                  <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+                  <p className="text-slate-500 leading-relaxed">{step.description}</p>
                 </div>
               );
             })}
@@ -496,63 +319,27 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="about" className="py-8 px-4">
-        <div className="max-w-6xl mx-auto rounded-[36px] border border-emerald-100 bg-[linear-gradient(130deg,_#ffffff_0%,_#ecfdf5_55%,_#eff6ff_100%)] p-8 md:p-12 shadow-sm">
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#10b981] mb-4">
-            {pick({ ru: "Почему VoloHero", en: "Why VoloHero", uz: "Nega VoloHero" })}
-          </p>
-          <h2 className="text-3xl md:text-5xl font-black text-gray-900 uppercase italic tracking-tighter mb-6">
-            {pick({
-              ru: "Платформа, где каждому ясно что делать дальше",
-              en: "A platform where everyone knows what to do next",
-              uz: "Har kim keyingi qadamni aniq biladigan platforma",
-            })}
-          </h2>
-          <p className="text-gray-700 font-semibold leading-relaxed mb-8">
-            {pick({
-              ru: "Мы специально сделали главную страницу понятной для новых пользователей: без сложных терминов и лишнего текста. Вы сразу видите цель сайта, доступные направления помощи и короткий маршрут от регистрации до участия.",
-              en: "We intentionally made the homepage simple for new users: no complex terms, no extra noise. You instantly see the platform purpose, available support areas, and a short path from signup to participation.",
-              uz: "Biz bosh sahifani yangi foydalanuvchilar uchun sodda qildik: murakkab atamalar va ortiqcha matnlarsiz. Sayt maqsadi, yordam yo'nalishlari va ro'yxatdan o'tishdan ishtirokgacha bo'lgan yo'l darhol ko'rinadi.",
-            })}
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            {trustPoints.map((point, index) => (
-              <div key={index} className="rounded-2xl bg-white border border-white/80 px-4 py-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#10b981] mt-0.5" />
-                  <p className="text-sm font-semibold text-gray-600 leading-relaxed">{point}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
+      {/* --- FOR WHOM --- */}
       <section id="for-whom" className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-5xl font-black text-gray-900 uppercase italic tracking-tighter text-center mb-12">
-            {pick({
-              ru: <>Кому подходит <span className="text-[#10b981]">платформа</span></>,
-              en: <>Who This <span className="text-[#10b981]">Platform</span> Is For</>,
-              uz: <>Platforma <span className="text-[#10b981]">kimlar uchun</span></>,
-            })}
-          </h2>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              {pick({
+                ru: <>Кому подходит <span className="text-emerald-500">платформа</span></>,
+                en: <>Who This <span className="text-emerald-500">Platform</span> Is For</>,
+                uz: <>Platforma <span className="text-emerald-500">kimlar uchun</span></>,
+              })}
+            </h2>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {audiences.map((audience, index) => (
-              <article
-                key={index}
-                className="rounded-[32px] border border-gray-100 bg-white p-7 shadow-[0_16px_40px_rgba(15,23,42,0.06)] flex flex-col"
-              >
-                <div className="w-11 h-11 rounded-2xl bg-gray-900 text-white flex items-center justify-center font-black text-sm mb-5">
-                  {`0${index + 1}`}
-                </div>
-                <h3 className="text-2xl font-black text-gray-900 uppercase italic tracking-tight">{audience.title}</h3>
-                <p className="mt-3 text-gray-600 font-medium leading-relaxed flex-1">{audience.description}</p>
+              <article key={index} className="flex flex-col text-center items-center md:items-start md:text-left">
+                <h3 className="text-xl font-bold mb-3">{audience.title}</h3>
+                <p className="text-slate-500 leading-relaxed flex-1 mb-6">{audience.description}</p>
                 <Link
                   href={audience.href}
-                  className="mt-6 inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[#10b981] hover:text-emerald-700 transition-colors"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
                 >
                   {audience.cta}
                   <ArrowRight className="w-4 h-4" />
@@ -563,72 +350,19 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="advantages" className="py-8 px-4">
-        <div className="max-w-7xl mx-auto rounded-[36px] border border-gray-100 bg-[linear-gradient(125deg,_#ffffff_0%,_#ecfdf5_45%,_#eff6ff_100%)] p-8 md:p-12">
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#10b981] mb-4">
-            {pick({ ru: "Преимущества продукта", en: "Product advantages", uz: "Mahsulot afzalliklari" })}
-          </p>
-          <h2 className="text-3xl md:text-5xl font-black text-gray-900 uppercase italic tracking-tighter mb-8">
-            {pick({
-              ru: <>Почему эту платформу <span className="text-[#10b981]">сложно заменить</span></>,
-              en: <>Why this platform is <span className="text-[#10b981]">hard to replace</span></>,
-              uz: <>Nega bu platformani <span className="text-[#10b981]">oson almashtirib bo&apos;lmaydi</span></>,
-            })}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {differentiators.map((point, index) => {
-              const Icon = differentiatorIcons[index];
-              return (
-                <article key={index} className="rounded-3xl border border-white bg-white/90 p-6 shadow-sm">
-                  <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <h3 className="text-xl font-black text-gray-900 uppercase italic tracking-tight">{point.title}</h3>
-                  <p className="mt-3 text-gray-600 font-medium leading-relaxed">{point.description}</p>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section id="impact" className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#10b981] mb-4">
-              {pick({ ru: "Результат в цифрах", en: "Impact in numbers", uz: "Natija raqamlarda" })}
-            </p>
-            <h2 className="text-3xl md:text-5xl font-black text-gray-900 uppercase italic tracking-tighter">
+      {/* --- DIRECTIONS --- */}
+      <section id="directions" className="py-20 px-4 bg-slate-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
               {pick({
-                ru: "Понятные метрики, которые убеждают новых пользователей",
-                en: "Clear metrics that convince new users quickly",
-                uz: "Yangi foydalanuvchini tez ishontiradigan aniq metrikalar",
+                ru: <>Направления <span className="text-emerald-500">помощи</span></>,
+                en: <>Areas of <span className="text-emerald-500">Support</span></>,
+                uz: <>Yordam <span className="text-emerald-500">yo'nalishlari</span></>,
               })}
             </h2>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {impactMetrics.map((metric, index) => (
-              <div key={index} className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-[0_16px_34px_rgba(15,23,42,0.05)]">
-                <p className="text-4xl font-black tracking-tight text-[#10b981]">{metric.value}</p>
-                <p className="mt-3 text-gray-600 font-semibold leading-relaxed">{metric.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="directions" className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl md:text-6xl font-black text-gray-900 uppercase italic tracking-tighter text-center mb-14">
-            {pick({
-              ru: <>Направления <span className="text-[#10b981]">помощи</span></>,
-              en: <>Areas of <span className="text-[#10b981]">Support</span></>,
-              uz: <>Yordam <span className="text-[#10b981]">yo&apos;nalishlari</span></>,
-            })}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
             <CategoryCard
               title={pick({ ru: "Экология", en: "Ecology", uz: "Ekologiya" })}
               category={pick({ ru: "Субботники", en: "Cleanup Actions", uz: "Hasharlar" })}
@@ -655,37 +389,7 @@ export default function Home() {
             />
           </div>
         </div>
-      </section>
-
-      <section id="events" className="py-24 bg-gray-50/60 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl md:text-6xl font-black text-gray-900 uppercase italic tracking-tighter text-center mb-14">
-            {pick({
-              ru: <>Ближайшие <span className="text-[#10b981]">события</span></>,
-              en: <>Upcoming <span className="text-[#10b981]">Events</span></>,
-              uz: <>Yaqin <span className="text-[#10b981]">tadbirlar</span></>,
-            })}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
-            {events.map((event, index) => (
-              <EventCard key={index} {...event} />
-            ))}
-          </div>
-          <div className="mt-12 text-center">
-            <Link
-              href="/events"
-              className="inline-flex items-center gap-2 px-5 py-4 rounded-[18px] bg-gray-900 text-white font-black uppercase tracking-[0.08em] text-[11px] hover:bg-[#10b981] transition-colors sm:px-8 sm:text-sm sm:tracking-[0.18em]"
-            >
-              {pick({
-                ru: "Открыть все события",
-                en: "Open All Events",
-                uz: "Barcha tadbirlarni ochish",
-              })}
-              <ArrowRight className="hidden h-4 w-4 shrink-0 sm:block" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      </section>      
     </div>
   );
 }

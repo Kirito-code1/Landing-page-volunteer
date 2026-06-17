@@ -38,7 +38,6 @@ export default function LoginPage() {
     message: "",
   });
 
-  // Инициализация клиента Supabase
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
   const nextPath = useMemo(() => {
     if (typeof window === "undefined") {
@@ -48,6 +47,7 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     return sanitizeNextPath(params.get("next"));
   }, []);
+  
   const supabaseUnavailableMessage = pick({
     ru: "Сервис входа временно недоступен. Попробуйте позже.",
     en: "Sign-in is temporarily unavailable. Please try again later.",
@@ -73,7 +73,6 @@ export default function LoginPage() {
 
     if (error) {
       setLoading(false);
-      // Упрощаем сообщение об ошибке, так как подтверждение почты отключено
       const msg = pick({
         ru: "Неверный email или пароль. Пожалуйста, проверьте данные.",
         en: "Invalid email or password. Please check your credentials.",
@@ -123,7 +122,6 @@ export default function LoginPage() {
 
     setResetLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      // Убедись, что этот путь совпадает с твоим роутом для смены пароля
       redirectTo: `${window.location.origin}/auth/update-password`,
     });
 
@@ -148,22 +146,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[linear-gradient(180deg,_#f0fdf4_0%,_#ffffff_50%,_#eff6ff_100%)] p-4 relative">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-50 p-4 py-12">
       
       {/* Модалка ошибки */}
       {errorModal.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-[400px] rounded-[35px] shadow-2xl p-8 text-center border border-red-50 animate-in zoom-in-95 duration-300">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-10 h-10" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-8 text-center">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">{errorModal.title}</h2>
-            <p className="text-gray-500 font-medium mb-8 leading-relaxed">{errorModal.message}</p>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">{errorModal.title}</h2>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">{errorModal.message}</p>
             <button
               onClick={() => setErrorModal({ ...errorModal, isOpen: false })}
-              className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-gray-200"
+              className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-medium hover:bg-slate-800 transition-colors"
             >
-              {pick({ ru: "Попробовать снова", en: "Try Again", uz: "Qayta urinib ko'rish" })}
+              {pick({ ru: "Попробовать снова", en: "Try again", uz: "Qayta urinish" })}
             </button>
           </div>
         </div>
@@ -171,18 +169,18 @@ export default function LoginPage() {
 
       {/* Модалка успеха */}
       {successModal.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white w-full max-w-[400px] rounded-[35px] shadow-2xl p-8 text-center border border-green-50 animate-in zoom-in-95">
-            <div className="w-16 h-16 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="w-10 h-10" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-8 text-center">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">
+            <h2 className="text-xl font-bold text-slate-900 mb-2">
               {pick({ ru: "Готово!", en: "Done!", uz: "Tayyor!" })}
             </h2>
-            <p className="text-gray-500 font-medium mb-8 leading-relaxed">{successModal.message}</p>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">{successModal.message}</p>
             <button
               onClick={() => setSuccessModal({ ...successModal, isOpen: false })}
-              className="w-full py-4 bg-[#10b981] text-white rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-green-100"
+              className="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition-colors"
             >
               {pick({ ru: "Закрыть", en: "Close", uz: "Yopish" })}
             </button>
@@ -190,25 +188,27 @@ export default function LoginPage() {
         </div>
       )}
 
+      {/* Логотип и заголовок */}
       <div className="flex flex-col items-center mb-8">
         <Link href="/">
-          <div className="w-16 h-16 bg-[#10b981] rounded-2xl flex items-center justify-center shadow-lg shadow-green-100 mb-6 transition-transform hover:scale-105 active:scale-95">
-            <Heart className="text-white w-10 h-10 fill-current" />
+          <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center mb-4 hover:bg-emerald-600 transition-colors">
+            <Heart className="text-white w-6 h-6 fill-current" />
           </div>
         </Link>
-        <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2 italic uppercase tracking-tighter">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           {pick({ ru: "С возвращением!", en: "Welcome Back!", uz: "Yana xush kelibsiz!" })}
         </h1>
-        <p className="text-gray-500 font-bold">
+        <p className="text-slate-500 mt-1 text-sm">
           {pick({
-            ru: "Войдите, чтобы творить добро",
-            en: "Sign in to make a difference",
-            uz: "Yaxshilik qilish uchun tizimga kiring",
+            ru: "Войдите, чтобы продолжить",
+            en: "Sign in to continue",
+            uz: "Davom etish uchun tizimga kiring",
           })}
         </p>
       </div>
 
-      <div className="w-full max-w-[440px] bg-white rounded-[40px] shadow-[0_24px_60px_rgba(15,23,42,0.16),0_6px_24px_rgba(16,185,129,0.12)] border border-gray-100 p-8 md:p-10">
+      {/* Карточка формы */}
+      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 p-8">
         <SocialAuthButtons
           mode="login"
           nextPath={nextPath}
@@ -221,72 +221,72 @@ export default function LoginPage() {
           }}
         />
 
-        <form className="space-y-6" onSubmit={handleLogin}>
-          <div className="space-y-2">
-            <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">
-              {pick({ ru: "Email адрес", en: "Email Address", uz: "Email manzil" })}
+        <form className="space-y-5 mt-6" onSubmit={handleLogin}>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              {pick({ ru: "Email", en: "Email", uz: "Email" })}
             </label>
-            <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#10b981] transition-colors" />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="example@mail.com"
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-[22px] focus:outline-none focus:border-[#10b981] focus:bg-white transition-all font-bold text-gray-900"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between items-center px-2">
-              <label className="text-xs font-black uppercase text-gray-400 tracking-widest">
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-medium text-slate-700">
                 {pick({ ru: "Пароль", en: "Password", uz: "Parol" })}
               </label>
               <button
                 type="button"
                 onClick={handleResetPassword}
                 disabled={resetLoading}
-                className="text-[10px] font-black text-[#10b981] uppercase hover:underline disabled:opacity-50"
+                className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors disabled:opacity-50"
               >
                 {resetLoading
                   ? pick({ ru: "Загрузка...", en: "Loading...", uz: "Yuklanmoqda..." })
                   : pick({ ru: "Забыли пароль?", en: "Forgot Password?", uz: "Parolni unutdingizmi?" })}
               </button>
             </div>
-            <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#10b981] transition-colors" />
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-[22px] focus:outline-none focus:border-[#10b981] focus:bg-white transition-all font-bold text-gray-900"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-10 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#10b981] transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
 
           <button
             disabled={loading || !supabase}
-            className="w-full bg-[#10b981] hover:bg-[#0da975] disabled:bg-gray-200 text-white py-5 rounded-[22px] font-black text-base sm:text-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-xl shadow-green-100/50"
+            className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-colors"
           >
             {loading
-              ? <Loader2 className="animate-spin" />
-              : pick({ ru: "ВОЙТИ В АККАУНТ", en: "SIGN IN", uz: "AKKAUNTGA KIRISH" })}
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : pick({ ru: "Войти", en: "Sign In", uz: "Kirish" })}
           </button>
 
-          <div className="text-center text-sm font-bold text-gray-400 pt-2">
+          <div className="text-center text-sm text-slate-500 pt-2">
             {pick({ ru: "Впервые у нас?", en: "New here?", uz: "Bizda birinchimisiz?" })}{" "}
-            <Link href="/auth/registr" className="text-[#10b981] font-black hover:underline uppercase text-[12px] ml-1">
+            <Link href="/auth/registr" className="font-medium text-emerald-600 hover:text-emerald-700 transition-colors">
               {pick({ ru: "Создать профиль", en: "Create Profile", uz: "Profil yaratish" })}
             </Link>
           </div>

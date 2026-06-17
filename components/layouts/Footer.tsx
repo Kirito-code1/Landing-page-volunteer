@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Heart, Mail, MapPin, Phone } from "lucide-react";
+import { Heart, Mail, MapPin, Phone } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function Footer() {
@@ -9,131 +9,104 @@ export default function Footer() {
   const { pick } = useLanguage();
 
   const quickLinks = [
-    { href: "/", label: pick({ ru: "Главная", en: "Home", uz: "Bosh sahifa" }) },
-    { href: "/events", label: pick({ ru: "События", en: "Events", uz: "Tadbirlar" }) },
-    { href: "/donate", label: pick({ ru: "Пожертвования", en: "Donations", uz: "Xayriyalar" }) },
-    { href: "/dashboard", label: pick({ ru: "Кабинет", en: "Dashboard", uz: "Kabinet" }) },
+    {
+      href: "/",
+      label: pick({ ru: "Главная", en: "Home", uz: "Bosh sahifa" }),
+    },
+    {
+      href: "/events",
+      label: pick({ ru: "События", en: "Events", uz: "Tadbirlar" }),
+    },
+    {
+      href: "/donate",
+      label: pick({ ru: "Пожертвования", en: "Donations", uz: "Xayriyalar" }),
+    },
+    {
+      href: "/dashboard",
+      label: pick({ ru: "Кабинет", en: "Dashboard", uz: "Kabinet" }),
+    },
   ];
 
   return (
-    <footer className="relative mt-16 overflow-hidden bg-[linear-gradient(135deg,_#0f172a_0%,_#052e2b_45%,_#1d4ed8_100%)] text-white">
-      <div className="pointer-events-none absolute -top-20 -right-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-emerald-400/20 blur-3xl" />
-
-      <div className="relative max-w-7xl mx-auto px-6 py-12 md:py-16">
-        <section className="mb-10 grid gap-6 rounded-[32px] border border-white/15 bg-white/10 p-6 backdrop-blur-sm lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+    <footer className="bg-slate-900 text-slate-300 mt-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        {/* --- CTA Section --- */}
+        <div className="pb-10 border-b border-slate-800 md:flex md:items-center md:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-200/90">
-              {pick({ ru: "Для следующего шага", en: "For your next step", uz: "Keyingi qadam uchun" })}
-            </p>
-            <h2 className="mt-3 max-w-2xl text-3xl font-black tracking-tight text-white md:text-4xl">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
               {pick({
-                ru: "Найдите событие, соберите команду или усилите кабинет организатора.",
-                en: "Find an event, build a team, or upgrade the organizer workspace.",
-                uz: "Tadbir toping, jamoa yig'ing yoki tashkilotchi kabinetingizni kuchaytiring.",
+                ru: "Найдите событие или усилите кабинет организатора",
+                en: "Find an event or upgrade the organizer workspace",
+                uz: "Tadbir toping yoki tashkilotchi kabinetingizni kuchaytiring",
               })}
             </h2>
-            <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-white/70">
+            <p className="mt-3 text-slate-400 max-w-xl">
               {pick({
-                ru: "VoloHero соединяет волонтёров и организаторов вокруг понятных действий, прозрачных метрик и живых городских инициатив.",
-                en: "VoloHero connects volunteers and organizers through clear actions, transparent metrics, and real urban initiatives.",
-                uz: "VoloHero volontyorlar va tashkilotchilarni aniq harakatlar, shaffof metrikalar va haqiqiy shahar tashabbuslari atrofida birlashtiradi.",
+                ru: "VoloHero соединяет волонтёров и организаторов вокруг понятных действий и живых городских инициатив.",
+                en: "VoloHero connects volunteers and organizers through clear actions and real urban initiatives.",
+                uz: "VoloHero volontyorlar va tashkilotchilarni aniq harakatlar va haqiqiy shahar tashabbuslari atrofida birlashtiradi.",
               })}
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 md:mt-0 flex flex-col sm:flex-row gap-3 shrink-0">
             <Link
               href="/events"
-              className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-950 transition-colors hover:bg-emerald-50"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-100 transition-colors text-sm"
             >
-              {pick({ ru: "Смотреть события", en: "Browse events", uz: "Tadbirlarni ko'rish" })}
+              {pick({
+                ru: "Смотреть события",
+                en: "Browse events",
+                uz: "Tadbirlarni ko'rish",
+              })}
             </Link>
             <Link
               href="/premium"
-              className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-6 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-white/20"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-700 text-white font-medium hover:bg-slate-800 transition-colors text-sm"
             >
-              {pick({ ru: "Для организаторов", en: "For organizers", uz: "Tashkilotchilar uchun" })}
+              {pick({
+                ru: "Для организаторов",
+                en: "For organizers",
+                uz: "Tashkilotchilar uchun",
+              })}
             </Link>
           </div>
-        </section>
+        </div>
 
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-          <div className="lg:col-span-2">
-            <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="w-11 h-11 rounded-2xl bg-[#10b981] text-white flex items-center justify-center shadow-lg shadow-emerald-900/30 group-hover:scale-105 transition-transform">
-                <Heart className="w-6 h-6 fill-current" />
+        {/* --- Main Grid --- */}
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Brand & Description */}
+          <div className="lg:col-span-1">
+            <Link href="/" className="inline-flex items-center gap-2 group">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
+                <Heart className="w-4 h-4 fill-current" />
               </div>
-              <span className="text-2xl font-black tracking-tighter uppercase italic">
-                Volo<span className="text-[#34d399]">Hero</span>
+              <span className="text-xl font-bold tracking-tight text-white">
+                VoloHero
               </span>
             </Link>
 
-            <p className="mt-5 max-w-xl text-white/75 font-semibold leading-relaxed">
+            <p className="mt-4 text-sm leading-relaxed text-slate-400">
               {pick({
-                ru: "Платформа волонтерских инициатив по Узбекистану: находим полезные события, объединяем людей и превращаем добрые идеи в реальные действия.",
-                en: "A volunteer platform for Uzbekistan: discover meaningful events, connect people, and turn good ideas into real action.",
-                uz: "O'zbekiston uchun volontyorlik platformasi: foydali tadbirlarni topamiz, odamlarni birlashtiramiz va yaxshi g'oyalarni amaliy ishga aylantiramiz.",
+                ru: "Платформа волонтерских инициатив: находим полезные события и превращаем добрые идеи в реальные действия.",
+                en: "A volunteer platform: discover meaningful events and turn good ideas into real action.",
+                uz: "Volontyorlik platformasi: foydali tadbirlarni topamiz va yaxshi g'oyalarni amaliy ishga aylantiramiz.",
               })}
             </p>
-
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em]">
-              <ArrowUpRight className="w-4 h-4" />
-              {pick({
-                ru: "Вместе делаем город лучше",
-                en: "Building Better Cities Together",
-                uz: "Birga shaharning kelajagini yaxshilaymiz",
-              })}
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                  {pick({ ru: "Фокус", en: "Focus", uz: "Fokus" })}
-                </p>
-                <p className="mt-2 text-sm font-bold text-white/85">
-                  {pick({
-                    ru: "Городские и социальные инициативы",
-                    en: "Civic and social initiatives",
-                    uz: "Shahar va ijtimoiy tashabbuslar",
-                  })}
-                </p>
-              </div>
-              <div className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                  {pick({ ru: "Инструменты", en: "Tools", uz: "Vositalar" })}
-                </p>
-                <p className="mt-2 text-sm font-bold text-white/85">
-                  {pick({
-                    ru: "Каталог, отклики, impact-отчёты",
-                    en: "Catalog, applications, impact reports",
-                    uz: "Katalog, arizalar, impact hisobotlar",
-                  })}
-                </p>
-              </div>
-              <div className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                  {pick({ ru: "Рост", en: "Growth", uz: "O'sish" })}
-                </p>
-                <p className="mt-2 text-sm font-bold text-white/85">
-                  {pick({
-                    ru: "Premium для активных организаторов",
-                    en: "Premium for active organizers",
-                    uz: "Faol tashkilotchilar uchun Premium",
-                  })}
-                </p>
-              </div>
-            </div>
           </div>
 
+          {/* Navigation */}
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/60 mb-4">
+            <h3 className="text-sm font-semibold text-white mb-4">
               {pick({ ru: "Навигация", en: "Navigation", uz: "Navigatsiya" })}
-            </p>
+            </h3>
             <ul className="space-y-3">
               {quickLinks.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="font-bold text-white/90 hover:text-[#86efac] transition-colors">
+                  <Link
+                    href={item.href}
+                    className="text-sm text-slate-400 hover:text-white transition-colors"
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -141,62 +114,71 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Contacts */}
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/60 mb-4">
+            <h3 className="text-sm font-semibold text-white mb-4">
               {pick({ ru: "Контакты", en: "Contacts", uz: "Kontaktlar" })}
-            </p>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-2 text-white/85 font-bold">
-                <MapPin className="w-4 h-4 mt-0.5 text-[#86efac]" />
+            </h3>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start gap-3 text-slate-400">
+                <MapPin className="w-4 h-4 mt-0.5 text-emerald-500 shrink-0" />
                 {pick({
                   ru: "Ташкент, Узбекистан",
                   en: "Tashkent, Uzbekistan",
                   uz: "Toshkent, O'zbekiston",
                 })}
               </li>
-              <li className="flex items-start gap-2">
-                <Mail className="w-4 h-4 mt-0.5 text-[#86efac]" />
-                <a href="mailto:support@volohero.uz" className="font-bold text-white/90 hover:text-[#86efac] transition-colors">
+              <li className="flex items-start gap-3">
+                <Mail className="w-4 h-4 mt-0.5 text-emerald-500 shrink-0" />
+                <a
+                  href="mailto:support@volohero.uz"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
                   support@volohero.uz
                 </a>
               </li>
-              <li className="flex items-start gap-2">
-                <Phone className="w-4 h-4 mt-0.5 text-[#86efac]" />
-                <a href="tel:+998901234567" className="font-bold text-white/90 hover:text-[#86efac] transition-colors">
+              <li className="flex items-start gap-3">
+                <Phone className="w-4 h-4 mt-0.5 text-emerald-500 shrink-0" />
+                <a
+                  href="tel:+998940228684"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
                   +998 94 022 86 84
                 </a>
               </li>
             </ul>
+          </div>
 
-            <div className="mt-6 rounded-[22px] border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                {pick({ ru: "Для партнёров", en: "For partners", uz: "Hamkorlar uchun" })}
-              </p>
-              <p className="mt-2 text-sm font-semibold leading-7 text-white/75">
-                {pick({
-                  ru: "Если вы НКО, команда или бренд, который хочет запустить совместные волонтёрские программы, свяжитесь с нами.",
-                  en: "If you're an NGO, team, or brand planning volunteer programs, get in touch with us.",
-                  uz: "Agar siz NNT, jamoa yoki volontyor dasturlarini yo'lga qo'ymoqchi bo'lgan brend bo'lsangiz, biz bilan bog'laning.",
-                })}
-              </p>
-            </div>
+          {/* Partners */}
+          <div>
+            <h3 className="text-sm font-semibold text-white mb-4">
+              {pick({
+                ru: "Для партнёров",
+                en: "For partners",
+                uz: "Hamkorlar uchun",
+              })}
+            </h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              {pick({
+                ru: "Если вы НКО, команда или бренд, который хочет запустить совместные волонтёрские программы, свяжитесь с нами.",
+                en: "If you're an NGO, team, or brand planning volunteer programs, get in touch with us.",
+                uz: "Agar siz NNT, jamoa yoki volontyor dasturlarini yo'lga qo'moqchi bo'lgan brend bo'lsangiz, biz bilan bog'laning.",
+              })}
+            </p>
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-white/15 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <p className="text-sm font-bold text-white/70">
+        {/* --- Bottom Bar --- */}
+        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <p className="text-sm text-slate-500">
             {pick({
               ru: `© ${year} VoloHero. Все права защищены.`,
               en: `© ${year} VoloHero. All rights reserved.`,
               uz: `© ${year} VoloHero. Barcha huquqlar himoyalangan.`,
             })}
           </p>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-white/50">
-            {pick({
-              ru: "Volunteer Platform Uzbekistan",
-              en: "Volunteer Platform Uzbekistan",
-              uz: "Volunteer Platform Uzbekistan",
-            })}
+          <p className="text-xs text-slate-600 uppercase tracking-wider">
+            Volunteer Platform Uzbekistan
           </p>
         </div>
       </div>

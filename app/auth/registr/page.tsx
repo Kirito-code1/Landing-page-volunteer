@@ -24,64 +24,68 @@ export default function RegisterPage() {
   });
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[linear-gradient(180deg,_#f0fdf4_0%,_#ffffff_50%,_#eff6ff_100%)] p-4 py-12 relative">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-50 p-4 py-12">
       
       {/* МОДАЛКА ОШИБКИ */}
       {errorModal.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[400px] rounded-[40px] shadow-2xl p-8 text-center animate-in zoom-in-95">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-10 h-10" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-8 text-center">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">{errorModal.title}</h2>
-            <p className="text-gray-500 font-medium mb-8 leading-relaxed">{errorModal.message}</p>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">{errorModal.title}</h2>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">{errorModal.message}</p>
             <button 
               onClick={() => setErrorModal({ ...errorModal, isOpen: false })}
-              className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-all"
+              className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-medium hover:bg-slate-800 transition-colors"
             >
-              {pick({ ru: "ПОПРОБОВАТЬ СНОВА", en: "TRY AGAIN", uz: "QAYTA URINISH" })}
+              {pick({ ru: "Попробовать снова", en: "Try again", uz: "Qayta urinish" })}
             </button>
           </div>
         </div>
       )}
 
-      {/* Логотип */}
+      {/* Логотип и Заголовок */}
       <div className="flex flex-col items-center mb-8">
         <Link href="/">
-          <div className="w-16 h-16 bg-[#10b981] rounded-[22px] flex items-center justify-center shadow-lg shadow-green-200 mb-6 hover:scale-105 transition-transform active:scale-95">
-            <Heart className="text-white w-10 h-10 fill-current" />
+          <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center mb-4 hover:bg-emerald-600 transition-colors">
+            <Heart className="text-white w-6 h-6 fill-current" />
           </div>
         </Link>
-        <h1 className="text-4xl font-black text-gray-900 mb-2 uppercase italic italic tracking-tighter">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           {pick({ ru: "Создать профиль", en: "Create Profile", uz: "Profil yaratish" })}
         </h1>
-        <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.18em]">
+        <p className="text-slate-500 mt-1 text-sm">
           {pick({ ru: "Регистрация через Google", en: "Google registration", uz: "Google orqali ro'yxatdan o'tish" })}
         </p>
       </div>
 
-      <div className="w-full max-w-[500px] bg-white rounded-[48px] shadow-[0_26px_65px_rgba(15,23,42,0.16),0_8px_26px_rgba(16,185,129,0.12)] border border-gray-100 p-8 md:p-12">
+      {/* Карточка формы */}
+      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 p-8">
         <div className="space-y-6">
-          <div className="rounded-[30px] border border-emerald-100 bg-emerald-50/70 px-5 py-5">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+          
+          {/* Информационный блок (объединенный) */}
+          <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-600 space-y-2">
+            <p className="font-semibold text-slate-900">
               {pick({ ru: "Как это работает", en: "How it works", uz: "Bu qanday ishlaydi" })}
             </p>
-            <h2 className="mt-3 text-2xl font-black text-slate-950">
+            <p>
               {pick({
-                ru: "Создаём аккаунт сразу через Google",
-                en: "Create your account with Google",
-                uz: "Akkaunt Google orqali yaratiladi",
+                ru: "Вход через Google создаёт профиль автоматически — никаких длинных форм и паролей.",
+                en: "Signing in with Google creates your profile automatically — no long forms or passwords.",
+                uz: "Google orqali kirish profilingizni avtomatik yaratadi — uzun forma va parollar kerak emas.",
               })}
-            </h2>
-            <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">
+            </p>
+            <p>
               {pick({
-                ru: "Никаких отдельных паролей и длинных форм. После входа через Google профиль создастся автоматически, а затем мы попросим добавить номер телефона для участия в событиях и публикации объявлений.",
-                en: "No extra passwords or long forms. After signing in with Google, your profile is created automatically, then we ask for your phone number before you can join events or publish listings.",
-                uz: "Alohida parol va uzun forma kerak emas. Google orqali kirgandan so'ng profilingiz avtomatik yaratiladi, keyin esa tadbirlarda qatnashish va e'lon berishdan oldin telefon raqamingiz so'raladi.",
+                ru: "После этого нужно будет только добавить номер телефона, чтобы откликаться на события и публиковать объявления.",
+                en: "After that, you'll only need to add a phone number to respond to events and publish listings.",
+                uz: "Shundan so'ng, tadbirlarga javob berish va e'lonlar chop etish uchun faqat telefon raqamini qo'shish kifoya.",
               })}
             </p>
           </div>
 
+          {/* Кнопки авторизации */}
           <SocialAuthButtons
             mode="register"
             nextPath={nextPath}
@@ -95,33 +99,10 @@ export default function RegisterPage() {
             }}
           />
 
-          <div className="rounded-[26px] border border-slate-100 bg-slate-50 px-5 py-5">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-              {pick({ ru: "После входа", en: "After sign-in", uz: "Kirishdan keyin" })}
-            </p>
-            <div className="mt-4 space-y-3 text-sm font-semibold leading-7 text-slate-600">
-              <p>
-                {pick({
-                  ru: "1. Система создаст ваш профиль на основе Google-аккаунта.",
-                  en: "1. The system creates your profile from your Google account.",
-                  uz: "1. Tizim profilingizni Google akkauntingiz asosida yaratadi.",
-                })}
-              </p>
-              <p>
-                {pick({
-                  ru: "2. После этого вы добавите номер телефона и только затем сможете отправлять отклики и создавать свои объявления.",
-                  en: "2. Then you add your phone number and only after that you can send applications and create your own listings.",
-                  uz: "2. Shundan keyin telefon raqamingizni kiritasiz va faqat undan so'ng ariza yubora hamda o'z e'lonlaringizni yarata olasiz.",
-                })}
-              </p>
-            </div>
-          </div>
-
-          <div className="text-center pt-2">
-            <span className="text-[12px] font-bold text-gray-400 uppercase tracking-tight">
-              {pick({ ru: "Уже есть аккаунт?", en: "Already have an account?", uz: "Akkauntingiz bormi?" })}
-            </span>{" "}
-            <Link href="/auth/login" className="text-[#10b981] font-black hover:underline uppercase text-[12px] ml-1">
+          {/* Ссылка на вход */}
+          <div className="text-center text-sm text-slate-500">
+            {pick({ ru: "Уже есть аккаунт?", en: "Already have an account?", uz: "Akkauntingiz bormi?" })}{' '}
+            <Link href="/auth/login" className="font-medium text-emerald-600 hover:text-emerald-700 transition-colors">
               {pick({ ru: "Войти", en: "Login", uz: "Kirish" })}
             </Link>
           </div>
