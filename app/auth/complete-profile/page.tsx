@@ -257,7 +257,7 @@ export default function CompleteProfilePage() {
                   {pick({
                     ru: "Сохраняем...",
                     en: "Saving...",
-                    uz: "Saqlanmoqda...",
+                    uz: "Saqlanmoqda....",
                   })}
                 </>
               ) : (
