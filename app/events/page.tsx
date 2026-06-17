@@ -229,7 +229,7 @@ export default function AllEvents() {
                   ),
                 })}
               </h1>
-
+{/* 
               <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1 xl:gap-4">
                 <div className="rounded-[26px] border border-emerald-100 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_100%)] px-5 py-4">
                   <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-600">
@@ -249,7 +249,7 @@ export default function AllEvents() {
                   </p>
                   <p className="mt-2 text-3xl font-black text-red-500">{urgentEventsCount}</p>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             <div className="w-full min-w-0 rounded-[32px] border border-slate-100 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] sm:p-5">
@@ -260,13 +260,6 @@ export default function AllEvents() {
                       ru: "Поиск и фильтрация",
                       en: "Search and filters",
                       uz: "Qidiruv va filtrlar",
-                    })}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-500">
-                    {pick({
-                      ru: "Подберите события по категории, срочности и размеру команды.",
-                      en: "Narrow events by category, urgency, and team size.",
-                      uz: "Tadbirlarni toifa, shoshilinchlik va jamoa hajmi bo'yicha tanlang.",
                     })}
                   </p>
                 </div>
