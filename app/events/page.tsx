@@ -462,24 +462,6 @@ export default function AllEvents() {
                       <p className="mt-2 text-lg font-black text-slate-950">{formatDate(event.created_at, dateLocale)}</p>
                     </div>
                   </div>
-
-                  <div className="mt-5 flex items-start gap-3 rounded-[22px] border border-slate-100 bg-white px-4 py-4">
-                    <Clock3 className="mt-0.5 h-4 w-4 text-[#10b981]" />
-                    <p className="text-sm font-semibold leading-7 text-slate-500">
-                      {urgency === "urgent"
-                        ? pick({
-                            ru: "Событие скоро начинается, поэтому лучше откликнуться как можно раньше.",
-                            en: "This event starts soon, so it is better to apply as early as possible.",
-                            uz: "Tadbir tez orada boshlanadi, shuning uchun imkon qadar tezroq ariza yuborgan ma'qul.",
-                          })
-                        : pick({
-                            ru: "Откройте карточку, чтобы увидеть полные детали, статус участия и рейтинг организатора.",
-                            en: "Open the card to see full details, participation status, and organizer rating.",
-                            uz: "To'liq ma'lumotlar, ishtirok holati va tashkilotchi reytingini ko'rish uchun kartani oching.",
-                          })}
-                    </p>
-                  </div>
-
                   <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
                     <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-900 transition-transform group-hover:translate-x-1 flex items-center gap-2">
                       {pick({ ru: "Открыть событие", en: "Open event", uz: "Tadbirni ochish" })}
