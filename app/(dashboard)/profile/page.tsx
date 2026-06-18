@@ -334,12 +334,12 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row shrink-0">
-              <button
+              {/* <button
                 onClick={() => setIsEditModalOpen(true)}
                 className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-800"
               >
                 {pick({ ru: "Настроить профиль", en: "Edit profile", uz: "Profilni sozlash" })}
-              </button>
+              </button> */}
               <button
                 onClick={() => router.push("/premium")}
                 className={`inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
