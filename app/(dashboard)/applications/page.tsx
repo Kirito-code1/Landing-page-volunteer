@@ -3,7 +3,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Clock3, CheckCircle2, XCircle, Calendar, MapPin, ArrowRight, MessageSquare, Star, X } from "lucide-react";
+import {
+  Loader2,
+  Clock3,
+  CheckCircle2,
+  XCircle,
+  Calendar,
+  MapPin,
+  ArrowRight,
+  MessageSquare,
+  Star,
+  X,
+} from "lucide-react";
 import EventVisual from "@/components/events/EventVisual";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { getEventCategoryLabel } from "@/components/events/eventMeta";
@@ -56,12 +67,15 @@ export default function ApplicationsPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [applicationsMissingSetup, setApplicationsMissingSetup] = useState(false);
+  const [applicationsMissingSetup, setApplicationsMissingSetup] =
+    useState(false);
   const [reviewsMissingSetup, setReviewsMissingSetup] = useState(false);
   const [applications, setApplications] = useState<VolunteerApplication[]>([]);
   const [eventsMap, setEventsMap] = useState<Record<string, EventPreview>>({});
   const [myReviews, setMyReviews] = useState<EventReview[]>([]);
-  const [statusFilter, setStatusFilter] = useState<"all" | ApplicationStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | ApplicationStatus>(
+    "all",
+  );
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [reviewModal, setReviewModal] = useState<{
     isOpen: boolean;
@@ -113,17 +127,23 @@ export default function ApplicationsPage() {
 
   const isMissingApplicationsTableError = (message: string) => {
     const hasTableMention = /event_applications/i.test(message);
-    const hasSchemaMention = /relation|table|schema cache|does not exist|PGRST/i.test(message);
+    const hasSchemaMention =
+      /relation|table|schema cache|does not exist|PGRST/i.test(message);
     return hasTableMention && hasSchemaMention;
   };
 
   const isMissingReviewsTableError = (message: string) => {
     const hasTableMention = /event_reviews/i.test(message);
-    const hasSchemaMention = /relation|table|schema cache|does not exist|PGRST/i.test(message);
+    const hasSchemaMention =
+      /relation|table|schema cache|does not exist|PGRST/i.test(message);
     return hasTableMention && hasSchemaMention;
   };
 
-  const showAlert = (title: string, message: string, tone: AlertTone = "info") => {
+  const showAlert = (
+    title: string,
+    message: string,
+    tone: AlertTone = "info",
+  ) => {
     setAlertModal({ isOpen: true, title, message, tone });
   };
 
@@ -139,7 +159,9 @@ export default function ApplicationsPage() {
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         router.push("/auth/login?next=/applications");
         return;
@@ -148,7 +170,9 @@ export default function ApplicationsPage() {
 
       const { data: applicationRows, error: applicationError } = await supabase
         .from("event_applications")
-        .select("id, event_id, organizer_id, status, attended, created_at, reviewed_at")
+        .select(
+          "id, event_id, organizer_id, status, attended, created_at, reviewed_at",
+        )
         .eq("volunteer_id", session.user.id)
         .order("created_at", { ascending: false });
 
@@ -163,11 +187,14 @@ export default function ApplicationsPage() {
         throw new Error(applicationError.message);
       }
 
-      const preparedApplications = (applicationRows ?? []) as VolunteerApplication[];
+      const preparedApplications = (applicationRows ??
+        []) as VolunteerApplication[];
       setApplicationsMissingSetup(false);
       setApplications(preparedApplications);
 
-      const eventIds = Array.from(new Set(preparedApplications.map((item) => item.event_id)));
+      const eventIds = Array.from(
+        new Set(preparedApplications.map((item) => item.event_id)),
+      );
       if (eventIds.length === 0) {
         setEventsMap({});
         setMyReviews([]);
@@ -182,10 +209,15 @@ export default function ApplicationsPage() {
           .in("id", eventIds),
         supabase
           .from("event_reviews")
-          .select("id, application_id, event_id, target_id, target_role, rating, comment, created_at, updated_at")
+          .select(
+            "id, application_id, event_id, target_id, target_role, rating, comment, created_at, updated_at",
+          )
           .eq("author_id", session.user.id)
           .eq("author_role", "volunteer")
-          .in("application_id", preparedApplications.map((item) => item.id))
+          .in(
+            "application_id",
+            preparedApplications.map((item) => item.id),
+          )
           .order("updated_at", { ascending: false }),
       ]);
 
@@ -254,16 +286,28 @@ export default function ApplicationsPage() {
   }, [myReviews]);
 
   const getStatusLabel = (status: ApplicationStatus) => {
-    if (status === "approved") {
+    if (status === "approved")
       return pick({ ru: "Принято", en: "Approved", uz: "Tasdiqlangan" });
-    }
-    if (status === "rejected") {
+    if (status === "rejected")
       return pick({ ru: "Отказ", en: "Rejected", uz: "Rad etilgan" });
-    }
-    return pick({ ru: "На рассмотрении", en: "Pending", uz: "Ko'rib chiqilmoqda" });
+    return pick({
+      ru: "На рассмотрении",
+      en: "Pending",
+      uz: "Ko'rib chiqilmoqda",
+    });
   };
 
-  const canLeaveReview = (application: VolunteerApplication, event?: EventPreview) => {
+  const getStatusStyle = (status: ApplicationStatus) => {
+    if (status === "approved")
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    if (status === "rejected") return "bg-red-50 text-red-600 border-red-200";
+    return "bg-amber-50 text-amber-700 border-amber-200";
+  };
+
+  const canLeaveReview = (
+    application: VolunteerApplication,
+    event?: EventPreview,
+  ) => {
     if (application.status !== "approved" || !event) return false;
     if (application.attended === true) return true;
     const eventTimestamp = new Date(event.date).getTime();
@@ -271,7 +315,9 @@ export default function ApplicationsPage() {
   };
 
   const reviewReadyCount = useMemo(() => {
-    return applications.filter((application) => canLeaveReview(application, eventsMap[application.event_id])).length;
+    return applications.filter((application) =>
+      canLeaveReview(application, eventsMap[application.event_id]),
+    ).length;
   }, [applications, eventsMap]);
 
   const openReviewModal = (application: VolunteerApplication) => {
@@ -284,8 +330,7 @@ export default function ApplicationsPage() {
       eventId: application.event_id,
       organizerId: application.organizer_id,
       eventTitle:
-        event?.title ??
-        pick({ ru: "Событие", en: "Event", uz: "Tadbir" }),
+        event?.title ?? pick({ ru: "Событие", en: "Event", uz: "Tadbir" }),
       rating: existingReview?.rating ?? 5,
       comment: existingReview?.comment ?? "",
     });
@@ -306,7 +351,12 @@ export default function ApplicationsPage() {
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!currentUserId || !reviewModal.applicationId || !reviewModal.eventId || !reviewModal.organizerId) {
+    if (
+      !currentUserId ||
+      !reviewModal.applicationId ||
+      !reviewModal.eventId ||
+      !reviewModal.organizerId
+    ) {
       return;
     }
 
@@ -329,14 +379,20 @@ export default function ApplicationsPage() {
       const { data, error } = await supabase
         .from("event_reviews")
         .upsert(payload, { onConflict: "application_id,author_id" })
-        .select("id, application_id, event_id, target_id, target_role, rating, comment, created_at, updated_at")
+        .select(
+          "id, application_id, event_id, target_id, target_role, rating, comment, created_at, updated_at",
+        )
         .single();
 
       if (error) {
         if (isMissingReviewsTableError(error.message)) {
           setReviewsMissingSetup(true);
           showAlert(
-            pick({ ru: "Нужна настройка базы", en: "Database setup required", uz: "Baza sozlamasi kerak" }),
+            pick({
+              ru: "Нужна настройка базы",
+              en: "Database setup required",
+              uz: "Baza sozlamasi kerak",
+            }),
             missingReviewsHint,
             "warning",
           );
@@ -347,12 +403,18 @@ export default function ApplicationsPage() {
 
       setReviewsMissingSetup(false);
       setMyReviews((prev) => {
-        const next = prev.filter((review) => review.application_id !== data.application_id);
+        const next = prev.filter(
+          (review) => review.application_id !== data.application_id,
+        );
         return [data as EventReview, ...next];
       });
       closeReviewModal();
       showAlert(
-        pick({ ru: "Отзыв сохранён", en: "Review saved", uz: "Sharh saqlandi" }),
+        pick({
+          ru: "Отзыв сохранён",
+          en: "Review saved",
+          uz: "Sharh saqlandi",
+        }),
         pick({
           ru: "Организатор уже получил вашу оценку.",
           en: "The organizer has received your feedback.",
@@ -379,134 +441,119 @@ export default function ApplicationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
-        <Loader2 className="w-10 h-10 text-[#10b981] animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,_#edf9f4_0%,_#f8fafc_18%,_#f8fafc_100%)] px-4 py-8 md:py-12">
-      <div className="max-w-6xl mx-auto">
-        <header className="rounded-[34px] border border-white/80 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.08)] backdrop-blur md:p-8">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-            <div className="min-w-0">
-              <div className="inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">
-                {pick({ ru: "Волонтёр", en: "Volunteer", uz: "Volontyor" })}
-              </div>
-              <h1 className="mt-5 text-3xl font-black italic tracking-[-0.06em] text-slate-950 md:text-5xl">
-                {pick({ ru: "Мои отклики", en: "My applications", uz: "Mening arizalarim" })}
-              </h1>
-              <p className="mt-4 max-w-3xl text-base font-semibold leading-8 text-slate-600">
-                {pick({
-                  ru: "Здесь видно, какие заявки уже приняты, какие ещё на рассмотрении и по каким событиям можно оставить отзыв организатору.",
-                  en: "Here you can see which requests are approved, which are still pending, and for which events you can already review the organizer.",
-                  uz: "Bu yerda qaysi arizalar tasdiqlanganini, qaysilari ko'rib chiqilayotganini va qaysi tadbirlar bo'yicha tashkilotchiga sharh qoldirish mumkinligini ko'rasiz.",
-                })}
-              </p>
+    <div className="min-h-screen bg-slate-50 px-4 py-8 md:py-12">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
+            {pick({
+              ru: "Мои отклики",
+              en: "My applications",
+              uz: "Mening arizalarim",
+            })}
+          </h1>
+          <p className="mt-2 text-sm text-slate-500 max-w-2xl">
+            {pick({
+              ru: "Здесь видно, какие заявки уже приняты, какие ещё на рассмотрении и по каким событиям можно оставить отзыв организатору.",
+              en: "Here you can see which requests are approved, which are still pending, and for which events you can review the organizer.",
+              uz: "Bu yerda qaysi arizalar tasdiqlanganini, qaysilari ko'rib chiqilayotganini va qaysi tadbirlar bo'yicha tashkilotchiga sharh qoldirish mumkinligini ko'rasiz.",
+            })}
+          </p>
 
-              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-[24px] border border-white bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] px-5 py-4 shadow-sm">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    {pick({ ru: "Всего", en: "Total", uz: "Jami" })}
-                  </p>
-                  <p className="mt-2 text-3xl font-black text-slate-950">{applications.length}</p>
-                </div>
-                <div className="rounded-[24px] border border-amber-100 bg-[linear-gradient(180deg,_#fffbeb_0%,_#ffffff_100%)] px-5 py-4 shadow-sm">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">
-                    {pick({ ru: "На рассмотрении", en: "Pending", uz: "Ko'rib chiqilmoqda" })}
-                  </p>
-                  <p className="mt-2 text-3xl font-black text-amber-700">{applicationsStats.pending}</p>
-                </div>
-                <div className="rounded-[24px] border border-emerald-100 bg-[linear-gradient(180deg,_#ecfdf5_0%,_#ffffff_100%)] px-5 py-4 shadow-sm">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">
-                    {pick({ ru: "Принято", en: "Approved", uz: "Tasdiqlangan" })}
-                  </p>
-                  <p className="mt-2 text-3xl font-black text-emerald-700">{applicationsStats.approved}</p>
-                </div>
-                <div className="rounded-[24px] border border-sky-100 bg-[linear-gradient(180deg,_#f0f9ff_0%,_#ffffff_100%)] px-5 py-4 shadow-sm">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-600">
-                    {pick({ ru: "Готово для отзыва", en: "Ready for review", uz: "Sharh uchun tayyor" })}
-                  </p>
-                  <p className="mt-2 text-3xl font-black text-sky-700">{reviewReadyCount}</p>
-                </div>
-              </div>
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-slate-50 rounded-xl p-4">
+              <p className="text-xs font-medium text-slate-500">
+                {pick({ ru: "Всего", en: "Total", uz: "Jami" })}
+              </p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
+                {applications.length}
+              </p>
             </div>
-
-            <div className="min-w-0 rounded-[30px] border border-slate-100 bg-[linear-gradient(180deg,_#ffffff_0%,_#f8fafc_100%)] p-5 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                {pick({ ru: "Быстрые фильтры", en: "Quick filters", uz: "Tez filtrlar" })}
-              </p>
-              <p className="mt-3 text-sm font-semibold leading-7 text-slate-500">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-xs font-medium text-amber-600">
                 {pick({
-                  ru: "Переключайтесь между статусами, чтобы быстро понять, где нужно дождаться решения, а где уже можно действовать.",
-                  en: "Switch between statuses to quickly understand where you are waiting for a decision and where you can already take action.",
-                  uz: "Qayerda qarorni kutish, qayerda esa allaqachon harakat qilish mumkinligini tez ko'rish uchun statuslarni almashtiring.",
+                  ru: "На рассмотрении",
+                  en: "Pending",
+                  uz: "Ko'rib chiqilmoqda",
                 })}
               </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {(["all", "pending", "approved", "rejected"] as const).map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
-                    className={`rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${
-                      statusFilter === status
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-[#10b981] hover:text-[#10b981]"
-                    }`}
-                  >
-                    {status === "all"
-                      ? pick({ ru: "Все", en: "All", uz: "Barchasi" })
-                      : getStatusLabel(status)}
-                  </button>
-                ))}
-              </div>
+              <p className="text-2xl font-bold text-amber-700 mt-1">
+                {applicationsStats.pending}
+              </p>
+            </div>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+              <p className="text-xs font-medium text-emerald-600">
+                {pick({ ru: "Принято", en: "Approved", uz: "Tasdiqlangan" })}
+              </p>
+              <p className="text-2xl font-bold text-emerald-700 mt-1">
+                {applicationsStats.approved}
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-4">
+              <p className="text-xs font-medium text-slate-500">
+                {pick({
+                  ru: "Готово для отзыва",
+                  en: "Ready for review",
+                  uz: "Sharh uchun tayyor",
+                })}
+              </p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">
+                {reviewReadyCount}
+              </p>
             </div>
           </div>
-        </header>
+        </div>
 
-        <section className="mt-6 rounded-[28px] border border-white/80 bg-white/90 p-4 shadow-sm backdrop-blur md:p-5">
-          <div className="flex flex-wrap gap-2">
-            {(["all", "pending", "approved", "rejected"] as const).map((status) => (
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2">
+          {(["all", "pending", "approved", "rejected"] as const).map(
+            (status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] border transition-colors ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   statusFilter === status
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-600 border-slate-200 hover:border-[#10b981] hover:text-[#10b981]"
+                    ? "bg-slate-900 text-white"
+                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
                 }`}
               >
                 {status === "all"
                   ? pick({ ru: "Все", en: "All", uz: "Barchasi" })
                   : getStatusLabel(status)}
               </button>
-            ))}
-          </div>
-        </section>
+            ),
+          )}
+        </div>
 
+        {/* Errors and Hints */}
         {applicationsMissingSetup && (
-          <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-black text-amber-700">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
             {missingApplicationsHint}
           </div>
         )}
-
         {reviewsMissingSetup && (
-          <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-black text-amber-700">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
             {missingReviewsHint}
           </div>
         )}
-
         {error && (
-          <div className="mt-6 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-black text-red-600">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
             {error}
           </div>
         )}
 
-        <section className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {/* Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {!applicationsMissingSetup && visibleApplications.length === 0 ? (
-            <div className="col-span-full rounded-[32px] border-2 border-dashed border-slate-200 bg-white px-6 py-14 text-center">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+            <div className="col-span-full bg-white border border-dashed border-slate-200 rounded-2xl py-16 flex flex-col items-center justify-center text-center px-6">
+              <p className="text-slate-500 mb-6">
                 {pick({
                   ru: "Откликов пока нет",
                   en: "No applications yet",
@@ -515,9 +562,13 @@ export default function ApplicationsPage() {
               </p>
               <Link
                 href="/events"
-                className="inline-flex items-center gap-2 mt-5 px-6 py-3 rounded-xl bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-black transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-medium hover:bg-slate-800 transition-colors"
               >
-                {pick({ ru: "Найти событие", en: "Find event", uz: "Tadbir topish" })}
+                {pick({
+                  ru: "Найти событие",
+                  en: "Find event",
+                  uz: "Tadbir topish",
+                })}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -528,239 +579,275 @@ export default function ApplicationsPage() {
               const reviewAvailable = canLeaveReview(application, event);
 
               return (
-                <article key={application.id} className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-                  <div className="relative h-56">
+                <article
+                  key={application.id}
+                  className="bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col"
+                >
+                  <div className="relative h-48 bg-slate-100">
                     <EventVisual
                       title={event?.title ?? "Volunteer Event"}
                       category={event?.category}
-                      categoryLabel={event?.category ? getEventCategoryLabel(event.category, pick) : undefined}
+                      categoryLabel={
+                        event?.category
+                          ? getEventCategoryLabel(event.category, pick)
+                          : undefined
+                      }
                       imageUrl={event?.image_url}
                       alt={event?.title ?? "Event"}
                       className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      sizes="(max-width: 768px) 100vw, 50vw"
                     />
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08)_0%,rgba(15,23,42,0.76)_100%)]" />
-                    <div className="absolute left-5 top-5 inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white backdrop-blur-md">
-                      {application.status === "pending" ? <Clock3 className="w-3.5 h-3.5" /> : null}
-                      {application.status === "approved" ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
-                      {application.status === "rejected" ? <XCircle className="w-3.5 h-3.5" /> : null}
-                      {getStatusLabel(application.status)}
-                    </div>
-                    {event?.category ? (
-                      <div className="absolute right-5 top-5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white backdrop-blur-md">
-                        {getEventCategoryLabel(event.category, pick)}
-                      </div>
-                    ) : null}
-                    <div className="absolute inset-x-5 bottom-5">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">
-                        {pick({ ru: "Отклик", en: "Application", uz: "Ariza" })}
-                      </p>
-                      <h3 className="mt-2 text-2xl font-black tracking-[-0.04em] text-white">
-                        {event?.title ?? pick({ ru: "Событие удалено", en: "Event removed", uz: "Tadbir o'chirilgan" })}
-                      </h3>
-                    </div>
                   </div>
 
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {event?.location ? (
-                        <div className="rounded-[22px] bg-slate-50 px-4 py-3">
-                          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                            {pick({ ru: "Локация", en: "Location", uz: "Joylashuv" })}
-                          </p>
-                          <p className="mt-2 text-sm font-semibold text-slate-700 inline-flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-[#10b981]" />
-                            {event.location}
-                          </p>
-                        </div>
-                      ) : null}
-                      {event?.date ? (
-                        <div className="rounded-[22px] bg-slate-50 px-4 py-3">
-                          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                            {pick({ ru: "Дата", en: "Date", uz: "Sana" })}
-                          </p>
-                          <p className="mt-2 text-sm font-semibold text-slate-700 inline-flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-[#10b981]" />
-                            {formatDate(event.date, dateLocale)}
-                          </p>
-                        </div>
-                      ) : null}
+                  <div className="p-5 flex flex-col flex-1">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <h3 className="font-bold text-slate-900 line-clamp-2">
+                        {event?.title ??
+                          pick({
+                            ru: "Событие удалено",
+                            en: "Event removed",
+                            uz: "Tadbir o'chirilgan",
+                          })}
+                      </h3>
+                      <span
+                        className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${getStatusStyle(application.status)}`}
+                      >
+                        {application.status === "pending" && (
+                          <Clock3 className="w-3 h-3" />
+                        )}
+                        {application.status === "approved" && (
+                          <CheckCircle2 className="w-3 h-3" />
+                        )}
+                        {application.status === "rejected" && (
+                          <XCircle className="w-3 h-3" />
+                        )}
+                        {getStatusLabel(application.status)}
+                      </span>
                     </div>
 
-                    <div className="mt-4 space-y-2 text-sm text-slate-500">
-                      <p className="text-[10px] uppercase tracking-[0.18em] font-black text-slate-300">
-                        {pick({ ru: "Отправлено", en: "Submitted", uz: "Yuborilgan" })}: {formatDate(application.created_at, dateLocale)}
-                      </p>
-                      {application.reviewed_at && (
-                        <p className="text-[10px] uppercase tracking-[0.18em] font-black text-slate-300">
-                          {pick({ ru: "Решение", en: "Decision", uz: "Qaror" })}: {formatDate(application.reviewed_at, dateLocale)}
+                    <div className="space-y-1.5 text-sm text-slate-500 mb-4">
+                      {event?.location && (
+                        <p className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
+                          {event.location}
+                        </p>
+                      )}
+                      {event?.date && (
+                        <p className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
+                          {formatDate(event.date, dateLocale)}
                         </p>
                       )}
                     </div>
 
-                    <Link
-                      href={`/events/${application.event_id}`}
-                      className="mt-5 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#10b981] hover:text-emerald-700 transition-colors"
-                    >
-                      {pick({ ru: "Открыть событие", en: "Open event", uz: "Tadbirni ochish" })}
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
+                    <div className="text-xs text-slate-400 space-y-1 mb-4">
+                      <p>
+                        {pick({
+                          ru: "Отправлено",
+                          en: "Submitted",
+                          uz: "Yuborilgan",
+                        })}
+                        : {formatDate(application.created_at, dateLocale)}
+                      </p>
+                      {application.reviewed_at && (
+                        <p>
+                          {pick({ ru: "Решение", en: "Decision", uz: "Qaror" })}
+                          : {formatDate(application.reviewed_at, dateLocale)}
+                        </p>
+                      )}
+                    </div>
 
-                    {application.status === "approved" && !reviewsMissingSetup ? (
-                      <div className="mt-5 rounded-[24px] border border-slate-100 bg-slate-50 px-4 py-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                              {pick({ ru: "Отзыв об организаторе", en: "Organizer review", uz: "Tashkilotchi haqida sharh" })}
-                            </p>
-                            {existingReview ? (
-                              <>
-                                <div className="mt-2 flex items-center gap-1 text-amber-500">
-                                  {Array.from({ length: 5 }).map((_, index) => (
-                                    <Star
-                                      key={index}
-                                      className={`h-4 w-4 ${index < existingReview.rating ? "fill-current" : ""}`}
-                                    />
-                                  ))}
-                                </div>
-                                <p className="mt-2 text-sm font-semibold leading-7 text-slate-700">
-                                  {existingReview.comment ||
-                                    pick({
-                                      ru: "Отзыв сохранён без текста.",
-                                      en: "Review saved without text.",
-                                      uz: "Sharh matnsiz saqlandi.",
-                                    })}
+                    <div className="mt-auto pt-4 border-t border-slate-100 space-y-4">
+                      <Link
+                        href={`/events/${application.event_id}`}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                      >
+                        {pick({
+                          ru: "Открыть событие",
+                          en: "Open event",
+                          uz: "Tadbirni ochish",
+                        })}
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+
+                      {application.status === "approved" &&
+                        !reviewsMissingSetup && (
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="text-sm text-slate-600">
+                              {existingReview ? (
+                                <>
+                                  <div className="flex items-center gap-0.5 text-amber-400 mb-1">
+                                    {Array.from({ length: 5 }).map(
+                                      (_, index) => (
+                                        <Star
+                                          key={index}
+                                          className={`w-4 h-4 ${index < existingReview.rating ? "fill-current" : "text-slate-200"}`}
+                                        />
+                                      ),
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-slate-500 line-clamp-2">
+                                    {existingReview.comment ||
+                                      pick({
+                                        ru: "Без текста",
+                                        en: "No text",
+                                        uz: "Matnsiz",
+                                      })}
+                                  </p>
+                                </>
+                              ) : reviewAvailable ? (
+                                <p className="text-xs text-slate-500">
+                                  {pick({
+                                    ru: "Оцените организацию, чтобы помочь другим волонтёрам.",
+                                    en: "Rate the organizer to help other volunteers.",
+                                    uz: "Boshqa volontyorlarga yordam berish uchun tashkilotni baholang.",
+                                  })}
                                 </p>
-                              </>
-                            ) : reviewAvailable ? (
-                              <p className="mt-2 text-sm font-semibold leading-7 text-slate-600">
-                                {pick({
-                                  ru: "Оцените организацию после участия, чтобы помочь другим волонтёрам.",
-                                  en: "Rate the organizer after participation to help other volunteers.",
-                                  uz: "Boshqa volontyorlarga yordam berish uchun tashkilotni baholang.",
-                                })}
-                              </p>
-                            ) : (
-                              <p className="mt-2 text-sm font-semibold leading-7 text-slate-500">
-                                {pick({
-                                  ru: "Оставить отзыв можно после участия или после завершения события.",
-                                  en: "Feedback becomes available after attendance or after the event ends.",
-                                  uz: "Sharh qoldirish tadbir tugagach yoki qatnashuv tasdiqlangach ochiladi.",
-                                })}
-                              </p>
+                              ) : (
+                                <p className="text-xs text-slate-400">
+                                  {pick({
+                                    ru: "Отзыв можно оставить после участия или завершения события.",
+                                    en: "Feedback becomes available after attendance or event ends.",
+                                    uz: "Sharh tadbir tugagach yoki qatnashuv tasdiqlangach ochiladi.",
+                                  })}
+                                </p>
+                              )}
+                            </div>
+
+                            {reviewAvailable && (
+                              <button
+                                type="button"
+                                onClick={() => openReviewModal(application)}
+                                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                {existingReview
+                                  ? pick({
+                                      ru: "Изменить",
+                                      en: "Edit",
+                                      uz: "Tahrirlash",
+                                    })
+                                  : pick({
+                                      ru: "Отзыв",
+                                      en: "Review",
+                                      uz: "Sharh",
+                                    })}
+                              </button>
                             )}
                           </div>
-
-                          {reviewAvailable ? (
-                            <button
-                              type="button"
-                              onClick={() => openReviewModal(application)}
-                              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-[#10b981] hover:text-[#10b981]"
-                            >
-                              <MessageSquare className="h-4 w-4" />
-                              {existingReview
-                                ? pick({ ru: "Изменить", en: "Edit", uz: "Tahrirlash" })
-                                : pick({ ru: "Оставить отзыв", en: "Leave review", uz: "Sharh qoldirish" })}
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    ) : null}
+                        )}
+                    </div>
                   </div>
                 </article>
               );
             })
           )}
-        </section>
+        </div>
+      </div>
 
-        {reviewModal.isOpen && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-[560px] rounded-[30px] border border-gray-100 bg-white p-6 shadow-2xl md:p-8">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#10b981]">
-                    {pick({ ru: "Отзыв", en: "Review", uz: "Sharh" })}
-                  </p>
-                  <h3 className="mt-2 text-2xl font-black text-gray-900">
-                    {reviewModal.eventTitle}
-                  </h3>
+      {/* Review Modal */}
+      {reviewModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 bg-white p-6">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <p className="text-xs font-medium text-emerald-600">
+                  {pick({ ru: "Отзыв", en: "Review", uz: "Sharh" })}
+                </p>
+                <h3 className="mt-1 text-xl font-bold text-slate-900 line-clamp-2">
+                  {reviewModal.eventTitle}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={closeReviewModal}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleReviewSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {pick({ ru: "Оценка", en: "Rating", uz: "Baho" })}
+                </label>
+                <div className="flex gap-2">
+                  {Array.from({ length: 5 }).map((_, index) => {
+                    const value = index + 1;
+                    const active = value <= reviewModal.rating;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() =>
+                          setReviewModal((prev) => ({ ...prev, rating: value }))
+                        }
+                        className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors ${
+                          active
+                            ? "border-amber-200 bg-amber-50 text-amber-500"
+                            : "border-slate-200 bg-white text-slate-300 hover:border-amber-200 hover:text-amber-400"
+                        }`}
+                      >
+                        <Star
+                          className={`w-5 h-5 ${active ? "fill-current" : ""}`}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
-                <button
-                  type="button"
-                  onClick={closeReviewModal}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-gray-400 transition-colors hover:text-red-500"
-                >
-                  <X className="h-5 w-5" />
-                </button>
               </div>
 
-              <form onSubmit={handleReviewSubmit} className="mt-6 space-y-5">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-400">
-                    {pick({ ru: "Оценка", en: "Rating", uz: "Baho" })}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {Array.from({ length: 5 }).map((_, index) => {
-                      const value = index + 1;
-                      const active = value <= reviewModal.rating;
-                      return (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => setReviewModal((prev) => ({ ...prev, rating: value }))}
-                          className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition-colors ${
-                            active
-                              ? "border-amber-200 bg-amber-50 text-amber-500"
-                              : "border-gray-200 bg-white text-gray-300 hover:border-amber-200 hover:text-amber-400"
-                          }`}
-                        >
-                          <Star className={`h-6 w-6 ${active ? "fill-current" : ""}`} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  {pick({ ru: "Комментарий", en: "Comment", uz: "Izoh" })}
+                </label>
+                <textarea
+                  rows={4}
+                  value={reviewModal.comment}
+                  onChange={(e) =>
+                    setReviewModal((prev) => ({
+                      ...prev,
+                      comment: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none resize-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  placeholder={pick({
+                    ru: "Что было хорошо организовано? Что можно улучшить?",
+                    en: "What was well organized? What could be improved?",
+                    uz: "Nima yaxshi tashkil qilindi? Nimani yaxshilash mumkin?",
+                  })}
+                />
+              </div>
 
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-400">
-                    {pick({ ru: "Комментарий", en: "Comment", uz: "Izoh" })}
-                  </label>
-                  <textarea
-                    rows={5}
-                    value={reviewModal.comment}
-                    onChange={(e) => setReviewModal((prev) => ({ ...prev, comment: e.target.value }))}
-                    className="mt-3 w-full rounded-[24px] border border-gray-200 bg-gray-50 px-5 py-4 font-semibold text-gray-700 outline-none transition-colors focus:border-[#10b981] focus:bg-white"
-                    placeholder={pick({
-                      ru: "Что было хорошо организовано? Что можно улучшить?",
-                      en: "What was well organized? What could be improved?",
-                      uz: "Nima yaxshi tashkil qilindi? Nimani yaxshilash mumkin?",
-                    })}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isReviewSubmitting}
-                  className="w-full rounded-[24px] bg-[#10b981] py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-[#0da975] disabled:bg-gray-200"
-                >
-                  {isReviewSubmitting
-                    ? <Loader2 className="mx-auto h-5 w-5 animate-spin" />
-                    : pick({ ru: "Сохранить отзыв", en: "Save review", uz: "Sharhni saqlash" })}
-                </button>
-              </form>
-            </div>
+              <button
+                type="submit"
+                disabled={isReviewSubmitting}
+                className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-colors"
+              >
+                {isReviewSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  pick({
+                    ru: "Сохранить отзыв",
+                    en: "Save review",
+                    uz: "Sharhni saqlash",
+                  })
+                )}
+              </button>
+            </form>
           </div>
-        )}
+        </div>
+      )}
 
-        <AlertModal
-          isOpen={alertModal.isOpen}
-          title={alertModal.title}
-          message={alertModal.message}
-          tone={alertModal.tone}
-          closeLabel={pick({ ru: "Понятно", en: "Close", uz: "Yopish" })}
-          onClose={() => setAlertModal((prev) => ({ ...prev, isOpen: false }))}
-        />
-      </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        title={alertModal.title}
+        message={alertModal.message}
+        tone={alertModal.tone}
+        closeLabel={pick({ ru: "Понятно", en: "Close", uz: "Yopish" })}
+        onClose={() => setAlertModal((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
