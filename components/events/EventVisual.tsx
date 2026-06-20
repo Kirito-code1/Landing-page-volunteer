@@ -101,7 +101,6 @@ export default function EventVisual({
         fill
         sizes={sizes}
         priority={priority}
-        unoptimized
       />
     );
   }

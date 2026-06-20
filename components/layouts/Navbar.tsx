@@ -110,6 +110,10 @@ export default function Navbar() {
   const hasNotificationsFetchedRef = useRef(false);
   const hasNotificationDetailsRef = useRef(false);
   const { locale, setLocale, pick } = useLanguage();
+  const pickRef = useRef(pick);
+  useEffect(() => {
+    pickRef.current = pick;
+  }, [pick]);
 
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
 
@@ -218,7 +222,7 @@ export default function Navbar() {
           id: `incoming-${row.id}`,
           label:
             eventTitleMap[row.event_id] ??
-            pick({ ru: "Событие", en: "Event", uz: "Tadbir" }),
+            pickRef.current({ ru: "Событие", en: "Event", uz: "Tadbir" }),
           happenedAt: row.created_at,
           type: "incoming" as NotificationType,
           href: "/dashboard",
@@ -227,7 +231,7 @@ export default function Navbar() {
           id: `decision-${row.id}`,
           label:
             eventTitleMap[row.event_id] ??
-            pick({ ru: "Событие", en: "Event", uz: "Tadbir" }),
+            pickRef.current({ ru: "Событие", en: "Event", uz: "Tadbir" }),
           happenedAt: row.reviewed_at as string,
           type:
             row.status === "approved"
@@ -239,8 +243,8 @@ export default function Navbar() {
           id: `payment-${row.id}`,
           label:
             row.kind === "premium"
-              ? pick({ ru: "Premium", en: "Premium", uz: "Premium" })
-              : pick({ ru: "Пожертвование", en: "Donation", uz: "Xayriya" }),
+              ? pickRef.current({ ru: "Premium", en: "Premium", uz: "Premium" })
+              : pickRef.current({ ru: "Пожертвование", en: "Donation", uz: "Xayriya" }),
           happenedAt: row.reviewed_at as string,
           type:
             row.status === "approved"
@@ -261,7 +265,7 @@ export default function Navbar() {
       hasNotificationDetailsRef.current = includeTitles;
       setNotificationsLoading(false);
     },
-    [supabase, pick],
+    [supabase],
   );
 
   const syncPremiumSession = useCallback(
@@ -339,7 +343,7 @@ export default function Navbar() {
     });
 
     premiumPollTimer = window.setInterval(() => {
-      if (!mounted || !userRef.current || hasPremiumAccess(userRef.current)) {
+      if (!mounted || !userRef.current || hasPremiumAccess(userRef.current) || document.visibilityState !== "visible") {
         return;
       }
 
@@ -740,7 +744,6 @@ export default function Navbar() {
                   height={18}
                   className="me-2 rounded-full border border-slate-100 object-cover"
                   alt={selectedLanguage.name}
-                  unoptimized
                 />
                 {selectedLanguage.code}
                 <FontAwesomeIcon icon={faChevronDown} className={`ms-2 h-2 w-2 shrink-0 transition-transform ${isLangOpen ? "rotate-180" : ""}`} />
@@ -760,7 +763,7 @@ export default function Navbar() {
                             lang.locale === locale ? "bg-emerald-50 text-[#10b981]" : "hover:bg-slate-50"
                           }`}
                         >
-                          <Image src={lang.flag} width={16} height={16} className="me-3 rounded-full border border-slate-100" alt="" unoptimized />
+                          <Image src={lang.flag} width={16} height={16} className="me-3 rounded-full border border-slate-100" alt="" />
                           {lang.name}
                         </button>
                       </li>

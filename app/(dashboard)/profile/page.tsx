@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { AuthChangeEvent, Session, User as SupabaseUser } from "@supabase/supabase-js";
@@ -13,6 +13,11 @@ import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 export default function ProfilePage() {
   const { pick, locale } = useLanguage();
+  const pickRef = useRef(pick);
+  useEffect(() => {
+    pickRef.current = pick;
+  }, [pick]);
+
   const router = useRouter();
   
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -42,16 +47,15 @@ export default function ProfilePage() {
   });
 
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
-  const supabaseUnavailableMessage = pick({
-    ru: "Сервис временно недоступен. Попробуйте позже.",
-    en: "The service is temporarily unavailable. Please try again later.",
-    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
-  });
 
   const fetchUser = useCallback(async () => {
     try {
       if (!supabase) {
-        setError(supabaseUnavailableMessage);
+        setError(pickRef.current({
+          ru: "Сервис временно недоступен. Попробуйте позже.",
+          en: "The service is temporarily unavailable. Please try again later.",
+          uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+        }));
         return false;
       }
 
@@ -91,11 +95,11 @@ export default function ProfilePage() {
       setError(
         error instanceof Error
           ? error.message
-          : pick({ ru: "Не удалось загрузить профиль.", en: "Could not load the profile.", uz: "Profilni yuklab bo'lmadi." }),
+          : pickRef.current({ ru: "Не удалось загрузить профиль.", en: "Could not load the profile.", uz: "Profilni yuklab bo'lmadi." }),
       );
       return false;
     }
-  }, [supabase, supabaseUnavailableMessage, pick]);
+  }, [supabase]);
 
   const showAlertModal = (title: string, message: string, tone: AlertTone = "info") => {
     setAlertModal({ isOpen: true, title, message, tone });

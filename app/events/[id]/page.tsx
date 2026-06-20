@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -98,14 +98,14 @@ export default function EventPage() {
     tone: "info",
   });
 
+  const pickRef = useRef(pick);
+  useEffect(() => {
+    pickRef.current = pick;
+  }, [pick]);
+
   const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
 
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
-  const supabaseUnavailableMessage = pick({
-    ru: "Сервис временно недоступен. Попробуйте позже.",
-    en: "The service is temporarily unavailable. Please try again later.",
-    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
-  });
 
   const missingApplicationsHint = pick({
     ru: "Функция заявок не настроена. Выполните SQL из файла database/event_applications.sql.",
@@ -194,7 +194,11 @@ export default function EventPage() {
         setLoading(true);
         setError(null);
         if (!supabase) {
-          setError(supabaseUnavailableMessage);
+          setError(pickRef.current({
+            ru: "Сервис временно недоступен. Попробуйте позже.",
+            en: "The service is temporarily unavailable. Please try again later.",
+            uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+          }));
           return;
         }
 
@@ -213,7 +217,7 @@ export default function EventPage() {
 
         if (!data) {
           throw new Error(
-            pick({
+            pickRef.current({
               ru: "Событие не найдено в базе данных",
               en: "Event was not found in the database",
               uz: "Tadbir ma'lumotlar bazasida topilmadi",
@@ -233,13 +237,13 @@ export default function EventPage() {
         const message =
           err instanceof Error
             ? err.message
-            : pick({
+            : pickRef.current({
                 ru: "Не удалось загрузить событие",
                 en: "Failed to load event",
                 uz: "Tadbirni yuklab bo'lmadi",
               });
         console.error(
-          pick({ ru: "Ошибка при загрузке:", en: "Loading error:", uz: "Yuklash xatosi:" }),
+          pickRef.current({ ru: "Ошибка при загрузке:", en: "Loading error:", uz: "Yuklash xatosi:" }),
           message,
         );
         setError(message);
@@ -249,7 +253,7 @@ export default function EventPage() {
     }
 
     fetchEvent();
-  }, [id, supabase, pick, loadParticipationData, loadOrganizerReviews, supabaseUnavailableMessage]);
+  }, [id, supabase, loadParticipationData, loadOrganizerReviews]);
 
   const handleShare = () => {
     if (typeof window !== "undefined") {

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { Heart, Mail, MapPin, Phone } from "lucide-react";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export default function Footer() {
-  const year = new Date().getFullYear();
   const { pick } = useLanguage();
 
   const quickLinks = [
@@ -172,9 +173,9 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <p className="text-sm text-slate-500">
             {pick({
-              ru: `© ${year} VoloHero. Все права защищены.`,
-              en: `© ${year} VoloHero. All rights reserved.`,
-              uz: `© ${year} VoloHero. Barcha huquqlar himoyalangan.`,
+              ru: `© ${CURRENT_YEAR} VoloHero. Все права защищены.`,
+              en: `© ${CURRENT_YEAR} VoloHero. All rights reserved.`,
+              uz: `© ${CURRENT_YEAR} VoloHero. Barcha huquqlar himoyalangan.`,
             })}
           </p>
           <p className="text-xs text-slate-600 uppercase tracking-wider">

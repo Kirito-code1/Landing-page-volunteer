@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Loader2,
   Search,
@@ -76,17 +76,20 @@ export default function AllEvents() {
   const categoryOptions = getEventCategoryOptions(pick);
 
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
-  const supabaseUnavailableMessage = pick({
-    ru: "Сервис временно недоступен. Попробуйте позже.",
-    en: "The service is temporarily unavailable. Please try again later.",
-    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
-  });
+  const pickRef = useRef(pick);
+  useEffect(() => {
+    pickRef.current = pick;
+  }, [pick]);
 
   useEffect(() => {
     async function getEvents() {
       if (!supabase) {
         setEvents([]);
-        setError(supabaseUnavailableMessage);
+        setError(pickRef.current({
+          ru: "Сервис временно недоступен. Попробуйте позже.",
+          en: "The service is temporarily unavailable. Please try again later.",
+          uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+        }));
         setLoading(false);
         return;
       }
@@ -97,7 +100,7 @@ export default function AllEvents() {
         .order("created_at", { ascending: false });
 
       if (supabaseError) {
-        setError(pick({ ru: "Не удалось загрузить события. Попробуйте обновить страницу.", en: "Failed to load events. Please refresh the page.", uz: "Tadbirlarni yuklab bo'lmadi. Sahifani yangilang." }));
+        setError(pickRef.current({ ru: "Не удалось загрузить события. Попробуйте обновить страницу.", en: "Failed to load events. Please refresh the page.", uz: "Tadbirlarni yuklab bo'lmadi. Sahifani yangilang." }));
         setEvents([]);
         setLoading(false);
         return;
@@ -108,7 +111,7 @@ export default function AllEvents() {
       setLoading(false);
     }
     getEvents();
-  }, [supabase, pick, supabaseUnavailableMessage]);
+  }, [supabase]);
 
   const visibleEvents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();

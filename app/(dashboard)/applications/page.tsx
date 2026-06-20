@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -63,6 +63,11 @@ function formatDate(value: string, locale: string) {
 export default function ApplicationsPage() {
   const router = useRouter();
   const { pick } = useLanguage();
+  const pickRef = useRef(pick);
+  useEffect(() => {
+    pickRef.current = pick;
+  }, [pick]);
+
   const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
 
   const [loading, setLoading] = useState(true);
@@ -108,11 +113,6 @@ export default function ApplicationsPage() {
   });
 
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
-  const supabaseUnavailableMessage = pick({
-    ru: "Сервис временно недоступен. Попробуйте позже.",
-    en: "The service is temporarily unavailable. Please try again later.",
-    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
-  });
 
   const missingApplicationsHint = pick({
     ru: "Таблица заявок не найдена. Выполните SQL из файла database/event_applications.sql.",
@@ -155,7 +155,11 @@ export default function ApplicationsPage() {
         setApplications([]);
         setEventsMap({});
         setMyReviews([]);
-        setError(supabaseUnavailableMessage);
+        setError(pickRef.current({
+          ru: "Сервис временно недоступен. Попробуйте позже.",
+          en: "The service is temporarily unavailable. Please try again later.",
+          uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+        }));
         return;
       }
 
@@ -249,7 +253,7 @@ export default function ApplicationsPage() {
       setError(
         err instanceof Error
           ? err.message
-          : pick({
+          : pickRef.current({
               ru: "Не удалось загрузить отклики.",
               en: "Failed to load applications.",
               uz: "Arizalarni yuklab bo'lmadi.",
@@ -258,7 +262,7 @@ export default function ApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, router, pick, supabaseUnavailableMessage]);
+  }, [supabase, router]);
 
   useEffect(() => {
     fetchData();

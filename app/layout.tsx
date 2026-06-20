@@ -6,7 +6,6 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import Navbar from "@/components/layouts/Navbar";
 import Footer from "@/components/layouts/Footer";
 import { LanguageProvider } from "@/components/providers/LanguageProvider";
-import ChunkLoadRecovery from "@/components/system/ChunkLoadRecovery";
 
 // Disable automatic CSS insertion because styles are imported manually above.
 config.autoAddCss = false;
@@ -98,7 +97,6 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="antialiased">
         <LanguageProvider>
-          <ChunkLoadRecovery />
           <Navbar />
           {children}
           <Footer />

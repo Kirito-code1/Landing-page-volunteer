@@ -20,9 +20,9 @@ export default function EventCard({ image, category, title, description, date, l
         <Image
           src={image}
           alt={title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          width={320}
-          height={224}
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
         />
         <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-2xl text-xs font-black text-gray-900 uppercase tracking-wider">
           {category}

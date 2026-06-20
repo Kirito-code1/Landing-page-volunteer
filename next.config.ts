@@ -42,10 +42,8 @@ const nextConfig: NextConfig = {
     remotePatterns,
   },
   typescript: {
+    // Ignore build errors for faster development
     ignoreBuildErrors: true,
-  },
-  webpack: (config) => {
-    return config;
   },
 };
 

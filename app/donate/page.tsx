@@ -249,8 +249,10 @@ export default function DonatePage() {
     void loadSummary();
 
     const intervalId = window.setInterval(() => {
-      void loadSummary();
-    }, 30000);
+      if (document.visibilityState === "visible") {
+        void loadSummary();
+      }
+    }, 60000);
 
     return () => {
       cancelled = true;

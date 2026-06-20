@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type {
   AuthChangeEvent,
   Session,
@@ -140,6 +140,11 @@ type ManagedEventPayload = {
 
 export default function Dashboard() {
   const { pick } = useLanguage();
+  const pickRef = useRef(pick);
+  useEffect(() => {
+    pickRef.current = pick;
+  }, [pick]);
+
   const router = useRouter();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [freePostCreditsUsed, setFreePostCreditsUsed] = useState(0);
@@ -226,11 +231,6 @@ export default function Dashboard() {
   });
 
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
-  const supabaseUnavailableMessage = pick({
-    ru: "Сервис временно недоступен. Попробуйте позже.",
-    en: "The service is temporarily unavailable. Please try again later.",
-    uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
-  });
 
   const fetchData = useCallback(async () => {
     try {
@@ -243,7 +243,11 @@ export default function Dashboard() {
         setEventReviews([]);
         setManualPaymentRequests([]);
         setCanReviewManualPayments(false);
-        setError(supabaseUnavailableMessage);
+        setError(pickRef.current({
+          ru: "Сервис временно недоступен. Попробуйте позже.",
+          en: "The service is temporarily unavailable. Please try again later.",
+          uz: "Xizmat vaqtincha mavjud emas. Keyinroq urinib ko'ring.",
+        }));
         return;
       }
 
@@ -377,7 +381,7 @@ export default function Dashboard() {
       setError(
         err instanceof Error
           ? err.message
-          : pick({
+          : pickRef.current({
               ru: "Не удалось загрузить кабинет.",
               en: "Could not load the dashboard.",
               uz: "Kabinetni yuklab bo'lmadi.",
@@ -386,7 +390,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, router, pick, supabaseUnavailableMessage]);
+  }, [supabase, router]);
 
   const dateLocale = pick({ ru: "ru-RU", en: "en-US", uz: "uz-UZ" });
   const categoryOptions = getEventCategoryOptions(pick);
