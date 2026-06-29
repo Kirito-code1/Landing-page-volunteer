@@ -293,7 +293,7 @@ export default function DonationReportsManager({ initialReports }: DonationRepor
           <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-600">Donation Reports</p>
           <h2 className="mt-2 text-3xl font-black text-slate-900">Публичные фотоотчёты</h2>
           <p className="mt-3 max-w-3xl text-sm font-medium leading-7 text-slate-600">
-            Здесь ты добавляешь реальные отчёты для страницы пожертвований: фото, сумма, краткий результат и статус публикации.
+            Здесь ты добавляешь реальные отчёты для страницы пожертвований: фото, суммы, краткий результат и статус публикации.
           </p>
         </div>
 
